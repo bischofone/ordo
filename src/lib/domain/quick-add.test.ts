@@ -9,7 +9,8 @@ const pools = [
 	{ id: 'haus', name: 'Projekt Haus' }
 ];
 const ctx: ParseContext = { now, pools };
-const parse = (s: string, extra: Partial<ParseContext> = {}) => parseQuickAdd(s, { ...ctx, ...extra });
+const parse = (s: string, extra: Partial<ParseContext> = {}) =>
+	parseQuickAdd(s, { ...ctx, ...extra });
 
 describe('parseQuickAdd', () => {
 	it('erkennt das Beispiel aus der Spec', () => {

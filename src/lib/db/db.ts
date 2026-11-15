@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie';
-import type { ContextMode, Pool, Setting, Task, Template, TimeEntry } from '#lib/domain/types';
+import type { ContextMode, Pool, Setting, Task, Template, TimeEntry } from '#lib/domain/types.ts';
 
 export class TasksDB extends Dexie {
 	pools!: EntityTable<Pool, 'id'>;

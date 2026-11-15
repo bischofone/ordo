@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { childrenOf, flattenTree } from '#lib/domain/tree';
+import { childrenOf, flattenTree } from '#lib/domain/tree.ts';
 import { TasksDB } from './db';
 import { createRepo, INBOX_ID, type Repo } from './repo';
 
@@ -66,6 +66,16 @@ describe('Gliederung wie im Outliner', () => {
 		const d = await repo.createTask({ poolId: pid, title: 'Buchen', afterId: c });
 		await repo.outdent(d);
 		expect(await shape(pid)).toEqual(['Urlaub', '  Packen', '    Kleidung', '  Buchen']);
+	});
+
+	it('Einfügen vor, nach und als erstes Kind', async () => {
+		const { id: pid } = await privat();
+		const b = await repo.createTask({ poolId: pid, title: 'B' });
+		await repo.createTask({ poolId: pid, title: 'A', beforeId: b });
+		await repo.createTask({ poolId: pid, title: 'C', afterId: b });
+		await repo.createTask({ poolId: pid, title: 'B2', parentId: b });
+		await repo.createTask({ poolId: pid, title: 'B1', parentId: b, first: true });
+		expect(await shape(pid)).toEqual(['A', 'B', '  B1', '  B2', 'C']);
 	});
 
 	it('Abhaken mit Unteraufgaben', async () => {

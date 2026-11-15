@@ -118,7 +118,8 @@ export function parseQuickAdd(input: string, ctx: ParseContext): ParseResult {
 		// Priorität
 		const prio = /^!([1-3])$/.exec(text);
 		if (prio && !has('priority')) {
-			if (push('priority', text, start + text.length)) result.priority = Number(prio[1]) as Priority;
+			if (push('priority', text, start + text.length))
+				result.priority = Number(prio[1]) as Priority;
 			continue;
 		}
 

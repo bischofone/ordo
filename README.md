@@ -1,54 +1,47 @@
-# sv
+# Tasks
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+Local-first Aufgaben-App mit getrennten Pools. Spezifikation und Fortschritt: [SPEC.md](SPEC.md).
 
-## Creating a project
+**Stand:** Phase 1 (MVP lokal) ist fertig. Alle Daten liegen nur im Browser (IndexedDB), es gibt noch keinen Sync.
 
-If you're seeing this, you've probably already done this step. Congrats!
+## Voraussetzungen
 
-```sh
-# create a new project
-npx sv create my-app
+- Node.js (getestet mit 26)
+- pnpm (`sudo pacman -S pnpm` oder `yarn global add pnpm`)
+
+## Befehle
+
+| Befehl           | Was passiert                                                         |
+| ---------------- | -------------------------------------------------------------------- |
+| `pnpm install`   | Abhängigkeiten installieren (einmalig)                               |
+| `pnpm dev`       | Entwicklungsserver auf http://localhost:5173                         |
+| `pnpm build`     | Fertige App nach `build/` (statische Dateien, beliebig hostbar)      |
+| `pnpm serve`     | `build/` lokal ausliefern auf http://localhost:4173 (wie ein Server) |
+| `pnpm test:unit` | Unit-Tests (Logik + Datenbank), im Watch-Modus                       |
+| `pnpm test:e2e`  | Browser-Tests mit Playwright gegen den echten Build                  |
+| `pnpm test`      | alle Tests einmal                                                    |
+| `pnpm check`     | TypeScript-/Svelte-Prüfung                                           |
+| `pnpm lint`      | Formatierung + ESLint                                                |
+
+Einmalig für die Browser-Tests: `pnpm exec playwright install chromium`.
+
+## Aufbau
+
+```
+src/lib/domain/   reine Logik (Baum, Schnelleingabe, Zurückschieben …) – keine DB, keine UI
+src/lib/db/       Dexie-Schema und Repository (alle Schreibzugriffe)
+src/lib/state/    App-Zustand, reaktive Abfragen, Aktionen mit Rückfragen
+src/lib/ui/       Komponenten
+src/lib/i18n/     UI-Texte (Deutsch)
+src/routes/       Seiten: / (alle Pools), /pool/[id], /inbox, /inbox/aufraeumen, /einstellungen
+e2e/              Playwright-Tests
 ```
 
-To recreate this project with the same configuration:
+Abhängigkeiten zeigen nur in eine Richtung: `domain ← db ← state ← ui/routes`.
 
-```sh
-# recreate this project
-pnpm dlx sv@1.4.0 create --template minimal --types ts --add prettier eslint vitest="usages:unit,component" playwright="demo:no" sveltekit-adapter="adapter:static" --install pnpm tasks-app
-```
+## Bedienung (Kurzfassung)
 
-## Adding features
-
-Add features to your project with `sv add`:
-
-```sh
-npx sv add
-```
-
-For example, to add Tailwind CSS:
-
-```sh
-npx sv add tailwindcss
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
-
-```sh
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
+- **Schnelleingabe:** `Rechnung zahlen morgen 9:00 !1 #privat` – erkannte Teile erscheinen als Chips, ✕ macht sie wieder zu normalem Text.
+- **Gliederung:** Enter = neue Zeile, Tab / Shift+Tab = ein-/ausrücken, Backspace in leerer Zeile = löschen, ↑/↓ = Zeile wechseln, Alt+↑/↓ = verschieben, Strg+Enter = erledigt.
+- **Handy:** Leiste über der Tastatur zum Ein-/Ausrücken; Zeile nach rechts wischen = erledigt, nach links = zurückschieben.
+- **Inbox aufräumen:** Tasten 1–9 = Pool, I = Irgendwann, Entf = löschen, → = überspringen.

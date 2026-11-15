@@ -85,7 +85,9 @@ export function movePatch(tasks: readonly Task[], id: string, dir: -1 | 1): Tree
 	const target = idx + dir;
 	if (target < 0 || target >= sibs.length) return null;
 	const sortOrder =
-		dir === -1 ? keyBetween(sibs[target - 1], sibs[target]) : keyBetween(sibs[target], sibs[target + 1]);
+		dir === -1
+			? keyBetween(sibs[target - 1], sibs[target])
+			: keyBetween(sibs[target], sibs[target + 1]);
 	return { parentId: task.parentId, sortOrder };
 }
 
@@ -103,7 +105,10 @@ export function descendantIds(tasks: readonly Task[], id: string): string[] {
 }
 
 /** Fortschritt der direkten Unteraufgaben, z. B. 3/5. Ohne Kinder → null. */
-export function progress(tasks: readonly Task[], id: string): { done: number; total: number } | null {
+export function progress(
+	tasks: readonly Task[],
+	id: string
+): { done: number; total: number } | null {
 	const kids = tasks.filter((t) => t.parentId === id && !t.deletedAt);
 	if (kids.length === 0) return null;
 	return { done: kids.filter(isDone).length, total: kids.length };

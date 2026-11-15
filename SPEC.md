@@ -201,7 +201,7 @@ Nur wenige, intuitive Kürzel – alles andere über Buttons:
 
 ## 10. Phasen
 
-1. **MVP lokal:** Pools, Aufgaben, mehrstufige Unteraufgaben (Enter/Tab),
+1. ✅ **MVP lokal:** Pools, Aufgaben, mehrstufige Unteraufgaben (Enter/Tab),
    Schnelleingabe, Inbox inkl. Aufräum-Modus, Zurückschieben, PWA.
 2. **CalDAV-Sync** pro Pool + Radicale-Setup.
 3. **Capacitor-Android-App** + lokale Benachrichtigungen + Kontext-Modi.
@@ -211,3 +211,64 @@ Nur wenige, intuitive Kürzel – alles andere über Buttons:
 7. **Rest:** Wochenrückblick, Teilen-Ziel, Export/Backup, optional Tauri-Desktop.
 
 Jede Phase ist abgeschlossen und getestet, bevor die nächste beginnt.
+
+## 11. Entscheidungen (laufend ergänzt)
+
+Festgelegt beim Start, um ohne Rückfragen loslegen zu können. Alles davon kann
+jederzeit geändert werden – dann wird es hier angepasst.
+
+### Technik
+
+- **Stack:** SvelteKit 3 (reine Client-App, `adapter-static`, kein SSR) +
+  TypeScript, Dexie 4 (IndexedDB), date-fns, marked + DOMPurify.
+- **i18n:** eigene, typisierte Textdatei (`src/lib/i18n/de.ts`) statt Bibliothek.
+- **PWA:** eigener Service Worker von SvelteKit (App-Hülle im Cache, startet offline).
+- **Tests:** Vitest (Logik + DB mit fake-indexeddb), Playwright (Desktop +
+  Pixel-7-Profil) gegen den echten Build.
+- **Code-Ort:** `~/code/tasks-app` (außerhalb von Nextcloud wegen `node_modules`);
+  git-Repository, GitHub-Remote folgt.
+- **Sortierung:** Fractional Indexing (Text-Schlüssel); beim Sync auf
+  `X-APPLE-SORT-ORDER` abgebildet.
+- **Löschen:** als Tombstone (`deletedAt`), damit der Sync Löschungen übertragen kann.
+
+### Verhalten
+
+- **Inbox** ist intern ein Pool mit Sonderrolle (eigene CalDAV-Liste, nicht archivierbar).
+- **Zurückschieben** setzt das _geplante Datum_ (`DTSTART`), die Fälligkeit bleibt.
+  „Später“ = alle Aufgaben mit geplantem Datum nach heute.
+  Schnellauswahl: morgen · nächster Montag · 1. des nächsten Monats · eigenes Datum.
+- **Nachfrage ab dem 3. Verschieben:** Aufteilen (legt sofort eine Unteraufgabe an) ·
+  Irgendwann · Löschen · Trotzdem verschieben.
+- **Schnelleingabe:**
+  - Datum/Uhrzeit setzen die _Fälligkeit_.
+  - Nur Uhrzeit → heute, falls noch nicht vorbei, sonst morgen.
+  - Wochentag → nächster solcher Tag, heute zählt mit.
+  - `15.12.` ohne Jahr → nächstes Vorkommen.
+  - Jede Kürzel-Art wird nur einmal erkannt (das erste Vorkommen).
+  - `#pool`: Groß/Klein egal, Anfang des Namens reicht.
+  - Unbekannter Pool → roter Chip mit „anlegen“.
+  - Ein über die Button-Leiste gesetzter Wert hat Vorrang; das passende Kürzel wird
+    dann wieder normaler Text.
+- **Gliederung:**
+  - Enter mitten im Text teilt die Zeile.
+  - Enter am Zeilenanfang fügt eine leere Zeile darüber ein.
+  - Enter in leerer, eingerückter Zeile rückt aus.
+  - Backspace in leerer Zeile löscht sie.
+  - Alt+↑/↓ verschiebt, Strg+Enter hakt ab.
+  - Leere Zeilen verschwinden beim Verlassen.
+  - Tastendrücke zwischen Enter und dem Erscheinen der neuen Zeile werden gepuffert.
+- **Abhaken mit offenen Unteraufgaben:** Nachfrage „Alle erledigen / Nur diese“.
+- **Erledigte** Aufgaben: eingeklappter Bereich „Erledigt“ pro Pool.
+- **Status „In Arbeit“** ist (noch) nicht direkt setzbar – vorgesehen für den Timer (Phase 5).
+- **Kategorien/Tags** gibt es nicht; `CATEGORIES` anderer Clients bleibt beim Sync erhalten.
+- **Inbox-Altern:** markiert nach mehr als 7 Tagen (einstellbar), Badge wird orange.
+- **Aufräum-Modus:** Wischen links = löschen (mit Rückgängig), rechts = überspringen;
+  Tasten 1–9 / I / Entf / →.
+- **Farbschema** (System/Hell/Dunkel) gilt pro Gerät.
+
+### Offen (spätere Phasen)
+
+- App-Name und Android-App-ID (vor Phase 2/3 festlegen, bestimmt auch das `X-`-Präfix).
+- Hosting der PWA und CORS-Setup (Phase 2).
+- Speicherung von CalDAV-Passwörtern im Browser (Phase 2).
+- „X Tage nach Erledigung“ kompatibel zu Tasks.org abbilden (Phase 5).

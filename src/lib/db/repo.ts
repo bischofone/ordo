@@ -3,7 +3,7 @@
  * (Phase 2 hängt hier die Sync-Warteschlange an.)
  */
 import { generateNKeysBetween } from 'fractional-indexing';
-import { needsPostponeReview, postponePatch } from '#lib/domain/postpone';
+import { needsPostponeReview, postponePatch } from '#lib/domain/postpone.ts';
 import {
 	bySortOrder,
 	childrenOf,
@@ -15,7 +15,7 @@ import {
 	movePatch,
 	outdentPatch,
 	type TreePatch
-} from '#lib/domain/tree';
+} from '#lib/domain/tree.ts';
 import {
 	DEFAULT_POOL_SETTINGS,
 	POOL_COLORS,
@@ -23,7 +23,7 @@ import {
 	type Pool,
 	type Priority,
 	type Task
-} from '#lib/domain/types';
+} from '#lib/domain/types.ts';
 import type { TasksDB } from './db';
 
 export const INBOX_ID = 'inbox';
@@ -34,6 +34,10 @@ export interface NewTask {
 	parentId?: string | null;
 	/** Direkt hinter dieser Aufgabe einfügen (gleiche Ebene). */
 	afterId?: string;
+	/** Direkt vor dieser Aufgabe einfügen (gleiche Ebene). */
+	beforeId?: string;
+	/** Als erstes Element der Geschwisterliste einfügen (statt am Ende). */
+	first?: boolean;
 	priority?: Priority | null;
 	due?: DateValue;
 	scheduled?: DateValue;
@@ -91,32 +95,31 @@ export function createRepo(db: TasksDB, clock: () => Date = () => new Date()) {
 						createdAt: t,
 						updatedAt: t
 					},
-					...(['Privat', 'Arbeit'] as const).map(
-						(name, i): Pool => ({
-							id: uid(),
-							kind: 'pool',
-							name,
-							color: POOL_COLORS[i === 0 ? 3 : 5],
-							sortOrder: keys[i + 1],
-							archived: false,
-							settings: structuredClone(DEFAULT_POOL_SETTINGS),
-							createdAt: t,
-							updatedAt: t
-						})
-					)
+					...(['Privat', 'Arbeit'] as const).map((name, i): Pool => ({
+						id: uid(),
+						kind: 'pool',
+						name,
+						color: POOL_COLORS[i === 0 ? 3 : 5],
+						sortOrder: keys[i + 1],
+						archived: false,
+						settings: structuredClone(DEFAULT_POOL_SETTINGS),
+						createdAt: t,
+						updatedAt: t
+					}))
 				]);
 			});
 		},
 
 		async createPool(name: string, color?: string) {
 			const pools = (await db.pools.toArray()).sort(bySortOrder);
+			const used = pools.filter((p) => p.kind === 'pool').length;
 			const id = uid();
 			const t = now();
 			await db.pools.add({
 				id,
 				kind: 'pool',
 				name: name.trim(),
-				color: color ?? POOL_COLORS[pools.length % (POOL_COLORS.length - 1)],
+				color: color ?? POOL_COLORS[(used * 3) % (POOL_COLORS.length - 1)],
 				sortOrder: keyAtEnd(pools),
 				archived: false,
 				settings: structuredClone(DEFAULT_POOL_SETTINGS),
@@ -127,7 +130,8 @@ export function createRepo(db: TasksDB, clock: () => Date = () => new Date()) {
 		},
 
 		async updatePool(id: string, patch: Partial<Pick<Pool, 'name' | 'color' | 'archived'>>) {
-			if (id === INBOX_ID && patch.archived) throw new Error('Die Inbox kann nicht archiviert werden');
+			if (id === INBOX_ID && patch.archived)
+				throw new Error('Die Inbox kann nicht archiviert werden');
 			await db.pools.update(id, { ...patch, updatedAt: now() });
 		},
 
@@ -157,6 +161,14 @@ export function createRepo(db: TasksDB, clock: () => Date = () => new Date()) {
 					if (!after) throw new Error('afterId nicht gefunden');
 					parentId = after.parentId;
 					sortOrder = keyAfter(tasks, after);
+				} else if (input.beforeId) {
+					const before = tasks.find((t) => t.id === input.beforeId);
+					if (!before) throw new Error('beforeId nicht gefunden');
+					parentId = before.parentId;
+					const sibs = childrenOf(tasks, parentId);
+					sortOrder = keyBetween(sibs[sibs.findIndex((t) => t.id === before.id) - 1], before);
+				} else if (input.first) {
+					sortOrder = keyBetween(null, childrenOf(tasks, parentId)[0]);
 				} else {
 					sortOrder = keyAtEnd(childrenOf(tasks, parentId));
 				}
