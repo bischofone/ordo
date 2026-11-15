@@ -226,7 +226,7 @@ jederzeit geändert werden – dann wird es hier angepasst.
 - **Tests:** Vitest (Logik + DB mit fake-indexeddb), Playwright (Desktop +
   Pixel-7-Profil) gegen den echten Build.
 - **Code-Ort:** `~/code/tasks-app` (außerhalb von Nextcloud wegen `node_modules`);
-  git-Repository, GitHub-Remote folgt.
+  Repository: https://github.com/bischofone/tasks-app (privat).
 - **Sortierung:** Fractional Indexing (Text-Schlüssel); beim Sync auf
   `X-APPLE-SORT-ORDER` abgebildet.
 - **Löschen:** als Tombstone (`deletedAt`), damit der Sync Löschungen übertragen kann.
