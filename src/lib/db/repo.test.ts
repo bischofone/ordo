@@ -235,6 +235,19 @@ describe('Zeiterfassung', () => {
 		await expect(repo.addTime(id, { minutes: 0 })).rejects.toThrow();
 	});
 
+	it('Gesamtzeit direkt setzen: Differenz zählt für heute', async () => {
+		clock = day(12);
+		const id = await repo.createTask({ poolId: INBOX_ID, title: 'Angebot' });
+		await repo.addTime(id, { minutes: 60, date: '2025-11-10' });
+		await repo.setTimeTotal(id, 90);
+		expect((await db.tasks.get(id))?.timeEntries?.map((e) => [e.date, e.minutes])).toEqual([
+			['2025-11-10', 60],
+			['2025-11-12', 30]
+		]);
+		await repo.setTimeTotal(id, 0);
+		expect((await db.tasks.get(id))?.timeEntries).toEqual([]);
+	});
+
 	it('Timer: nur einer läuft, Wechsel erfasst den alten, übersteht „Neustart“', async () => {
 		const a = await repo.createTask({ poolId: INBOX_ID, title: 'A' });
 		const b = await repo.createTask({ poolId: INBOX_ID, title: 'B' });

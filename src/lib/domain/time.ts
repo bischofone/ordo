@@ -79,6 +79,55 @@ export function timerMinutes(startMs: number, endMs: number): number | null {
 	return Math.max(1, Math.round(elapsed / 60_000));
 }
 
+/**
+ * Eingabe im Zeitfeld der Aufgabenzeile:
+ *   „1:30“ / „0,5h“  → Gesamtzeit auf diesen Wert setzen
+ *   „+0:15“          → 15 Minuten dazu
+ *   „-10“            → 10 Minuten weniger
+ *   leer oder „0“    → alles löschen
+ * Liefert die neue Gesamtzeit in Minuten (oder null, wenn unverständlich).
+ */
+export function parseTotalInput(input: string, current: number): number | null {
+	const s = input.trim();
+	if (s === '' || /^0+(?:[:.,]0+)?\s*(?:h|m|min|std)?\.?$/i.test(s)) return 0;
+	const sign = s[0] === '+' ? 1 : s[0] === '-' || s[0] === '−' ? -1 : 0;
+	const minutes = parseDuration(sign ? s.slice(1) : s);
+	if (minutes === null) return null;
+	return sign ? Math.max(0, current + sign * minutes) : minutes;
+}
+
+/**
+ * Gesamtzeit einer Aufgabe auf `target` Minuten bringen, ohne die Tage durcheinanderzubringen:
+ * Mehr Zeit zählt für heute (vorhandener Eintrag von heute wird erhöht, sonst kommt einer dazu).
+ * Weniger Zeit wird zuerst bei heute abgezogen, dann bei den jüngsten Tagen.
+ */
+export function withTotal(
+	entries: readonly TimeEntry[] | undefined,
+	target: number,
+	today: string,
+	newId: () => string
+): TimeEntry[] {
+	const list = (entries ?? []).map((e) => ({ ...e }));
+	let diff = Math.round(target) - entryMinutes(list);
+	if (diff > 0) {
+		const todays = list.filter((e) => e.date === today).at(-1);
+		if (todays) todays.minutes += diff;
+		else list.push({ id: newId(), date: today, minutes: diff });
+		return list;
+	}
+	// jüngster Tag zuerst; bei gleichem Tag der zuletzt angelegte Eintrag zuerst
+	const order = list
+		.map((e, i) => ({ e, i }))
+		.sort((a, b) => (a.e.date < b.e.date ? 1 : a.e.date > b.e.date ? -1 : b.i - a.i));
+	for (const { e } of order) {
+		if (diff >= 0) break;
+		const take = Math.min(e.minutes, -diff);
+		e.minutes -= take;
+		diff += take;
+	}
+	return list.filter((e) => e.minutes > 0);
+}
+
 // ---------- Summen ----------
 
 export const entryMinutes = (entries: readonly TimeEntry[] | undefined) =>

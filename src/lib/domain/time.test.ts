@@ -5,10 +5,12 @@ import {
 	formatDuration,
 	formatElapsed,
 	parseDuration,
+	parseTotalInput,
 	periodOf,
 	shiftPeriod,
 	timerMinutes,
-	totalsWithChildren
+	totalsWithChildren,
+	withTotal
 } from './time';
 
 describe('Zeitangaben verstehen', () => {
@@ -60,6 +62,56 @@ describe('Zeitangaben verstehen', () => {
 		expect(timerMinutes(0, 89_000)).toBe(1);
 		expect(timerMinutes(0, 91_000)).toBe(2);
 		expect(timerMinutes(0, 3_600_000)).toBe(60);
+	});
+});
+
+describe('Gesamtzeit direkt setzen', () => {
+	const e = (id: string, date: string, minutes: number) => ({ id, date, minutes });
+	const today = '2026-11-18';
+	const id = () => 'neu';
+	const brief = (list: { date: string; minutes: number }[]) =>
+		list.map((x) => `${x.date.slice(8)}:${x.minutes}`);
+
+	it.each([
+		['1:30', 20, 90],
+		['0,5h', 20, 30],
+		['+0:15', 20, 35],
+		['+1h', 20, 80],
+		['-10', 20, 10],
+		['-1h', 20, 0],
+		['', 20, 0],
+		['0', 20, 0],
+		['0:00', 20, 0]
+	])('Eingabe „%s“ bei %i Minuten → %i', (input, current, total) => {
+		expect(parseTotalInput(input, current)).toBe(total);
+	});
+
+	it('Unverständliches wird abgelehnt', () => {
+		expect(parseTotalInput('abc', 20)).toBeNull();
+		expect(parseTotalInput('+', 20)).toBeNull();
+	});
+
+	it('mehr Zeit zählt für heute', () => {
+		expect(brief(withTotal([], 30, today, id))).toEqual(['18:30']);
+		expect(brief(withTotal([e('a', '2026-11-16', 60)], 90, today, id))).toEqual(['16:60', '18:30']);
+		// vorhandener Eintrag von heute wird erhöht statt ein zweiter angelegt
+		const grown = withTotal([e('a', '2026-11-16', 60), e('b', today, 15)], 120, today, id);
+		expect(grown).toEqual([e('a', '2026-11-16', 60), e('b', today, 60)]);
+	});
+
+	it('weniger Zeit wird bei heute, dann bei den jüngsten Tagen abgezogen', () => {
+		const list = [e('a', '2026-11-10', 60), e('b', '2026-11-16', 45), e('c', today, 30)];
+		expect(brief(withTotal(list, 120, today, id))).toEqual(['10:60', '16:45', '18:15']);
+		expect(brief(withTotal(list, 90, today, id))).toEqual(['10:60', '16:30']);
+		expect(brief(withTotal(list, 20, today, id))).toEqual(['10:20']);
+		expect(withTotal(list, 0, today, id)).toEqual([]);
+	});
+
+	it('gleicher Wert ändert nichts; Eingangsliste bleibt unverändert', () => {
+		const list = [e('a', today, 30)];
+		expect(withTotal(list, 30, today, id)).toEqual(list);
+		withTotal(list, 5, today, id);
+		expect(list[0].minutes).toBe(30);
 	});
 });
 

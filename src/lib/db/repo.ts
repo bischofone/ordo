@@ -5,7 +5,7 @@
 import { generateNKeysBetween } from 'fractional-indexing';
 import { toIsoDate } from '#lib/domain/dates.ts';
 import { uuid } from '#lib/domain/id.ts';
-import { timerMinutes } from '#lib/domain/time.ts';
+import { timerMinutes, withTotal } from '#lib/domain/time.ts';
 import { needsPostponeReview, postponePatch } from '#lib/domain/postpone.ts';
 import {
 	bySortOrder,
@@ -494,6 +494,15 @@ export function createRepo(db: TasksDB, clock: () => Date = () => new Date()) {
 					timeEntries: (task.timeEntries ?? []).filter((e) => e.id !== entryId),
 					updatedAt: now()
 				});
+			});
+		},
+
+		/** Gesamtzeit einer Aufgabe direkt setzen (Zeitfeld in der Zeile). Mehr/weniger zählt für heute. */
+		async setTimeTotal(taskId: string, minutes: number) {
+			await db.transaction('rw', db.tasks, async () => {
+				const task = await getTask(taskId);
+				const next = withTotal(task.timeEntries, minutes, toIsoDate(clock()), uid);
+				await db.tasks.update(taskId, { timeEntries: next, updatedAt: now() });
 			});
 		},
 

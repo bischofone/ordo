@@ -44,7 +44,7 @@ test('Timer: Play/Stop in der Zeile, oben sichtbar, nur einer läuft, übersteht
 	// Wechsel auf eine andere Aufgabe stoppt die erste und erfasst sie
 	await (await play(page, 'Telefonat')).click();
 	await expect(bar).toContainText('Telefonat');
-	await expect((await rowByTitle(page, 'Angebot schreiben')).getByTestId('row-time')).toHaveText(
+	await expect((await rowByTitle(page, 'Angebot schreiben')).getByTestId('row-time')).toHaveValue(
 		'0:25'
 	);
 	await expect(page.getByRole('button', { name: 'Timer stoppen' })).toHaveCount(2); // Zeile + Leiste
@@ -56,14 +56,14 @@ test('Timer: Play/Stop in der Zeile, oben sichtbar, nur einer läuft, übersteht
 		'0:10 erfasst'
 	);
 	await expect(bar).toHaveCount(0);
-	await expect((await rowByTitle(page, 'Telefonat')).getByTestId('row-time')).toHaveText('0:10');
+	await expect((await rowByTitle(page, 'Telefonat')).getByTestId('row-time')).toHaveValue('0:10');
 
 	// Versehentlicher Klick (unter 30 Sekunden) wird nicht erfasst
 	await (await play(page, 'Telefonat')).click();
 	await page.clock.fastForward('00:10');
 	await (await play(page, 'Telefonat')).click();
 	await expect(page.getByText('Unter 30 Sekunden – nicht erfasst')).toBeVisible();
-	await expect((await rowByTitle(page, 'Telefonat')).getByTestId('row-time')).toHaveText('0:10');
+	await expect((await rowByTitle(page, 'Telefonat')).getByTestId('row-time')).toHaveValue('0:10');
 });
 
 test('Zeit von Hand erfassen: Formate, Datum, ändern, löschen', async ({ page }) => {
@@ -99,9 +99,73 @@ test('Zeit von Hand erfassen: Formate, Datum, ändern, löschen', async ({ page 
 
 	// Bleibt gespeichert und steht in der Zeile
 	await page.reload();
-	await expect((await rowByTitle(page, 'Angebot schreiben')).getByTestId('row-time')).toHaveText(
+	await expect((await rowByTitle(page, 'Angebot schreiben')).getByTestId('row-time')).toHaveValue(
 		/2:30|2:45/
 	);
+});
+
+test('Zeit direkt in der Liste sehen, eintippen und überschreiben', async ({ page }) => {
+	const row = await rowByTitle(page, 'Angebot schreiben');
+	const field = row.getByRole('textbox', { name: 'Erfasste Zeit' });
+	const detail = page.getByTestId('detail');
+
+	// Leer: Platzhalter 0:00. Eintippen in beliebigem Format, Enter übernimmt.
+	await expect(field).toHaveValue('');
+	await expect(field).toHaveAttribute('placeholder', '0:00');
+	await field.click();
+	await expect(detail).toHaveCount(0); // Klick ins Zeitfeld öffnet nicht die Details
+	await field.fill('0,5h');
+	await field.press('Enter');
+	await expect(field).toHaveValue('0:30');
+	await expect(field).not.toBeFocused();
+
+	// Überschreiben, dazuzählen, abziehen
+	await field.fill('1:30');
+	await field.press('Enter');
+	await expect(field).toHaveValue('1:30');
+	await field.fill('+15');
+	await field.press('Tab');
+	await expect(field).toHaveValue('1:45');
+	await field.fill('-0:45');
+	await field.press('Enter');
+	await expect(field).toHaveValue('1:00');
+
+	// Unverständliches und Escape ändern nichts
+	await field.fill('quatsch');
+	await field.press('Enter');
+	await expect(field).toHaveValue('1:00');
+	await field.fill('9:99');
+	await field.press('Escape');
+	await expect(field).toHaveValue('1:00');
+
+	// Die Zeit zählt für heute und steht genauso in den Details und in der Auswertung
+	await row.getByRole('button', { name: 'Details' }).click();
+	const entries = page.getByTestId('time-entry');
+	await expect(entries).toHaveCount(1);
+	await expect(entries.getByLabel('Datum')).toHaveValue('2026-11-18');
+	await expect(page.getByTestId('time-total')).toContainText('1:00');
+	await page.keyboard.press('Escape');
+
+	// Unteraufgabe mit eigener Zeit → Summe am Elternteil
+	await row.hover();
+	await row.getByRole('button', { name: 'Unteraufgabe hinzufügen' }).click();
+	await page.keyboard.type('Kalkulation');
+	const child = await rowByTitle(page, 'Kalkulation');
+	await child.getByRole('textbox', { name: 'Erfasste Zeit' }).fill('20');
+	await child.getByRole('textbox', { name: 'Erfasste Zeit' }).press('Enter');
+	await expect(row.getByTestId('row-sum')).toHaveText('Σ 1:20');
+	await expect(field).toHaveValue('1:00');
+
+	// Leeren löscht die Zeit; bleibt nach dem Neuladen
+	await field.fill('');
+	await field.press('Enter');
+	await expect(field).toHaveValue('');
+	await page.reload();
+	await expect(
+		(await rowByTitle(page, 'Kalkulation')).getByRole('textbox', { name: 'Erfasste Zeit' })
+	).toHaveValue('0:20');
+	await page.getByRole('navigation').getByRole('link', { name: 'Zeiten' }).click();
+	await expect(page.getByTestId('report-total')).toHaveText('0:20');
 });
 
 test('Auswertung: Woche, Tag, zurückblättern, nach Pool und Aufgabe', async ({ page }) => {

@@ -384,7 +384,17 @@ jederzeit geändert werden – dann wird es hier angepasst.
 - **Timer:** läuft pro Gerät (nicht synchronisiert), immer nur einer; ein Wechsel stoppt
   und erfasst den vorherigen. Beim Stoppen wird auf Minuten gerundet (mindestens 1) und
   dem Tag des Starts zugeordnet. Unter 30 Sekunden wird nichts erfasst.
-- **Summe** an der Zeile schließt Unteraufgaben ein.
+- **Zeitfeld in der Zeile** (links neben dem Play-Knopf): zeigt die erfasste Zeit der
+  Aufgabe (leer = „0:00“ blass) und lässt sich direkt überschreiben. Ein Wert setzt die
+  Gesamtzeit, `+0:15` zählt dazu, `-10` zieht ab, leer oder `0` löscht. Enter oder
+  Verlassen übernimmt, Escape verwirft; Unverständliches ändert nichts.
+  Die Differenz zählt für **heute**: Mehr Zeit erhöht den Eintrag von heute (oder legt
+  einen an); weniger wird zuerst bei heute, dann bei den jüngsten Tagen abgezogen. Für
+  andere Tage gibt es die Einträge in den Details.
+- Haben Unteraufgaben eigene Zeit, steht am Elternteil zusätzlich „Σ“ mit der Summe.
+- **Schmale Bildschirme:** Zeitfeld erscheint erst, wenn Zeit erfasst ist; die Knöpfe für
+  Unteraufgabe und Zurückschieben entfallen dort (Leiste über der Tastatur bzw. Wisch
+  nach links), damit der Titel lesbar bleibt.
 - **Sync:** Einträge zweier Geräte werden je Eintrag zusammengeführt (neu von beiden
   Seiten bleibt, Löschen gilt, bei Änderung auf beiden Seiten gewinnt der Server) – kein
   Konflikt-Dialog.

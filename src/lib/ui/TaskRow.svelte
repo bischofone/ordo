@@ -1,7 +1,12 @@
 <script lang="ts">
 	import { daysFromToday, formatDateValue } from '#lib/domain/dates.ts';
 	import type { Row } from '#lib/domain/tree.ts';
-	import { formatDuration, formatElapsed } from '#lib/domain/time.ts';
+	import {
+		entryMinutes,
+		formatDuration,
+		formatElapsed,
+		parseTotalInput
+	} from '#lib/domain/time.ts';
 	import { isDone } from '#lib/domain/types.ts';
 	import { isAged } from '#lib/domain/views.ts';
 	import { m } from '#lib/i18n/index.ts';
@@ -66,10 +71,40 @@
 	 * - Klick in den Titel: Am PC (Details als Spalte daneben) wird zusätzlich der Cursor
 	 *   gesetzt; am Handy/schmalen Fenster nur bearbeitet, damit das Tippen frei bleibt.
 	 */
+	// ---------- Zeitfeld neben dem Play-Knopf ----------
+	const ownMinutes = $derived(entryMinutes(task.timeEntries));
+	let timeInvalid = $state(false);
+
+	/** Eingabe übernehmen: Wert = neue Gesamtzeit, „+0:15“ = dazu, leer/0 = löschen. */
+	function commitTime(field: HTMLInputElement) {
+		const shown = ownMinutes ? formatDuration(ownMinutes) : '';
+		if (field.value.trim() === shown) return;
+		const total = parseTotalInput(field.value, ownMinutes);
+		if (total === null) {
+			// Unverständlich: nichts ändern, kurz rot markieren, alten Wert zurück
+			timeInvalid = true;
+			setTimeout(() => (timeInvalid = false), 1200);
+		} else if (total !== ownMinutes) {
+			void repo.setTimeTotal(task.id, total);
+		}
+		field.value = total === null ? shown : total ? formatDuration(total) : '';
+	}
+
+	function ontimekey(e: KeyboardEvent & { currentTarget: HTMLInputElement }) {
+		if (e.key === 'Enter') {
+			e.preventDefault();
+			e.currentTarget.blur();
+		} else if (e.key === 'Escape') {
+			e.stopPropagation();
+			e.currentTarget.value = ownMinutes ? formatDuration(ownMinutes) : '';
+			e.currentTarget.blur();
+		}
+	}
+
 	function onrowclick(e: MouseEvent) {
 		if (!appearance.current.openDetailOnClick) return;
 		const target = e.target as HTMLElement;
-		if (target.closest('button, a')) return;
+		if (target.closest('button, a, .time-edit')) return;
 		if (target === input && !ui.docked) return;
 		ui.detailId = task.id;
 	}
@@ -198,9 +233,9 @@
 		{#if showScheduled && task.scheduled}
 			<span class="sched">→ {formatDateValue(task.scheduled, ui.now)}</span>
 		{/if}
-		{#if minutes > 0 && appearance.current.timeTracking}
-			<span class="time" title={m.time.section} data-testid="row-time">
-				<Icon name="clock" size={12} />{formatDuration(minutes)}
+		{#if minutes !== ownMinutes && appearance.current.timeTracking}
+			<span class="sum" title={m.time.sumTitle} data-testid="row-sum">
+				Σ {formatDuration(minutes)}
 			</span>
 		{/if}
 		{#if task.postponeCount > 0}
@@ -223,7 +258,7 @@
 		{/if}
 		{#if !done}
 			<button
-				class="icon-btn"
+				class="icon-btn postpone-btn"
 				aria-label={m.task.postpone}
 				title={m.task.postpone}
 				onclick={() => (ui.postponeId = ui.postponeId === task.id ? null : task.id)}
@@ -241,6 +276,23 @@
 		</button>
 	</span>
 
+	{#if appearance.current.timeTracking}
+		<input
+			class="time-edit"
+			class:empty={!ownMinutes}
+			class:invalid={timeInvalid}
+			value={ownMinutes ? formatDuration(ownMinutes) : ''}
+			placeholder="0:00"
+			aria-label={m.time.rowLabel}
+			title={m.time.rowHint}
+			autocomplete="off"
+			size="4"
+			data-testid="row-time"
+			onfocus={(e) => e.currentTarget.select()}
+			onkeydown={ontimekey}
+			onblur={(e) => commitTime(e.currentTarget)}
+		/>
+	{/if}
 	{#if appearance.current.timeTracking && (!done || running)}
 		<button
 			class="timer"
@@ -442,11 +494,43 @@
 			opacity: 1;
 		}
 	}
-	.time {
-		display: inline-flex;
-		align-items: center;
-		gap: 3px;
+	.sum {
 		font-variant-numeric: tabular-nums;
+	}
+	/* Erfasste Zeit: sieht aus wie Text, ist aber ein Feld – anklicken und überschreiben */
+	.time-edit {
+		width: 5.2ch;
+		box-sizing: content-box;
+		height: 24px;
+		padding: 0 5px;
+		flex: none;
+		text-align: right;
+		font-size: 0.8125rem;
+		font-variant-numeric: tabular-nums;
+		font-weight: 600;
+		border: 1px solid transparent;
+		border-radius: 6px;
+		background: transparent;
+		outline: none;
+	}
+	.time-edit.empty {
+		font-weight: 400;
+	}
+	.time-edit::placeholder {
+		color: var(--text-faint);
+		opacity: 0.6;
+	}
+	.row:hover .time-edit,
+	.time-edit:hover {
+		border-color: var(--border);
+	}
+	.time-edit:focus {
+		border-color: var(--accent);
+		background: var(--bg-raised);
+	}
+	.time-edit.invalid {
+		border-color: var(--danger);
+		color: var(--danger);
 	}
 	/* Play/Stop: immer sichtbar */
 	.timer {
@@ -479,8 +563,14 @@
 		.actions .icon-btn {
 			width: 28px;
 		}
-		/* Platz für den Timer: Unteraufgaben gehen am Handy über die Leiste über der Tastatur */
-		.actions .subtask-btn {
+		/*
+		 * Schmale Bildschirme: der Titel braucht den Platz.
+		 * Unteraufgaben gehen über die Leiste über der Tastatur, Zurückschieben per Wisch nach
+		 * links. Das Zeitfeld erscheint erst, wenn Zeit erfasst ist (sonst über Play oder Details).
+		 */
+		.actions .subtask-btn,
+		.actions .postpone-btn,
+		.time-edit.empty:not(:focus) {
 			display: none;
 		}
 		.meta .sched,

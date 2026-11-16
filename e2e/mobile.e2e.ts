@@ -81,12 +81,12 @@ test('Handy: Tipp auf den Titel bearbeitet, Tipp daneben öffnet die Details', a
 	const detail = page.getByTestId('detail');
 
 	// Titel antippen → nur bearbeiten (Tastatur), keine Details darüber
-	await row.getByRole('textbox').tap();
-	await expect(row.getByRole('textbox')).toBeFocused();
+	await row.getByRole('textbox', { name: 'Titel' }).tap();
+	await expect(row.getByRole('textbox', { name: 'Titel' })).toBeFocused();
 	await expect(detail).toHaveCount(0);
 
 	// Freie Fläche rechts vom Titel antippen → Details als Blatt von unten
-	const title = (await row.getByRole('textbox').boundingBox())!;
+	const title = (await row.getByRole('textbox', { name: 'Titel' }).boundingBox())!;
 	const box = (await row.boundingBox())!;
 	expect(title.width).toBeLessThan(box.width / 2); // Feld ist nur so breit wie der Text
 	await page.touchscreen.tap(title.x + title.width + 30, box.y + box.height / 2);

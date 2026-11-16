@@ -80,7 +80,7 @@ test('zwei Geräte synchronisieren über CalDAV, Konflikt wird gelöst', async (
 
 	// Beide ändern denselben Titel → Konflikt auf dem zweiten Gerät
 	const edit = async (page: Page, from: string, to: string) => {
-		const input = (await rowByTitle(page, from)).getByRole('textbox');
+		const input = (await rowByTitle(page, from)).getByRole('textbox', { name: 'Titel' });
 		await input.fill(to);
 		await input.blur();
 	};

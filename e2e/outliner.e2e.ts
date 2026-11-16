@@ -36,12 +36,12 @@ test('Aufgabenbaum nur mit der Tastatur anlegen, Fortschritt, Neuladen', async (
 	await expect((await rowByTitle(page, 'Urlaub')).getByTitle('Unteraufgaben')).toHaveText('0/2');
 
 	// Strg+Enter hakt ab → Fortschritt am Elternteil
-	await (await rowByTitle(page, 'Kleidung')).getByRole('textbox').click();
+	await (await rowByTitle(page, 'Kleidung')).getByRole('textbox', { name: 'Titel' }).click();
 	await kb.press('Control+Enter');
 	await expect((await rowByTitle(page, 'Packen')).getByTitle('Unteraufgaben')).toHaveText('1/2');
 
 	// Alt+↑ verschiebt innerhalb der Ebene
-	await (await rowByTitle(page, 'Ladekabel')).getByRole('textbox').click();
+	await (await rowByTitle(page, 'Ladekabel')).getByRole('textbox', { name: 'Titel' }).click();
 	await kb.press('Alt+ArrowUp');
 	await expect
 		.poll(() => outline(page))
@@ -84,7 +84,9 @@ test('Text hinter dem Cursor wandert mit Enter in die neue Zeile; Backspace lös
 	await page.keyboard.press('ArrowUp');
 	await page.keyboard.press('Backspace');
 	await expect.poll(() => outline(page)).toEqual(['0:Bericht', '0:schreiben']);
-	await expect(page.getByTestId('task-row').first().getByRole('textbox')).toBeFocused();
+	await expect(
+		page.getByTestId('task-row').first().getByRole('textbox', { name: 'Titel' })
+	).toBeFocused();
 });
 
 test('Löschen mit Unteraufgaben fragt nach und lässt sich rückgängig machen', async ({ page }) => {

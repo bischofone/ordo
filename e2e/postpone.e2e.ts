@@ -48,5 +48,5 @@ test('„Aufteilen“ legt direkt eine Unteraufgabe an', async ({ page }) => {
 	await page.keyboard.type('Erster Schritt');
 	const rows = page.getByTestId('task-row');
 	await expect(rows.nth(1)).toHaveAttribute('data-depth', '1');
-	await expect(rows.nth(1).getByRole('textbox')).toHaveValue('Erster Schritt');
+	await expect(rows.nth(1).getByRole('textbox', { name: 'Titel' })).toHaveValue('Erster Schritt');
 });

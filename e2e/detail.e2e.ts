@@ -15,10 +15,10 @@ test('Klick auf eine Aufgabe öffnet die Details daneben, Tippen bleibt möglich
 	const first = await rowByTitle(page, 'Erste Aufgabe');
 
 	// Klick in den Titel: Cursor sitzt im Titel UND die Details stehen rechts daneben (kein Abdunkeln)
-	await first.getByRole('textbox').click();
+	await first.getByRole('textbox', { name: 'Titel' }).click();
 	await expect(detail).toBeVisible();
 	await expect(detail.getByRole('textbox', { name: 'Titel' })).toHaveValue('Erste Aufgabe');
-	await expect(first.getByRole('textbox')).toBeFocused();
+	await expect(first.getByRole('textbox', { name: 'Titel' })).toBeFocused();
 	await expect(page.getByRole('button', { name: 'Schließen' })).toHaveCount(1); // nur das X, kein Hintergrund
 	await page.keyboard.press('End');
 	await page.keyboard.type(' (neu)');
@@ -54,7 +54,7 @@ test('abschaltbar: dann öffnen nur die drei Punkte', async ({ page }) => {
 	await page.getByRole('switch', { name: /Details beim Anklicken öffnen/ }).uncheck();
 	await openPool(page, 'Privat');
 	const row = await rowByTitle(page, 'Erste Aufgabe');
-	await row.getByRole('textbox').click();
+	await row.getByRole('textbox', { name: 'Titel' }).click();
 	await expect(page.getByTestId('detail')).toHaveCount(0);
 	await row.getByRole('button', { name: 'Details' }).click();
 	await expect(page.getByTestId('detail')).toBeVisible();
