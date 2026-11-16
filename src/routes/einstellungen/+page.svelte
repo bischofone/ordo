@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { DEFAULT_INBOX_AGING_DAYS } from '#lib/domain/views.ts';
 	import { m } from '#lib/i18n/index.ts';
-	import { deletePool } from '#lib/state/actions.ts';
+	import { deletePool, deleteProject } from '#lib/state/actions.ts';
 	import { repo } from '#lib/state/app.ts';
 	import { live } from '#lib/state/live.svelte.ts';
 	import { q } from '#lib/state/queries.ts';
@@ -65,6 +65,7 @@
 					onupdate={(patch) => repo.updateProject(pr.id, patch)}
 					onmove={(dir) => repo.moveProject(pr.id, dir)}
 					onarchive={() => repo.updateProject(pr.id, { archived: !pr.archived })}
+					ondelete={() => deleteProject(pr)}
 				/>
 			{/each}
 		</div>

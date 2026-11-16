@@ -328,6 +328,9 @@ jederzeit geändert werden – dann wird es hier angepasst.
   vorhandene Liste eines Kontos. Neben dem Pool-Namen zeigt ein kleines Schild das Konto
   (rot bei Fehler). Die Einstellungen enthalten nur die Konten – je Konto die Listen auf
   dem Server mit dem verknüpften Pool bzw. „Als Pool übernehmen“.
+- **Projekt löschen:** über den Stift am Projekt (im Pool, auf der Projektseite) oder in
+  den Einstellungen. Enthält es Aufgaben, wählt man „Aufgaben behalten“ (sie bleiben im
+  Pool, ohne Projekt) oder „Mit Aufgaben löschen“.
 - **Pool löschen:** Rückfrage nennt die Zahl der Aufgaben und Projekte; alles wird auf dem
   Gerät endgültig entfernt (kein Rückgängig). Bei synchronisierten Pools wählt man:
   „Nur auf diesem Gerät“ (Liste bleibt auf dem Server und lässt sich wieder übernehmen)

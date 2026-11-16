@@ -3,7 +3,7 @@
  * Die eigentliche Datenänderung passiert im Repository, hier kommt nur die Nutzerführung dazu.
  */
 import { formatDateValue } from '#lib/domain/dates.ts';
-import { isOpen, type Pool, type Task } from '#lib/domain/types.ts';
+import { isOpen, type Pool, type Project, type Task } from '#lib/domain/types.ts';
 import { errorText } from '#lib/sync/engine.ts';
 import { m } from '#lib/i18n/index.ts';
 import { db, repo } from './app';
@@ -126,5 +126,27 @@ export async function deletePool(pool: Pool): Promise<boolean> {
 	}
 	await repo.deletePool(pool.id);
 	toast(m.pool.deleted(pool.name));
+	return true;
+}
+
+/**
+ * Projekt löschen (nach Rückfrage). Enthält es Aufgaben, wählt der Nutzer, ob sie im Pool
+ * bleiben oder mit gelöscht werden. Liefert true, wenn gelöscht wurde.
+ */
+export async function deleteProject(project: Project): Promise<boolean> {
+	const tasks = await db.tasks.filter((t) => t.projectId === project.id && !t.deletedAt).count();
+	const choice = await ask({
+		title: m.project.deleteTitle(project.name),
+		message: tasks ? m.project.deleteText(tasks) : m.project.deleteEmptyText,
+		actions: tasks
+			? [
+					{ id: 'keep', label: m.project.deleteKeep, variant: 'primary' },
+					{ id: 'all', label: m.project.deleteWithTasks, variant: 'danger' }
+				]
+			: [{ id: 'keep', label: m.project.delete, variant: 'danger' }]
+	});
+	if (!choice) return false;
+	await repo.deleteProject(project.id, { withTasks: choice === 'all' });
+	toast(m.project.deleted(project.name));
 	return true;
 }

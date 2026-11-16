@@ -3,10 +3,10 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { m } from '#lib/i18n/index.ts';
+	import { deleteProject } from '#lib/state/actions.ts';
 	import { repo } from '#lib/state/app.ts';
 	import { live } from '#lib/state/live.svelte.ts';
 	import { q } from '#lib/state/queries.ts';
-	import { ask } from '#lib/state/ui.svelte.ts';
 	import Badge from '#lib/ui/Badge.svelte';
 	import Editor from '#lib/ui/Editor.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
@@ -23,14 +23,8 @@
 
 	async function remove() {
 		if (!project || !pool) return;
-		const ok = await ask({
-			title: m.project.deleteTitle,
-			message: m.project.deleteText(project.name),
-			actions: [{ id: 'delete', label: m.project.delete, variant: 'danger' }]
-		});
-		if (!ok) return;
-		await repo.deleteProject(project.id);
-		goto(resolve('/pool/[id]', { id: pool.id }));
+		const poolId = pool.id;
+		if (await deleteProject(project)) goto(resolve('/pool/[id]', { id: poolId }));
 	}
 </script>
 

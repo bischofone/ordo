@@ -3,8 +3,10 @@
 	import { resolve } from '$app/paths';
 	import { isOpen, type Pool, type Project, type Task } from '#lib/domain/types.ts';
 	import { m } from '#lib/i18n/index.ts';
+	import { deleteProject } from '#lib/state/actions.ts';
 	import { repo } from '#lib/state/app.ts';
 	import Badge from './Badge.svelte';
+	import Editor from './Editor.svelte';
 	import Icon from './Icon.svelte';
 	import TaskGroup from './TaskGroup.svelte';
 
@@ -24,6 +26,7 @@
 	} = $props();
 
 	let collapsed = $state<Record<string, boolean>>({});
+	let editingId = $state<string | null>(null);
 	let adding = $state(false);
 	let newName = $state('');
 
@@ -72,7 +75,27 @@
 					<span>{p.name}</span>
 				</a>
 				<span class="count">{openCount(p.id) || ''}</span>
+				<button
+					class="icon-btn"
+					aria-label="{m.project.edit}: {p.name}"
+					title={m.project.edit}
+					aria-expanded={editingId === p.id}
+					onclick={() => (editingId = editingId === p.id ? null : p.id)}
+				>
+					<Icon name="edit" size={14} />
+				</button>
 			</div>
+			{#if editingId === p.id}
+				<div class="project-editor">
+					<Editor
+						item={p}
+						onupdate={(patch) => repo.updateProject(p.id, patch)}
+						onmove={(dir) => repo.moveProject(p.id, dir)}
+						onarchive={() => repo.updateProject(p.id, { archived: !p.archived })}
+						ondelete={() => deleteProject(p)}
+					/>
+				</div>
+			{/if}
 			{#if !collapsed[p.id]}
 				<TaskGroup poolId={pool.id} projectId={p.id} {tasks} emptyText="" />
 			{/if}
@@ -131,6 +154,14 @@
 		gap: 8px;
 		font-weight: 600;
 		flex: 1;
+	}
+	.project-head .icon-btn {
+		width: 28px;
+		height: 28px;
+		color: var(--text-faint);
+	}
+	.project-editor {
+		padding-left: 38px;
 	}
 	.twisty {
 		width: 20px;

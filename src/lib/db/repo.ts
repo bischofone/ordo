@@ -258,13 +258,18 @@ export function createRepo(db: TasksDB, clock: () => Date = () => new Date()) {
 			await db.projects.update(id, { sortOrder, updatedAt: now() });
 		},
 
-		/** Projekt löschen – die Aufgaben bleiben im Pool, nur ohne Projekt. (Tombstone für den Sync) */
-		async deleteProject(id: string) {
+		/**
+		 * Projekt löschen (Tombstone für den Sync). Die Aufgaben bleiben im Pool, nur ohne
+		 * Projekt – oder werden mit `withTasks` ebenfalls gelöscht.
+		 */
+		async deleteProject(id: string, opts: { withTasks?: boolean } = {}) {
 			await db.transaction('rw', db.projects, db.tasks, async () => {
 				const t = now();
 				await db.tasks
-					.filter((task) => task.projectId === id)
-					.modify({ projectId: null, updatedAt: t });
+					.filter((task) => task.projectId === id && !task.deletedAt)
+					.modify(
+						opts.withTasks ? { deletedAt: t, updatedAt: t } : { projectId: null, updatedAt: t }
+					);
 				await db.projects.update(id, { deletedAt: t, updatedAt: t });
 			});
 		},

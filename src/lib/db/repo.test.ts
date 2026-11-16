@@ -168,6 +168,16 @@ describe('Projekte', () => {
 		expect((await db.tasks.get(t))?.projectId).toBeNull();
 	});
 
+	it('Projekt mit Aufgaben löschen entfernt auch Unteraufgaben, sonst nichts', async () => {
+		const { id: pid } = await privat();
+		const p = await repo.createProject(pid, 'Weg');
+		const a = await repo.createTask({ poolId: pid, projectId: p, title: 'A' });
+		await repo.createTask({ poolId: pid, parentId: a, title: 'A1' });
+		await repo.createTask({ poolId: pid, title: 'ohne Projekt' });
+		await repo.deleteProject(p, { withTasks: true });
+		expect(await shape(pid)).toEqual(['ohne Projekt']);
+	});
+
 	it('Reihenfolge, Farbe, Icon', async () => {
 		const { id: pid } = await privat();
 		const a = await repo.createProject(pid, 'A');

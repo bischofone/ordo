@@ -122,9 +122,13 @@ export const de = {
 		newName: 'Name des neuen Projekts',
 		edit: 'Projekt bearbeiten',
 		delete: 'Projekt löschen',
-		deleteTitle: 'Projekt löschen?',
-		deleteText: (name: string) =>
-			`„${name}“ wird gelöscht. Die Aufgaben bleiben im Pool, nur ohne Projekt.`,
+		deleteTitle: (name: string) => `Projekt „${name}“ löschen?`,
+		deleteEmptyText: 'Das Projekt enthält keine Aufgaben.',
+		deleteText: (tasks: number) =>
+			`Das Projekt enthält ${tasks === 1 ? '1 Aufgabe' : `${tasks} Aufgaben`} (Unteraufgaben mitgezählt). Sollen sie im Pool bleiben oder mit gelöscht werden?`,
+		deleteKeep: 'Aufgaben behalten',
+		deleteWithTasks: 'Mit Aufgaben löschen',
+		deleted: (name: string) => `Projekt „${name}“ gelöscht`,
 		none: 'Ohne Projekt',
 		notFound: 'Projekt nicht gefunden.'
 	},
