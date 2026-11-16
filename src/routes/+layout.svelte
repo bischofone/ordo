@@ -8,6 +8,7 @@
 	import { live } from '#lib/state/live.svelte.ts';
 	import { q } from '#lib/state/queries.ts';
 	import { startAutoSync } from '#lib/state/sync.svelte.ts';
+	import { watchTimeSettings } from '#lib/state/time-settings.svelte.ts';
 	import { watchTimer } from '#lib/state/timer.svelte.ts';
 	import { ui } from '#lib/state/ui.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
@@ -32,6 +33,7 @@
 	// untrack: der Start darf nicht von reaktivem Zustand abhängen (sonst Neustart-Schleife)
 	$effect(() => untrack(() => startAutoSync()));
 	$effect(() => untrack(() => watchTimer()));
+	$effect(() => untrack(() => watchTimeSettings()));
 
 	$effect(() => {
 		repo.ensureDefaults();

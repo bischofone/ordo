@@ -122,6 +122,13 @@ export interface TimeEntry {
 	note?: string;
 }
 
+/** Tatsächlich gearbeitete Zeit an einem Tag (von Hand eingetragen) */
+export interface WorkDay {
+	/** 'YYYY-MM-DD' */
+	date: string;
+	minutes: number;
+}
+
 /** Laufender Timer (pro Gerät, wird nicht synchronisiert) */
 export interface RunningTimer {
 	taskId: string;

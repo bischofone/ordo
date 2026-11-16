@@ -4,11 +4,18 @@ import { openPool, quickAdd, rowByTitle } from './helpers';
 // Mittwoch, 18.11.2026, 10:00 – KW 47 (16.–22.11.)
 test.beforeEach(async ({ page }) => {
 	await page.clock.install({ time: new Date('2026-11-18T10:00:00') });
-	await page.goto('/');
+	await enableTimeTracking(page);
 	await openPool(page, 'Arbeit');
 	await quickAdd(page, 'Angebot schreiben');
 	await quickAdd(page, 'Telefonat');
 });
+
+/** Zeiterfassungs-Modus in den Einstellungen einschalten (Standard: aus). */
+async function enableTimeTracking(page: Page) {
+	await page.goto('/einstellungen');
+	await page.getByRole('switch', { name: /Zeiterfassungs-Modus/ }).check();
+	await expect(page.getByRole('navigation').getByRole('link', { name: /Zeiten/ })).toBeVisible();
+}
 
 const play = async (page: Page, title: string) =>
 	(await rowByTitle(page, title)).getByTestId('timer-button');
@@ -164,7 +171,10 @@ test('Zeit direkt in der Liste sehen, eintippen und überschreiben', async ({ pa
 	await expect(
 		(await rowByTitle(page, 'Kalkulation')).getByRole('textbox', { name: 'Erfasste Zeit' })
 	).toHaveValue('0:20');
-	await page.getByRole('navigation').getByRole('link', { name: 'Zeiten' }).click();
+	await page
+		.getByRole('navigation')
+		.getByRole('link', { name: /Zeiten/ })
+		.click();
 	await expect(page.getByTestId('report-total')).toHaveText('0:20');
 });
 
@@ -178,7 +188,10 @@ test('Auswertung: Woche, Tag, zurückblättern, nach Pool und Aufgabe', async ({
 	await logTime(page, '30');
 	await page.keyboard.press('Escape');
 
-	await page.getByRole('navigation').getByRole('link', { name: 'Zeiten' }).click();
+	await page
+		.getByRole('navigation')
+		.getByRole('link', { name: /Zeiten/ })
+		.click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Zeiten' })).toBeVisible();
 
 	// Woche (Standard)
@@ -198,7 +211,7 @@ test('Auswertung: Woche, Tag, zurückblättern, nach Pool und Aufgabe', async ({
 	await page.getByRole('button', { name: 'Heute' }).click();
 
 	// Klick auf den Montagsbalken → Tagesansicht
-	await page.getByRole('button', { name: /Montag, 16\. November: 1:30/ }).click();
+	await page.getByTestId('day-row').first().getByRole('button', { name: 'Montag' }).click();
 	await expect(page.getByTestId('period-label')).toHaveText('Montag, 16. November 2026');
 	await expect(page.getByTestId('report-total')).toHaveText('1:30');
 
@@ -216,14 +229,118 @@ test('Auswertung: Woche, Tag, zurückblättern, nach Pool und Aufgabe', async ({
 	await expect(page.getByText('In diesem Zeitraum wurde keine Zeit erfasst.')).toBeVisible();
 });
 
-test('Zeiterfassung lässt sich ausblenden', async ({ page }) => {
+test('Modus ist standardmäßig aus und blendet alles aus; eigener Einstellungsbereich', async ({
+	page
+}) => {
+	const nav = page.getByRole('navigation');
+	const card = page.getByTestId('time-settings');
+
+	// Eingeschaltet (beforeEach): Knöpfe da
+	await openPool(page, 'Arbeit');
 	await expect(page.getByTestId('timer-button')).toHaveCount(2);
+	await expect(page.getByTestId('row-time')).toHaveCount(2);
+
+	// Ausschalten: nichts mehr von der Zeiterfassung zu sehen
 	await page.goto('/einstellungen');
-	await page.getByRole('switch', { name: /Zeiterfassung/ }).uncheck();
-	await expect(page.getByRole('navigation').getByRole('link', { name: 'Zeiten' })).toHaveCount(0);
+	await card.getByRole('switch', { name: /Zeiterfassungs-Modus/ }).uncheck();
+	await expect(card.getByText('Soll-Zeit je Wochentag')).toHaveCount(0);
+	await expect(nav.getByRole('link', { name: /Zeiten/ })).toHaveCount(0);
 	await openPool(page, 'Arbeit');
 	await expect(page.getByTestId('timer-button')).toHaveCount(0);
+	await expect(page.getByTestId('row-time')).toHaveCount(0);
 	await (await rowByTitle(page, 'Telefonat')).getByRole('button', { name: 'Details' }).click();
 	await expect(page.getByTestId('detail')).toBeVisible();
 	await expect(page.getByTestId('time-section')).toHaveCount(0);
+});
+
+test('frische App: Zeiterfassung ist aus', async ({ browser }) => {
+	const ctx = await browser.newContext();
+	const fresh = await ctx.newPage();
+	await fresh.goto('/inbox');
+	await fresh.getByTestId('quick-add').fill('Neu');
+	await fresh.getByTestId('quick-add').press('Enter');
+	await expect(fresh.getByTestId('task-row')).toHaveCount(1);
+	await expect(fresh.getByTestId('timer-button')).toHaveCount(0);
+	await expect(fresh.getByRole('navigation').getByRole('link', { name: /Zeiten/ })).toHaveCount(0);
+	await ctx.close();
+});
+
+test('Soll, gearbeitet und getrackt: sehen, was zugeordnet ist und was fehlt', async ({ page }) => {
+	// Soll-Zeiten einstellen: Mittwoch 6:00, Freitag frei
+	await page.goto('/einstellungen');
+	const card = page.getByTestId('time-settings');
+	await expect(card.getByTestId('week-target')).toContainText('40:00');
+	const wed = card.getByRole('textbox', { name: 'Soll-Zeit je Wochentag Mi' });
+	await wed.fill('6h');
+	await wed.blur();
+	await expect(wed).toHaveValue('6:00');
+	const fri = card.getByRole('textbox', { name: 'Soll-Zeit je Wochentag Fr' });
+	await fri.fill('0');
+	await fri.blur();
+	await expect(card.getByTestId('week-target')).toContainText('30:00');
+
+	// Zeit tracken: heute (Mi) 2:00, Montag 5:00
+	await openPool(page, 'Arbeit');
+	await openDetail(page, 'Angebot schreiben');
+	await logTime(page, '2h');
+	await logTime(page, '5h', '2026-11-16');
+	await page.keyboard.press('Escape');
+
+	// Seitenleiste: heute getrackt / Soll
+	await expect(page.getByTestId('today-time')).toHaveText('2:00 / 6:00');
+
+	// Tagesansicht heute: Soll 6:00, getrackt 2:00, fehlt 4:00
+	await page
+		.getByRole('navigation')
+		.getByRole('link', { name: /Zeiten/ })
+		.click();
+	await page.getByRole('radio', { name: 'Tag' }).click();
+	await expect(page.getByTestId('stat-target')).toHaveText('6:00');
+	await expect(page.getByTestId('report-total')).toHaveText('2:00');
+	await expect(page.getByTestId('stat-missing')).toHaveText('4:00');
+	await expect(page.getByText('Arbeitszeit nicht eingetragen')).toBeVisible();
+
+	// Tatsächliche Arbeitszeit eintragen: 5:30 → 3:30 nicht zugeordnet, 0:30 fehlt aufs Soll
+	const worked = page.getByRole('textbox', { name: /Gearbeitet am Mittwoch/ });
+	await worked.fill('5,5h');
+	await worked.blur();
+	await expect(worked).toHaveValue('5:30');
+	await expect(page.getByTestId('stat-unassigned')).toHaveText('3:30');
+	await expect(page.getByTestId('stat-missing')).toHaveText('0:30');
+	await expect(page.getByTestId('stat-saldo')).toHaveText('−0:30');
+
+	// Wochenansicht: Montag in der Tabelle nachtragen
+	await page.getByRole('radio', { name: 'Woche' }).click();
+	const monday = page.getByTestId('day-row').first();
+	await expect(monday).toContainText('8:00'); // Soll
+	await expect(monday).toContainText('5:00'); // getrackt
+	await monday.getByRole('textbox', { name: /Gearbeitet am Montag/ }).fill('8:30');
+	await monday.getByRole('textbox', { name: /Gearbeitet am Montag/ }).blur();
+	await expect(monday).toContainText('3:30'); // nicht zugeordnet
+
+	// Woche gesamt: Soll 30:00; gearbeitet 8:30 + 5:30; getrackt 7:00; nicht zugeordnet 7:00
+	await expect(page.getByTestId('stat-target')).toHaveText('30:00');
+	await expect(page.getByTestId('stat-worked')).toHaveText('14:00');
+	await expect(page.getByTestId('report-total')).toHaveText('7:00');
+	await expect(page.getByTestId('stat-unassigned')).toHaveText('7:00');
+	// Saldo bis heute: Mo +0:30, Di −8:00, Mi −0:30
+	await expect(page.getByTestId('stat-saldo')).toHaveText('−8:00');
+	// Künftige Tage lassen sich noch nicht eintragen
+	await expect(
+		page
+			.getByTestId('day-row')
+			.nth(3)
+			.getByRole('textbox', { name: /Gearbeitet am Donnerstag/ })
+	).toBeDisabled();
+
+	// Eintrag bleibt nach dem Neuladen; leeren entfernt ihn
+	await page.reload();
+	const again = page
+		.getByTestId('day-row')
+		.first()
+		.getByRole('textbox', { name: /Gearbeitet am Montag/ });
+	await expect(again).toHaveValue('8:30');
+	await again.fill('');
+	await again.blur();
+	await expect(page.getByTestId('stat-worked')).toHaveText('10:30');
 });

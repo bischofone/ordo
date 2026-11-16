@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { makeTask } from './test-helpers';
 import {
+	buildBalance,
 	buildReport,
+	DEFAULT_TIME_SETTINGS,
+	formatSigned,
+	targetFor,
 	formatDuration,
 	formatElapsed,
 	parseDuration,
@@ -112,6 +116,63 @@ describe('Gesamtzeit direkt setzen', () => {
 		expect(withTotal(list, 30, today, id)).toEqual(list);
 		withTotal(list, 5, today, id);
 		expect(list[0].minutes).toBe(30);
+	});
+});
+
+describe('Soll, gearbeitet, getrackt', () => {
+	const settings = DEFAULT_TIME_SETTINGS; // Mo–Fr 8:00, Sa/So frei
+	const week = periodOf('week', '2026-11-18').days; // Mo 16. … So 22.
+
+	it('Soll-Zeit richtet sich nach dem Wochentag', () => {
+		expect(week.map((d) => targetFor(d, settings))).toEqual([480, 480, 480, 480, 480, 0, 0]);
+		expect(targetFor('2026-11-16', { targets: [240, 0, 0, 0, 0, 0, 300] })).toBe(240);
+		expect(targetFor('2026-11-22', { targets: [240, 0, 0, 0, 0, 0, 300] })).toBe(300);
+	});
+
+	it('je Tag: nicht zugeordnet und fehlend', () => {
+		const b = buildBalance(
+			week,
+			{ '2026-11-16': 300, '2026-11-17': 480, '2026-11-18': 120, '2026-11-21': 60 },
+			{ '2026-11-16': 450, '2026-11-17': 480 },
+			settings,
+			'2026-11-18'
+		);
+		const [mo, di, mi, , , sa] = b.days;
+		// Montag: 7:30 gearbeitet, 5:00 getrackt → 2:30 nicht zugeordnet, 0:30 fehlt aufs Soll
+		expect(mo).toMatchObject({
+			target: 480,
+			worked: 450,
+			tracked: 300,
+			unassigned: 150,
+			missing: 30
+		});
+		expect(di).toMatchObject({ unassigned: 0, missing: 0 });
+		// Mittwoch: nichts eingetragen → getrackte 2:00 zählen als gearbeitet, 6:00 fehlen
+		expect(mi).toMatchObject({ worked: null, tracked: 120, unassigned: 0, missing: 360 });
+		// Samstag frei: getrackte Zeit ist Plus
+		expect(sa).toMatchObject({ target: 0, missing: 0 });
+
+		expect(b.target).toBe(5 * 480);
+		expect(b.tracked).toBe(960);
+		expect(b.worked).toBe(450 + 480 + 120 + 60);
+		expect(b.unassigned).toBe(150);
+		expect(b.hasWorked).toBe(true);
+		// Saldo und „fehlt“ nur bis heute (Mittwoch): -0:30, 0, -6:00
+		expect(b.saldo).toBe(-390);
+		expect(b.missing).toBe(390);
+	});
+
+	it('Timer runden: auf 5 oder 15 Minuten, mindestens ein Schritt', () => {
+		const min = (m: number) => m * 60_000;
+		expect(timerMinutes(0, min(7), 5)).toBe(5);
+		expect(timerMinutes(0, min(8), 5)).toBe(10);
+		expect(timerMinutes(0, min(2), 15)).toBe(15);
+		expect(timerMinutes(0, min(38), 15)).toBe(45);
+		expect(timerMinutes(0, min(7))).toBe(7);
+	});
+
+	it('Plus/Minus mit Vorzeichen', () => {
+		expect([90, -30, 0].map(formatSigned)).toEqual(['+1:30', '−0:30', '±0:00']);
 	});
 });
 

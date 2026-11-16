@@ -13,6 +13,7 @@
 	import { toggleDone } from '#lib/state/actions.ts';
 	import { db, repo } from '#lib/state/app.ts';
 	import { appearance } from '#lib/state/appearance.svelte.ts';
+	import { timeSettings } from '#lib/state/time-settings.svelte.ts';
 	import { timer, toggleTimer } from '#lib/state/timer.svelte.ts';
 	import { replayKeys, ui } from '#lib/state/ui.svelte.ts';
 	import { drag } from './drag.svelte';
@@ -233,7 +234,7 @@
 		{#if showScheduled && task.scheduled}
 			<span class="sched">→ {formatDateValue(task.scheduled, ui.now)}</span>
 		{/if}
-		{#if minutes !== ownMinutes && appearance.current.timeTracking}
+		{#if minutes !== ownMinutes && timeSettings.enabled}
 			<span class="sum" title={m.time.sumTitle} data-testid="row-sum">
 				Σ {formatDuration(minutes)}
 			</span>
@@ -276,7 +277,7 @@
 		</button>
 	</span>
 
-	{#if appearance.current.timeTracking}
+	{#if timeSettings.enabled}
 		<input
 			class="time-edit"
 			class:empty={!ownMinutes}
@@ -293,7 +294,7 @@
 			onblur={(e) => commitTime(e.currentTarget)}
 		/>
 	{/if}
-	{#if appearance.current.timeTracking && (!done || running)}
+	{#if timeSettings.enabled && (!done || running)}
 		<button
 			class="timer"
 			class:running

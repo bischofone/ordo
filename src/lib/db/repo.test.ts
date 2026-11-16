@@ -288,6 +288,25 @@ describe('Zeiterfassung', () => {
 		expect((await repo.stopTimer())?.entry).toMatchObject({ date: '2025-11-12', minutes: 60 });
 	});
 
+	it('Einstellungen: Standard aus, Runden wirkt beim Stoppen; Arbeitszeit je Tag', async () => {
+		expect(await repo.getTimeSettings()).toMatchObject({ enabled: false, roundTo: 1 });
+		await repo.setTimeSettings({ enabled: true, roundTo: 15 });
+		expect(await repo.getTimeSettings()).toMatchObject({ enabled: true, roundTo: 15 });
+		expect((await repo.getTimeSettings()).targets).toHaveLength(7);
+
+		const a = await repo.createTask({ poolId: INBOX_ID, title: 'A' });
+		clock = day(12, 9, 0);
+		await repo.startTimer(a);
+		clock = day(12, 9, 38);
+		expect((await repo.stopTimer())?.entry.minutes).toBe(45);
+
+		await repo.setWorkDay('2025-11-12', 450);
+		await repo.setWorkDay('2025-11-12', 480);
+		expect(await db.workDays.toArray()).toEqual([{ date: '2025-11-12', minutes: 480 }]);
+		await repo.setWorkDay('2025-11-12', 0);
+		expect(await db.workDays.count()).toBe(0);
+	});
+
 	it('Timer einer gelöschten Aufgabe läuft ins Leere', async () => {
 		const a = await repo.createTask({ poolId: INBOX_ID, title: 'A' });
 		clock = day(12, 9);

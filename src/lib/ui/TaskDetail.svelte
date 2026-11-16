@@ -8,7 +8,7 @@
 	import { db, repo } from '#lib/state/app.ts';
 	import { live } from '#lib/state/live.svelte.ts';
 	import { ui } from '#lib/state/ui.svelte.ts';
-	import { appearance } from '#lib/state/appearance.svelte.ts';
+	import { timeSettings } from '#lib/state/time-settings.svelte.ts';
 	import Icon from './Icon.svelte';
 	import TimeSection from './TimeSection.svelte';
 	import { syncValue } from './sync-value';
@@ -163,7 +163,7 @@
 			{/if}
 		</div>
 
-		{#if appearance.current.timeTracking}
+		{#if timeSettings.enabled}
 			<TimeSection task={t} />
 		{/if}
 

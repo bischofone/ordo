@@ -5,7 +5,9 @@
 	import { repo } from '#lib/state/app.ts';
 	import { live } from '#lib/state/live.svelte.ts';
 	import { q } from '#lib/state/queries.ts';
+	import { formatDuration, parseTotalInput } from '#lib/domain/time.ts';
 	import { appearance } from '#lib/state/appearance.svelte.ts';
+	import { timeSettings } from '#lib/state/time-settings.svelte.ts';
 	import type { Pool } from '#lib/domain/types.ts';
 	import ColorPicker from '#lib/ui/ColorPicker.svelte';
 	import Editor from '#lib/ui/Editor.svelte';
@@ -30,6 +32,16 @@
 				.trim();
 		}
 	});
+	/** Soll-Zeit eines Wochentags ändern (gleiche Formate wie überall: 8:00, 7,5h, 0 = frei) */
+	function setTarget(index: number, input: HTMLInputElement) {
+		const current = timeSettings.current.targets[index] ?? 0;
+		const parsed = parseTotalInput(input.value.replace(/^[+\-−]/, ''), current);
+		if (parsed !== null && parsed !== current) {
+			void timeSettings.set({ targets: timeSettings.current.targets.with(index, parsed) });
+		}
+		input.value = formatDuration(parsed ?? current);
+	}
+
 	const opts = <T extends string>(labels: Record<T, string>) =>
 		(Object.entries(labels) as [T, string][]).map(([value, label]) => ({ value, label }));
 	let newName = $state('');
@@ -112,24 +124,75 @@
 			onchange={(e) => appearance.set({ openDetailOnClick: e.currentTarget.checked })}
 		/>
 	</label>
-	<label class="line">
-		<span>
-			{m.settings.timeTracking}
-			<small>{m.settings.timeTrackingHint}</small>
-		</span>
-		<input
-			type="checkbox"
-			class="switch"
-			role="switch"
-			checked={a.timeTracking}
-			onchange={(e) => appearance.set({ timeTracking: e.currentTarget.checked })}
-		/>
-	</label>
 	<div class="line end">
 		<button class="btn ghost" onclick={() => appearance.reset()}>
 			{m.settings.resetAppearance}
 		</button>
 	</div>
+</section>
+
+<section class="card" data-testid="time-settings">
+	<header>
+		<h2 class="card-title">{m.timeSettings.title}</h2>
+		<span class="hint">{m.timeSettings.hint}</span>
+	</header>
+	<label class="line">
+		<span>
+			{m.timeSettings.enable}
+			<small>{m.timeSettings.enableHint}</small>
+		</span>
+		<input
+			type="checkbox"
+			class="switch"
+			role="switch"
+			checked={timeSettings.enabled}
+			onchange={(e) => timeSettings.set({ enabled: e.currentTarget.checked })}
+		/>
+	</label>
+	{#if timeSettings.enabled}
+		<div class="line">
+			<span>
+				{m.timeSettings.targets}
+				<small>{m.timeSettings.targetsHint}</small>
+			</span>
+			<div class="week">
+				{#each m.timeSettings.weekdays as day, i (day)}
+					<label>
+						<span>{day}</span>
+						<input
+							class="field"
+							aria-label="{m.timeSettings.targets} {day}"
+							value={formatDuration(timeSettings.current.targets[i] ?? 0)}
+							onchange={(e) => setTarget(i, e.currentTarget)}
+						/>
+					</label>
+				{/each}
+			</div>
+		</div>
+		<div class="line">
+			<span>{m.timeSettings.weekTotal}</span>
+			<strong data-testid="week-target">
+				{formatDuration(timeSettings.current.targets.reduce((a, b) => a + b, 0))}
+				{m.time.hours}
+			</strong>
+		</div>
+		<div class="line">
+			<span>
+				{m.timeSettings.round}
+				<small>{m.timeSettings.roundHint}</small>
+			</span>
+			<Segmented
+				label={m.timeSettings.round}
+				value={String(timeSettings.current.roundTo)}
+				options={[
+					{ value: '1', label: m.timeSettings.roundExact },
+					{ value: '5', label: '5 min' },
+					{ value: '15', label: '15 min' }
+				]}
+				onchange={(v) => timeSettings.set({ roundTo: Number(v) })}
+			/>
+		</div>
+	{/if}
 </section>
 
 <section class="card">
@@ -297,6 +360,29 @@
 	}
 	.switch:checked::after {
 		transform: translateX(16px);
+	}
+	.week {
+		display: grid;
+		grid-template-columns: repeat(7, minmax(0, 1fr));
+		gap: 4px;
+		flex: 1 1 320px;
+		max-width: 420px;
+	}
+	.week label {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 2px;
+		font-size: 0.75rem;
+		color: var(--text-muted);
+	}
+	.week .field {
+		width: 100%;
+		min-width: 0;
+		padding: 6px 2px;
+		text-align: center;
+		font-variant-numeric: tabular-nums;
+		color: var(--text);
 	}
 	.pool-block {
 		border-top: 1px solid var(--border);

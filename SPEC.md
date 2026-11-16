@@ -124,7 +124,14 @@ Nur wenige, intuitive Kürzel – alles andere über Buttons:
 - **Auswertung „Zeiten“:** Tag, Woche oder Monat, vor- und zurückblättern (auch
   rückblickend); Gesamtzeit, Balken je Tag, Aufteilung nach Pool/Projekt und nach
   Aufgabe, alle Einträge (dort änder- und löschbar); Filter nach Pool.
-- Zeiterfassung ist in den Einstellungen ausblendbar.
+- **Zeiterfassungs-Modus:** Alles zur Zeiterfassung erscheint nur, wenn der Modus in den
+  Einstellungen (eigener Bereich „Zeiterfassung“) eingeschaltet ist. Standard: aus.
+- **Soll-Zeit** je Wochentag einstellbar (Standard Mo–Fr 8:00, Sa/So frei).
+- **Tatsächliche Arbeitszeit** je Tag von Hand eintragbar (Seite „Zeiten“: in der
+  Tagesansicht und in der Tagestabelle von Woche/Monat).
+- **Gegenüberstellung** je Tag, Woche und Monat: Soll · Gearbeitet · Getrackt ·
+  Nicht zugeordnet (gearbeitet, aber keiner Aufgabe zugeordnet) · Fehlt aufs Soll · Saldo.
+- Timer lässt sich beim Stoppen auf 5 oder 15 Minuten runden.
 
 ## 4. Inbox (ohne Chaos)
 
@@ -398,6 +405,14 @@ jederzeit geändert werden – dann wird es hier angepasst.
 - **Sync:** Einträge zweier Geräte werden je Eintrag zusammengeführt (neu von beiden
   Seiten bleibt, Löschen gilt, bei Änderung auf beiden Seiten gewinnt der Server) – kein
   Konflikt-Dialog.
+- **Modus, Soll-Zeiten, Runden und die eingetragene Arbeitszeit je Tag** liegen nur auf dem
+  jeweiligen Gerät (lokale Datenbank) und werden noch nicht synchronisiert. Die an
+  Aufgaben getrackte Zeit wird synchronisiert.
+- **Rechenregeln:** Ist für einen Tag keine Arbeitszeit eingetragen, zählt die getrackte
+  Zeit als gearbeitet. „Nicht zugeordnet“ = gearbeitet − getrackt (nie negativ, nur bei
+  eingetragener Arbeitszeit). „Fehlt aufs Soll“ und Saldo zählen nur Tage bis
+  einschließlich heute; künftige Tage lassen sich nicht eintragen.
+- In der Seitenleiste steht neben „Zeiten“: heute getrackt / Soll.
 - **Eigene JSON-Felder im VTODO** (`-TIME`, `-WAITING`) werden URL-kodiert gespeichert:
   Radicale schneidet unbekannte Eigenschaften sonst am ersten Komma ab.
 

@@ -4,16 +4,21 @@
 	import { de } from 'date-fns/locale';
 	import { fromIsoDate, todayIso } from '#lib/domain/dates.ts';
 	import {
+		buildBalance,
 		buildReport,
 		formatDuration,
+		formatSigned,
 		parseDuration,
+		parseTotalInput,
 		periodOf,
 		shiftPeriod,
 		type PeriodKind,
 		type ReportEntry
 	} from '#lib/domain/time.ts';
 	import { m } from '#lib/i18n/index.ts';
-	import { repo } from '#lib/state/app.ts';
+	import { resolve } from '$app/paths';
+	import { db, repo } from '#lib/state/app.ts';
+	import { timeSettings } from '#lib/state/time-settings.svelte.ts';
 	import { live } from '#lib/state/live.svelte.ts';
 	import { q } from '#lib/state/queries.ts';
 	import { ui } from '#lib/state/ui.svelte.ts';
@@ -32,7 +37,31 @@
 	const today = $derived(todayIso(ui.now));
 	const period = $derived(periodOf(kind, anchor));
 	const report = $derived(buildReport(tasks.current, period, selectedPools));
-	const maxDay = $derived(Math.max(1, ...report.byDay.map((d) => d.minutes)));
+	// Soll / gearbeitet / getrackt
+	const workDays = live(() => () => db.workDays.toArray(), []);
+	const balance = $derived(
+		buildBalance(
+			period.days,
+			Object.fromEntries(report.byDay.map((d) => [d.date, d.minutes])),
+			Object.fromEntries(workDays.current.map((w) => [w.date, w.minutes])),
+			timeSettings.current,
+			today
+		)
+	);
+	const day = $derived(balance.days[0]);
+	const scale = $derived(Math.max(1, balance.target, balance.worked, balance.tracked));
+	const pct = (minutes: number) => Math.min(100, (minutes / scale) * 100);
+	const rowLabel = (iso: string) =>
+		format(fromIsoDate(iso), kind === 'month' ? 'EEEEEE d.' : 'EEEE', { locale: de });
+
+	/** Tatsächliche Arbeitszeit eines Tages eintragen (leer oder 0 = Eintrag entfernen) */
+	function setWorked(date: string, input: HTMLInputElement) {
+		const before = balance.days.find((d) => d.date === date)?.worked ?? null;
+		const parsed = parseTotalInput(input.value, before ?? 0);
+		if (parsed !== null) void repo.setWorkDay(date, parsed);
+		const shown = parsed ?? before;
+		input.value = shown ? formatDuration(shown) : '';
+	}
 
 	const usedPools = $derived(
 		pools.current.filter((p) =>
@@ -52,8 +81,6 @@
 		([value, label]) => ({ value, label })
 	);
 
-	const dayLabel = (iso: string) =>
-		format(fromIsoDate(iso), kind === 'month' ? 'd.' : 'EEEEEE', { locale: de });
 	const dayTitle = (iso: string) => format(fromIsoDate(iso), 'EEEE, d. MMMM', { locale: de });
 
 	/** Einträge nach Tag gruppiert (neueste zuerst) */
@@ -82,6 +109,13 @@
 </script>
 
 <h1>{m.time.title}</h1>
+
+{#if timeSettings.loaded && !timeSettings.enabled}
+	<p class="empty">
+		{m.timeSettings.enableHint}
+		<a class="link" href={resolve('/einstellungen')}>{m.nav.settings}</a>
+	</p>
+{/if}
 
 <div class="controls">
 	<Segmented
@@ -134,27 +168,102 @@
 	<header>
 		<h2 class="card-title">{m.time.overview}</h2>
 	</header>
-	<p class="big">
-		<span data-testid="report-total">{formatDuration(report.total)}</span>
-		<small>{m.time.hours}</small>
-	</p>
+
+	<div class="tiles">
+		<div class="tile">
+			<span class="k">{m.time.target}</span>
+			<span class="v" data-testid="stat-target">{formatDuration(balance.target)}</span>
+		</div>
+		<div class="tile">
+			<span class="k">{m.time.worked}</span>
+			{#if kind === 'day'}
+				<input
+					class="field v worked"
+					aria-label={m.time.workedFor(dayTitle(period.from))}
+					title={m.time.workedHint}
+					placeholder={m.time.workedPlaceholder}
+					value={day.worked === null ? '' : formatDuration(day.worked)}
+					onchange={(e) => setWorked(period.from, e.currentTarget)}
+				/>
+			{:else}
+				<span class="v" data-testid="stat-worked">{formatDuration(balance.worked)}</span>
+			{/if}
+		</div>
+		<div class="tile">
+			<span class="k">{m.time.tracked}</span>
+			<span class="v" data-testid="report-total">{formatDuration(balance.tracked)}</span>
+		</div>
+		<div class="tile" class:warn={balance.unassigned > 0} title={m.time.unassignedHint}>
+			<span class="k">{m.time.unassigned}</span>
+			<span class="v" data-testid="stat-unassigned">{formatDuration(balance.unassigned)}</span>
+		</div>
+		<div class="tile" class:warn={balance.missing > 0}>
+			<span class="k">{m.time.missing}</span>
+			<span class="v" data-testid="stat-missing">{formatDuration(balance.missing)}</span>
+		</div>
+		<div class="tile" title={m.time.saldoHint}>
+			<span class="k">{m.time.saldo}</span>
+			<span
+				class="v"
+				class:plus={balance.saldo > 0}
+				class:minus={balance.saldo < 0}
+				data-testid="stat-saldo">{formatSigned(balance.saldo)}</span
+			>
+		</div>
+	</div>
+
+	<!-- Balken: getrackt (kräftig) innerhalb von gearbeitet (blass), Strich = Soll -->
+	<div class="meter" aria-hidden="true">
+		<span class="worked" style:width="{pct(balance.worked)}%"></span>
+		<span class="tracked" style:width="{pct(balance.tracked)}%"></span>
+		{#if balance.target}<span class="mark" style:left="{pct(balance.target)}%"></span>{/if}
+	</div>
+	{#if kind === 'day' && day.worked === null}
+		<p class="note">{m.time.notEntered}</p>
+	{/if}
+
 	{#if kind !== 'day'}
-		<div class="bars" class:month={kind === 'month'}>
-			{#each report.byDay as d (d.date)}
-				<button
-					class="bar"
+		<div class="table" role="table" data-testid="day-table">
+			<div class="tr head" role="row">
+				<span role="columnheader">{m.time.day}</span>
+				<span role="columnheader">{m.time.target}</span>
+				<span role="columnheader">{m.time.worked}</span>
+				<span role="columnheader">{m.time.tracked}</span>
+				<span role="columnheader" class="wide">{m.time.unassigned}</span>
+			</div>
+			{#each balance.days as d (d.date)}
+				<div
+					class="tr"
 					class:today={d.date === today}
-					title="{dayTitle(d.date)}: {formatDuration(d.minutes)}"
-					aria-label="{dayTitle(d.date)}: {formatDuration(d.minutes)}"
-					onclick={() => {
-						kind = 'day';
-						anchor = d.date;
-					}}
+					class:off={!d.target && !d.tracked && d.worked === null}
+					role="row"
+					data-testid="day-row"
 				>
-					<span class="value">{d.minutes ? formatDuration(d.minutes) : ''}</span>
-					<span class="fill" style:height="{(d.minutes / maxDay) * 100}%"></span>
-					<span class="day">{dayLabel(d.date)}</span>
-				</button>
+					<span role="cell">
+						<button
+							class="daylink"
+							onclick={() => {
+								kind = 'day';
+								anchor = d.date;
+							}}>{rowLabel(d.date)}</button
+						>
+					</span>
+					<span role="cell">{d.target ? formatDuration(d.target) : '–'}</span>
+					<span role="cell">
+						<input
+							class="field worked"
+							aria-label={m.time.workedFor(dayTitle(d.date))}
+							placeholder={d.date <= today ? m.time.workedPlaceholder : ''}
+							disabled={d.date > today}
+							value={d.worked === null ? '' : formatDuration(d.worked)}
+							onchange={(e) => setWorked(d.date, e.currentTarget)}
+						/>
+					</span>
+					<span role="cell">{d.tracked ? formatDuration(d.tracked) : '–'}</span>
+					<span role="cell" class="wide" class:warn={d.unassigned > 0}>
+						{d.worked === null ? '' : formatDuration(d.unassigned)}
+					</span>
+				</div>
 			{/each}
 		</div>
 	{/if}
@@ -275,68 +384,141 @@
 	header {
 		margin-bottom: 6px;
 	}
-	.big {
-		margin: 0 0 4px;
-		font-size: 2rem;
-		font-weight: 700;
-		font-variant-numeric: tabular-nums;
-	}
-	.big small {
-		font-size: 0.875rem;
-		font-weight: 400;
-		color: var(--text-muted);
-	}
-	.bars {
+	.tiles {
 		display: grid;
-		grid-auto-flow: column;
-		grid-auto-columns: 1fr;
-		gap: 6px;
-		height: 150px;
-		margin-top: 8px;
+		grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+		gap: 8px;
 	}
-	.bars.month {
-		gap: 2px;
-	}
-	.bar {
+	.tile {
 		display: flex;
 		flex-direction: column;
-		justify-content: flex-end;
-		align-items: center;
-		gap: 4px;
+		gap: 2px;
+		padding: 8px 10px;
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		background: var(--bg);
 		min-width: 0;
-		border-radius: 6px;
 	}
-	.bar:hover {
-		background: var(--bg-hover);
-	}
-	.fill {
-		width: 100%;
-		max-width: 56px;
-		min-height: 2px;
-		border-radius: 4px 4px 0 0;
-		background: color-mix(in srgb, var(--accent) 65%, transparent);
-	}
-	.bar.today .fill {
-		background: var(--accent);
-	}
-	.value {
-		font-size: 0.6875rem;
-		color: var(--text-muted);
-		font-variant-numeric: tabular-nums;
-	}
-	.month .value {
-		display: none;
-	}
-	.day {
+	.tile .k {
 		font-size: 0.75rem;
 		color: var(--text-muted);
 	}
-	.bar.today .day {
+	.tile .v {
+		font-size: 1.25rem;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+	}
+	.tile.warn .v {
+		color: var(--warn);
+	}
+	.v.plus {
+		color: var(--ok);
+	}
+	.v.minus {
+		color: var(--danger);
+	}
+	.tile input.v {
+		width: 100%;
+		min-height: 0;
+		padding: 0 6px;
+		margin: -1px -7px;
+		width: calc(100% + 14px);
+	}
+	.worked::placeholder {
+		font-weight: 400;
+		font-size: 0.8125rem;
+		color: var(--text-faint);
+	}
+	.meter {
+		position: relative;
+		height: 10px;
+		margin: 12px 0 4px;
+		border-radius: 5px;
+		background: var(--bg-sunken);
+		overflow: hidden;
+	}
+	.meter span {
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 0;
+	}
+	.meter .worked {
+		background: color-mix(in srgb, var(--accent) 35%, transparent);
+	}
+	.meter .tracked {
+		background: var(--accent);
+	}
+	.meter .mark {
+		width: 2px;
+		margin-left: -1px;
+		background: var(--text);
+	}
+	.note {
+		margin: 6px 0 0;
+		font-size: 0.8125rem;
+		color: var(--text-muted);
+	}
+	.table {
+		margin-top: 12px;
+	}
+	.tr {
+		display: grid;
+		grid-template-columns: minmax(70px, 1.4fr) repeat(4, minmax(0, 1fr));
+		align-items: center;
+		gap: 8px;
+		min-height: 36px;
+		border-top: 1px solid var(--border);
+		font-variant-numeric: tabular-nums;
+	}
+	.tr > * {
+		text-align: right;
+	}
+	.tr > :first-child {
+		text-align: left;
+	}
+	.tr.head {
+		border-top: 0;
+		min-height: 28px;
+		font-size: 0.75rem;
+		color: var(--text-muted);
+	}
+	.tr.off {
+		color: var(--text-faint);
+	}
+	.tr.today .daylink {
 		color: var(--accent);
 		font-weight: 700;
 	}
-	.month .day {
-		font-size: 0.625rem;
+	.daylink:hover {
+		text-decoration: underline;
+	}
+	.tr .field {
+		width: 100%;
+		max-width: 96px;
+		min-height: 28px;
+		padding: 2px 6px;
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+	}
+	.tr .field[disabled] {
+		border-color: transparent;
+		background: transparent;
+	}
+	.tr .warn {
+		color: var(--warn);
+	}
+	.link {
+		color: var(--accent);
+		text-decoration: underline;
+	}
+	@media (max-width: 520px) {
+		.tr {
+			grid-template-columns: minmax(56px, 1.2fr) repeat(3, minmax(0, 1fr));
+		}
+		.tr .wide {
+			display: none;
+		}
 	}
 	.line {
 		display: flex;

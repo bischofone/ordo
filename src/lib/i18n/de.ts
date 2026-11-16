@@ -171,8 +171,6 @@ export const de = {
 		openDetailOnClick: 'Details beim Anklicken öffnen',
 		openDetailOnClickHint:
 			'Am PC: Klick auf eine Aufgabe zeigt die Details rechts daneben. Am Handy: neben den Titel tippen.',
-		timeTracking: 'Zeiterfassung',
-		timeTrackingHint: 'Play-Knopf an Aufgaben, Zeit in den Details und die Auswertung „Zeiten“',
 		resetAppearance: 'Darstellung zurücksetzen',
 		appearanceHint: 'Gilt nur für dieses Gerät.',
 		poolsHint: 'Farbe, Icon, Name und Reihenfolge. Projekte stehen eingerückt unter ihrem Pool.',
@@ -182,8 +180,37 @@ export const de = {
 		about:
 			'Alle Daten liegen lokal auf diesem Gerät – und, falls verbunden, auf deinem CalDAV-Server.'
 	},
+	timeSettings: {
+		title: 'Zeiterfassung',
+		hint: 'Gilt nur für dieses Gerät.',
+		enable: 'Zeiterfassungs-Modus',
+		enableHint:
+			'Zeigt Play-Knopf und Zeitfeld an jeder Aufgabe, den Zeit-Bereich in den Details und die Seite „Zeiten“.',
+		targets: 'Soll-Zeit je Wochentag',
+		targetsHint: 'z. B. 8:00 oder 7,5h – 0 für freie Tage',
+		weekdays: ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'],
+		weekTotal: 'Soll pro Woche',
+		round: 'Timer runden',
+		roundHint: 'Beim Stoppen auf volle 5 oder 15 Minuten runden',
+		roundExact: 'Genau'
+	},
 	time: {
 		title: 'Zeiten',
+		target: 'Soll',
+		worked: 'Gearbeitet',
+		workedHint: 'Tatsächliche Arbeitszeit – hier eintragen',
+		workedFor: (day: string) => `Gearbeitet am ${day}`,
+		workedPlaceholder: 'eintragen',
+		tracked: 'Getrackt',
+		unassigned: 'Nicht zugeordnet',
+		unassignedHint: 'Gearbeitet, aber noch keiner Aufgabe zugeordnet',
+		missing: 'Fehlt aufs Soll',
+		saldo: 'Saldo',
+		saldoHint: 'Plus oder Minus gegenüber dem Soll, bis einschließlich heute',
+		day: 'Tag',
+		days: 'Tage',
+		todaySummary: (tracked: string, target: string) => `Heute ${tracked} von ${target}`,
+		notEntered: 'Arbeitszeit nicht eingetragen – die getrackte Zeit zählt als gearbeitet.',
 		section: 'Zeit',
 		start: 'Timer starten',
 		stop: 'Timer stoppen',

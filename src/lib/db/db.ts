@@ -7,7 +7,8 @@ import type {
 	Project,
 	Setting,
 	Task,
-	Template
+	Template,
+	WorkDay
 } from '#lib/domain/types.ts';
 
 export class TasksDB extends Dexie {
@@ -21,6 +22,7 @@ export class TasksDB extends Dexie {
 	syncState!: EntityTable<SyncState, 'poolId'>;
 	syncRecords!: EntityTable<SyncRecord, 'taskId'>;
 	conflicts!: EntityTable<Conflict, 'id'>;
+	workDays!: EntityTable<WorkDay, 'date'>;
 
 	constructor(name = 'tasks-app') {
 		super(name);
@@ -54,5 +56,7 @@ export class TasksDB extends Dexie {
 		// v4: Zeiteinträge liegen direkt an der Aufgabe (werden mit ihr synchronisiert);
 		// die bisher ungenutzte eigene Tabelle entfällt.
 		this.version(4).stores({ timeEntries: null });
+		// v5: tatsächliche Arbeitszeit je Tag
+		this.version(5).stores({ workDays: 'date' });
 	}
 }

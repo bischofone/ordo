@@ -5,7 +5,12 @@
 import { generateNKeysBetween } from 'fractional-indexing';
 import { toIsoDate } from '#lib/domain/dates.ts';
 import { uuid } from '#lib/domain/id.ts';
-import { timerMinutes, withTotal } from '#lib/domain/time.ts';
+import {
+	DEFAULT_TIME_SETTINGS,
+	timerMinutes,
+	withTotal,
+	type TimeSettings
+} from '#lib/domain/time.ts';
 import { needsPostponeReview, postponePatch } from '#lib/domain/postpone.ts';
 import {
 	bySortOrder,
@@ -35,6 +40,7 @@ import type { TasksDB } from './db';
 
 export const INBOX_ID = 'inbox';
 export const TIMER_KEY = 'timer';
+export const TIME_SETTINGS_KEY = 'timeSettings';
 
 /** Farben für neue Pools/Projekte (ohne Grau, das ist der Inbox vorbehalten). */
 const PALETTE = POOL_COLORS.filter((c) => c !== NEUTRAL_COLOR);
@@ -506,6 +512,23 @@ export function createRepo(db: TasksDB, clock: () => Date = () => new Date()) {
 			});
 		},
 
+		async getTimeSettings(): Promise<TimeSettings> {
+			const stored = (await db.settings.get(TIME_SETTINGS_KEY))?.value as
+				Partial<TimeSettings> | undefined;
+			return { ...DEFAULT_TIME_SETTINGS, ...stored };
+		},
+
+		async setTimeSettings(patch: Partial<TimeSettings>) {
+			const next = { ...(await repo.getTimeSettings()), ...patch };
+			await db.settings.put({ key: TIME_SETTINGS_KEY, value: next });
+		},
+
+		/** Tatsächlich gearbeitete Zeit eines Tages eintragen; 0 oder null entfernt den Eintrag. */
+		async setWorkDay(date: string, minutes: number | null) {
+			if (!minutes || minutes <= 0) await db.workDays.delete(date);
+			else await db.workDays.put({ date, minutes: Math.round(minutes) });
+		},
+
 		getTimer: (): Promise<RunningTimer | null> =>
 			db.settings.get(TIMER_KEY).then((s) => (s?.value as RunningTimer | undefined) ?? null),
 
@@ -530,7 +553,8 @@ export function createRepo(db: TasksDB, clock: () => Date = () => new Date()) {
 			const running = await repo.getTimer();
 			if (!running) return null;
 			await db.settings.delete(TIMER_KEY);
-			const minutes = timerMinutes(running.start, now());
+			const { roundTo } = await repo.getTimeSettings();
+			const minutes = timerMinutes(running.start, now(), roundTo);
 			const task = await db.tasks.get(running.taskId);
 			if (minutes === null || !task || task.deletedAt) return null;
 			const entry = await repo.addTime(running.taskId, {

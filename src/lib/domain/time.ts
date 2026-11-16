@@ -73,10 +73,117 @@ export function formatElapsed(ms: number): string {
 export const MIN_TIMER_MS = 30_000;
 
 /** Gestoppter Timer → Minuten (mindestens 1), oder null, wenn zu kurz. */
-export function timerMinutes(startMs: number, endMs: number): number | null {
+export function timerMinutes(startMs: number, endMs: number, roundTo = 1): number | null {
 	const elapsed = endMs - startMs;
 	if (elapsed < MIN_TIMER_MS) return null;
-	return Math.max(1, Math.round(elapsed / 60_000));
+	const step = Math.max(1, roundTo);
+	return Math.max(step, Math.round(elapsed / 60_000 / step) * step);
+}
+
+// ---------- Zeiterfassungs-Modus: Soll, Ist, getrackt ----------
+
+export interface TimeSettings {
+	/** Zeiterfassung eingeschaltet? Ohne das wird nichts davon angezeigt. */
+	enabled: boolean;
+	/** Soll-Arbeitszeit in Minuten je Wochentag, Montag bis Sonntag */
+	targets: number[];
+	/** Timer beim Stoppen runden auf so viele Minuten (1 = minutengenau) */
+	roundTo: number;
+}
+
+export const DEFAULT_TIME_SETTINGS: TimeSettings = {
+	enabled: false,
+	targets: [480, 480, 480, 480, 480, 0, 0],
+	roundTo: 1
+};
+
+/** Soll-Zeit eines Tages (nach Wochentag). */
+export function targetFor(dateIso: string, settings: Pick<TimeSettings, 'targets'>): number {
+	const weekday = (fromIsoDate(dateIso).getDay() + 6) % 7; // Montag = 0
+	return settings.targets[weekday] ?? 0;
+}
+
+export interface DayBalance {
+	date: string;
+	/** Soll-Zeit */
+	target: number;
+	/** tatsächlich gearbeitet (von Hand eingetragen) – null, wenn nichts eingetragen ist */
+	worked: number | null;
+	/** auf Aufgaben getrackt */
+	tracked: number;
+	/** gearbeitet, aber noch keiner Aufgabe zugeordnet (nur wenn „gearbeitet“ eingetragen ist) */
+	unassigned: number;
+	/** fehlt noch bis zum Soll (gemessen an „gearbeitet“, sonst an „getrackt“) */
+	missing: number;
+}
+
+export interface Balance {
+	days: DayBalance[];
+	target: number;
+	worked: number;
+	tracked: number;
+	unassigned: number;
+	missing: number;
+	/** Plus/Minus gegenüber dem Soll – nur über Tage bis einschließlich heute */
+	saldo: number;
+	/** Gab es mindestens einen Tag mit eingetragener Arbeitszeit? */
+	hasWorked: boolean;
+}
+
+/**
+ * Stellt für jeden Tag Soll, gearbeitet und getrackt gegenüber.
+ * Ist für einen Tag keine Arbeitszeit eingetragen, gilt die getrackte Zeit als gearbeitet.
+ */
+export function buildBalance(
+	days: readonly string[],
+	trackedByDay: ReadonlyMap<string, number> | Record<string, number>,
+	workedByDay: ReadonlyMap<string, number> | Record<string, number>,
+	settings: Pick<TimeSettings, 'targets'>,
+	today: string
+): Balance {
+	const get = (src: ReadonlyMap<string, number> | Record<string, number>, d: string) =>
+		src instanceof Map ? src.get(d) : (src as Record<string, number>)[d];
+	const total: Balance = {
+		days: [],
+		target: 0,
+		worked: 0,
+		tracked: 0,
+		unassigned: 0,
+		missing: 0,
+		saldo: 0,
+		hasWorked: false
+	};
+	for (const date of days) {
+		const target = targetFor(date, settings);
+		const tracked = get(trackedByDay, date) ?? 0;
+		const worked = get(workedByDay, date) ?? null;
+		const effective = worked ?? tracked;
+		const day: DayBalance = {
+			date,
+			target,
+			worked,
+			tracked,
+			unassigned: worked === null ? 0 : Math.max(0, worked - tracked),
+			missing: Math.max(0, target - effective)
+		};
+		total.days.push(day);
+		total.target += target;
+		total.tracked += tracked;
+		total.worked += effective;
+		total.unassigned += day.unassigned;
+		if (worked !== null) total.hasWorked = true;
+		if (date <= today) {
+			total.saldo += effective - target;
+			total.missing += day.missing;
+		}
+	}
+	return total;
+}
+
+/** Plus/Minus mit Vorzeichen: 90 → „+1:30“, -30 → „−0:30“, 0 → „±0:00“ */
+export function formatSigned(minutes: number): string {
+	const sign = minutes > 0 ? '+' : minutes < 0 ? '−' : '±';
+	return sign + formatDuration(Math.abs(minutes));
 }
 
 /**

@@ -3,10 +3,12 @@
 	import { resolve } from '$app/paths';
 	import { INBOX_ID } from '#lib/db/repo.ts';
 	import { isOpen, type Pool, type Project, type Task } from '#lib/domain/types.ts';
+	import { todayIso } from '#lib/domain/dates.ts';
+	import { formatDuration, targetFor } from '#lib/domain/time.ts';
 	import { isAged } from '#lib/domain/views.ts';
 	import { isLater } from '#lib/domain/postpone.ts';
 	import { m } from '#lib/i18n/index.ts';
-	import { appearance } from '#lib/state/appearance.svelte.ts';
+	import { timeSettings } from '#lib/state/time-settings.svelte.ts';
 	import { db, repo } from '#lib/state/app.ts';
 	import { live } from '#lib/state/live.svelte.ts';
 	import { syncNow, syncStatus } from '#lib/state/sync.svelte.ts';
@@ -47,6 +49,17 @@
 	}
 
 	const path = $derived(page.url.pathname);
+
+	// Heute getrackt / Soll – steht neben „Zeiten“
+	const today = $derived(todayIso(ui.now));
+	const trackedToday = $derived(
+		tasks.reduce(
+			(sum, t) =>
+				sum + (t.timeEntries ?? []).reduce((s, e) => s + (e.date === today ? e.minutes : 0), 0),
+			0
+		)
+	);
+	const targetToday = $derived(targetFor(today, timeSettings.current));
 	const conflictCount = live(() => () => db.conflicts.count(), 0);
 	const syncLabel = $derived(
 		syncStatus.running ? m.sync.syncing : syncStatus.error ? m.sync.error : m.sync.ok
@@ -78,10 +91,17 @@
 		<span class="name">{m.nav.all}</span>
 	</a>
 
-	{#if appearance.current.timeTracking}
+	{#if timeSettings.enabled}
 		<a class="item" class:current={path === '/zeiten'} href={resolve('/zeiten')}>
 			<Icon name="chart" />
 			<span class="name">{m.nav.times}</span>
+			<span
+				class="count"
+				data-testid="today-time"
+				title={m.time.todaySummary(formatDuration(trackedToday), formatDuration(targetToday))}
+			>
+				{formatDuration(trackedToday)}{targetToday ? ` / ${formatDuration(targetToday)}` : ''}
+			</span>
 		</a>
 	{/if}
 
