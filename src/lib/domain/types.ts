@@ -37,10 +37,25 @@ export interface Pool {
 	kind: 'pool' | 'inbox';
 	name: string;
 	color: string;
+	/** Name eines Icons aus der Icon-Auswahl (optional). */
+	icon?: string;
 	sortOrder: string;
 	archived: boolean;
 	settings: PoolSettings;
 	caldav?: CaldavBinding;
+	createdAt: number;
+	updatedAt: number;
+}
+
+/** Projekt innerhalb eines Pools (eine Ebene). Aufgaben ordnen sich per `projectId` zu. */
+export interface Project {
+	id: string;
+	poolId: string;
+	name: string;
+	color: string;
+	icon?: string;
+	sortOrder: string;
+	archived: boolean;
 	createdAt: number;
 	updatedAt: number;
 }
@@ -55,6 +70,8 @@ export interface Task {
 	/** Entspricht später der VTODO-UID. */
 	id: string;
 	poolId: string;
+	/** Projekt im Pool; null = ohne Projekt. Unteraufgaben tragen das Projekt ihrer Wurzel. */
+	projectId: string | null;
 	parentId: string | null;
 	sortOrder: string;
 	title: string;
@@ -128,8 +145,13 @@ export const POOL_COLORS = [
 	'#0090ff',
 	'#6e56cf',
 	'#d6409f',
-	'#8d8d8d'
+	'#8d8d8d',
+	'#a18072',
+	'#3e63dd',
+	'#bdee63'
 ] as const;
+
+export const NEUTRAL_COLOR = '#8d8d8d';
 
 export const isOpen = (t: Task) => t.status === 'needs-action' || t.status === 'in-process';
 export const isDone = (t: Task) => !isOpen(t);

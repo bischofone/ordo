@@ -126,6 +126,56 @@ describe('Inbox & Pools wechseln', () => {
 	});
 });
 
+describe('Projekte', () => {
+	it('Unteraufgaben erben das Projekt, Verschieben nimmt den Teilbaum mit', async () => {
+		const { id: pid } = await privat();
+		const umzug = await repo.createProject(pid, 'Umzug');
+		const kisten = await repo.createTask({ poolId: pid, projectId: umzug, title: 'Kisten' });
+		const kind = await repo.createTask({ poolId: pid, parentId: kisten, title: 'Kartons kaufen' });
+		const danach = await repo.createTask({ poolId: pid, afterId: kisten, title: 'Danach' });
+		expect((await db.tasks.get(kind))?.projectId).toBe(umzug);
+		expect((await db.tasks.get(danach))?.projectId).toBe(umzug);
+
+		const arbeit = (await db.pools.toArray()).find((p) => p.name === 'Arbeit')!;
+		const web = await repo.createProject(arbeit.id, 'Website');
+		await repo.moveTo(kisten, { poolId: arbeit.id, projectId: web });
+		for (const id of [kisten, kind]) {
+			expect(await db.tasks.get(id)).toMatchObject({ poolId: arbeit.id, projectId: web });
+		}
+		expect((await db.tasks.get(kisten))?.parentId).toBeNull();
+	});
+
+	it('Projekt löschen lässt die Aufgaben im Pool', async () => {
+		const { id: pid } = await privat();
+		const p = await repo.createProject(pid, 'Weg damit');
+		const t = await repo.createTask({ poolId: pid, projectId: p, title: 'bleibt' });
+		await repo.deleteProject(p);
+		expect(await db.projects.count()).toBe(0);
+		expect((await db.tasks.get(t))?.projectId).toBeNull();
+	});
+
+	it('Reihenfolge, Farbe, Icon', async () => {
+		const { id: pid } = await privat();
+		const a = await repo.createProject(pid, 'A');
+		const b = await repo.createProject(pid, 'B');
+		await repo.moveProject(b, -1);
+		const order = (await db.projects.toArray())
+			.sort((x, y) => (x.sortOrder < y.sortOrder ? -1 : 1))
+			.map((p) => p.name);
+		expect(order).toEqual(['B', 'A']);
+		await repo.updateProject(a, { color: '#000000', icon: 'star' });
+		expect(await db.projects.get(a)).toMatchObject({ color: '#000000', icon: 'star' });
+	});
+
+	it('placeTask verhindert Zyklen', async () => {
+		const { id: pid } = await privat();
+		const a = await repo.createTask({ poolId: pid, title: 'A' });
+		const a1 = await repo.createTask({ poolId: pid, parentId: a, title: 'A1' });
+		const place = { poolId: pid, projectId: null, parentId: a1, sortOrder: 'a0' };
+		await expect(repo.placeTask(a, place)).rejects.toThrow();
+	});
+});
+
 describe('Zurückschieben', () => {
 	it('zählt mit und verlangt beim 3. Mal eine Entscheidung', async () => {
 		const id = await repo.createTask({ poolId: INBOX_ID, title: 'Steuer' });

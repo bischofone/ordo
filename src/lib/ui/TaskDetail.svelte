@@ -2,7 +2,7 @@
 	import DOMPurify from 'dompurify';
 	import { marked } from 'marked';
 	import { childrenOf } from '#lib/domain/tree.ts';
-	import type { DateValue, Energy, Pool, Priority } from '#lib/domain/types.ts';
+	import type { DateValue, Energy, Pool, Priority, Project } from '#lib/domain/types.ts';
 	import { m } from '#lib/i18n/index.ts';
 	import { deleteTask } from '#lib/state/actions.ts';
 	import { db, repo } from '#lib/state/app.ts';
@@ -11,7 +11,7 @@
 	import Icon from './Icon.svelte';
 	import { syncValue } from './sync-value';
 
-	let { pools }: { pools: Pool[] } = $props();
+	let { pools, projects }: { pools: Pool[]; projects: Project[] } = $props();
 
 	const task = live(() => {
 		const id = ui.detailId;
@@ -60,12 +60,18 @@
 			<span class="lbl">{m.task.pool}</span>
 			<select
 				class="field"
-				value={t.poolId}
-				onchange={(e) => repo.moveToPool(t.id, e.currentTarget.value)}
+				value={`${t.poolId}|${t.projectId ?? ''}`}
+				onchange={(e) => {
+					const [poolId, projectId] = e.currentTarget.value.split('|');
+					repo.moveTo(t.id, { poolId, projectId: projectId || null });
+				}}
 				disabled={t.parentId !== null}
 			>
 				{#each pools as p (p.id)}
-					<option value={p.id}>{p.name}</option>
+					<option value="{p.id}|">{p.name}</option>
+					{#each projects.filter((pr) => pr.poolId === p.id) as pr (pr.id)}
+						<option value="{p.id}|{pr.id}">&nbsp;&nbsp;{p.name} › {pr.name}</option>
+					{/each}
 				{/each}
 			</select>
 

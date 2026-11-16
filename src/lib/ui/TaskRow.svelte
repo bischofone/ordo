@@ -7,6 +7,7 @@
 	import { toggleDone } from '#lib/state/actions.ts';
 	import { db, repo } from '#lib/state/app.ts';
 	import { replayKeys, ui } from '#lib/state/ui.svelte.ts';
+	import { drag } from './drag.svelte';
 	import Icon from './Icon.svelte';
 	import { swipe } from './swipe';
 	import { syncValue } from './sync-value';
@@ -17,7 +18,9 @@
 		dim = false,
 		showScheduled = false,
 		agingDays,
-		onkey
+		onkey,
+		ondragstart,
+		onaddsubtask
 	}: {
 		row: Row;
 		progress: { done: number; total: number } | null;
@@ -26,6 +29,9 @@
 		/** Gesetzt in der Inbox: Einträge älter als so viele Tage werden markiert. */
 		agingDays?: number;
 		onkey: (e: KeyboardEvent & { currentTarget: HTMLInputElement }) => void;
+		/** Gesetzt, wenn die Zeile gezogen werden darf. */
+		ondragstart?: (e: PointerEvent) => void;
+		onaddsubtask?: () => void;
 	} = $props();
 
 	const task = $derived(row.task);
@@ -65,14 +71,30 @@
 	class="row"
 	class:dim
 	class:done
+	class:moving={drag.moving.includes(task.id)}
 	style:--depth={row.depth}
 	data-testid="task-row"
+	data-row-id={task.id}
 	data-depth={row.depth}
 	use:swipe={{
 		onright: () => toggleDone(task),
 		onleft: () => (ui.postponeId = task.id)
 	}}
 >
+	{#if ondragstart}
+		<button
+			class="grip"
+			tabindex="-1"
+			aria-label={m.task.drag}
+			title={m.task.drag}
+			onpointerdown={ondragstart}
+		>
+			<Icon name="grip" size={16} />
+		</button>
+	{:else}
+		<span class="grip"></span>
+	{/if}
+
 	<button
 		class="twisty"
 		class:open={!task.collapsed}
@@ -135,6 +157,16 @@
 	</span>
 
 	<span class="actions">
+		{#if onaddsubtask && !done}
+			<button
+				class="icon-btn"
+				aria-label={m.task.addSubtask}
+				title={m.task.addSubtask}
+				onclick={onaddsubtask}
+			>
+				<Icon name="subtask" size={16} />
+			</button>
+		{/if}
 		{#if !done}
 			<button
 				class="icon-btn"
@@ -172,6 +204,30 @@
 	.row:hover,
 	.row:focus-within {
 		background: var(--bg-hover);
+	}
+	.row.moving {
+		opacity: 0.35;
+	}
+	.grip {
+		width: 18px;
+		height: 28px;
+		display: grid;
+		place-items: center;
+		flex: none;
+		color: var(--text-faint);
+		cursor: grab;
+		touch-action: none;
+		opacity: 0;
+		margin-right: -4px;
+	}
+	.row:hover .grip,
+	.row:focus-within .grip {
+		opacity: 1;
+	}
+	@media (pointer: coarse) {
+		.grip {
+			opacity: 0.6;
+		}
 	}
 	.row:global([data-swipe='right']) {
 		box-shadow: inset 4px 0 0 var(--ok);
@@ -291,6 +347,9 @@
 		}
 	}
 	@media (max-width: 520px) {
+		.actions .icon-btn {
+			width: 28px;
+		}
 		.meta .sched,
 		.meta .count {
 			display: none;

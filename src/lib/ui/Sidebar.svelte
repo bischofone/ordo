@@ -2,20 +2,31 @@
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import { INBOX_ID } from '#lib/db/repo.ts';
-	import { isOpen, type Pool, type Task } from '#lib/domain/types.ts';
+	import { isOpen, type Pool, type Project, type Task } from '#lib/domain/types.ts';
 	import { isAged } from '#lib/domain/views.ts';
 	import { isLater } from '#lib/domain/postpone.ts';
 	import { m } from '#lib/i18n/index.ts';
 	import { repo } from '#lib/state/app.ts';
 	import { ui } from '#lib/state/ui.svelte.ts';
+	import Badge from './Badge.svelte';
+	import { drag } from './drag.svelte';
 	import Icon from './Icon.svelte';
 
-	let { pools, tasks, agingDays }: { pools: Pool[]; tasks: Task[]; agingDays: number } = $props();
+	let {
+		pools,
+		projects,
+		tasks,
+		agingDays
+	}: { pools: Pool[]; projects: Project[]; tasks: Task[]; agingDays: number } = $props();
 
 	const active = (t: Task) => t.parentId === null && isOpen(t) && !t.someday && !isLater(t, ui.now);
 	const counts = $derived.by(() => {
 		const c: Record<string, number> = {};
-		for (const t of tasks) if (active(t)) c[t.poolId] = (c[t.poolId] ?? 0) + 1;
+		for (const t of tasks) {
+			if (!active(t)) continue;
+			c[t.poolId] = (c[t.poolId] ?? 0) + 1;
+			if (t.projectId) c[t.projectId] = (c[t.projectId] ?? 0) + 1;
+		}
 		return c;
 	});
 	const inboxAged = $derived(
@@ -36,7 +47,15 @@
 </script>
 
 <nav class="sidebar" class:open={ui.sidebarOpen} aria-label="Navigation">
-	<a class="item" class:current={path.startsWith('/inbox')} href={resolve('/inbox')}>
+	<a
+		class="item"
+		class:current={path.startsWith('/inbox')}
+		class:drop-over={drag.overTarget === `pool:${INBOX_ID}`}
+		href={resolve('/inbox')}
+		data-drop-target="pool:{INBOX_ID}"
+		data-pool-id={INBOX_ID}
+		data-name={m.nav.inbox}
+	>
 		<Icon name="inbox" />
 		<span class="name">{m.nav.inbox}</span>
 		{#if counts[INBOX_ID]}
@@ -53,12 +72,32 @@
 		<a
 			class="item"
 			class:current={path === `/pool/${p.id}`}
+			class:drop-over={drag.overTarget === `pool:${p.id}`}
 			href={resolve('/pool/[id]', { id: p.id })}
+			data-drop-target="pool:{p.id}"
+			data-pool-id={p.id}
+			data-name={p.name}
 		>
-			<span class="dot" style:background={p.color}></span>
+			<Badge color={p.color} icon={p.icon} />
 			<span class="name">{p.name}</span>
 			{#if counts[p.id]}<span class="count">{counts[p.id]}</span>{/if}
 		</a>
+		{#each projects.filter((pr) => pr.poolId === p.id && !pr.archived) as pr (pr.id)}
+			<a
+				class="item sub"
+				class:current={path === `/pool/${p.id}/projekt/${pr.id}`}
+				class:drop-over={drag.overTarget === `project:${pr.id}`}
+				href={resolve('/pool/[id]/projekt/[pid]', { id: p.id, pid: pr.id })}
+				data-drop-target="project:{pr.id}"
+				data-pool-id={p.id}
+				data-project-id={pr.id}
+				data-name="{p.name} › {pr.name}"
+			>
+				<Badge color={pr.color} icon={pr.icon} size={14} />
+				<span class="name">{pr.name}</span>
+				{#if counts[pr.id]}<span class="count">{counts[pr.id]}</span>{/if}
+			</a>
+		{/each}
 	{/each}
 
 	{#if adding}
@@ -131,6 +170,16 @@
 		color: var(--text);
 		font-weight: 600;
 	}
+	.item.sub {
+		min-height: 32px;
+		padding-left: 30px;
+		font-size: 14px;
+	}
+	.item.drop-over {
+		background: color-mix(in srgb, var(--accent) 20%, transparent);
+		color: var(--text);
+		box-shadow: inset 0 0 0 2px var(--accent);
+	}
 	.item.muted {
 		color: var(--text-faint);
 	}
@@ -139,13 +188,6 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-	}
-	.dot {
-		width: 10px;
-		height: 10px;
-		border-radius: 50%;
-		margin: 0 4px;
-		flex: none;
 	}
 	.count {
 		font-size: 13px;

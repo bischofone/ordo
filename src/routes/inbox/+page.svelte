@@ -8,10 +8,11 @@
 	import { q } from '#lib/state/queries.ts';
 	import { ui } from '#lib/state/ui.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
-	import PoolSection from '#lib/ui/PoolSection.svelte';
+	import TaskGroup from '#lib/ui/TaskGroup.svelte';
 	import QuickAdd from '#lib/ui/QuickAdd.svelte';
 
 	const pools = live(() => q.pools, []);
+	const projects = live(() => q.projects, []);
 	const tasks = live(() => q.poolTasks(INBOX_ID), []);
 	const agingDays = live(
 		() => q.setting('inboxAgingDays', DEFAULT_INBOX_AGING_DAYS),
@@ -36,10 +37,21 @@
 	<p class="hint">{m.inbox.aged(aged)}</p>
 {/if}
 
-<QuickAdd pools={pools.current.filter((p) => !p.archived)} defaultPoolId={INBOX_ID} />
+<QuickAdd
+	pools={pools.current.filter((p) => !p.archived)}
+	projects={projects.current}
+	defaultPoolId={INBOX_ID}
+/>
 
 {#if inbox}
-	<PoolSection pool={inbox} tasks={tasks.current} agingDays={agingDays.current} />
+	<section data-testid="pool-section">
+		<TaskGroup
+			poolId={inbox.id}
+			projectId={null}
+			tasks={tasks.current}
+			agingDays={agingDays.current}
+		/>
+	</section>
 {/if}
 
 <style>

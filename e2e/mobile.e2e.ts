@@ -41,3 +41,33 @@ test('Handy: Menü, Leiste über der Tastatur, Wischen zum Abhaken', async ({ pa
 	await expect(page.getByRole('button', { name: /Erledigt/ })).toContainText('1');
 	await expect.poll(() => outline(page)).toEqual(['0:Einkauf']);
 });
+
+test('Handy: Aufgabe mit dem Finger am Griff verschieben', async ({ page }) => {
+	await page.goto('/inbox');
+	for (const t of ['Erste', 'Zweite']) {
+		const input = page.getByTestId('quick-add');
+		await input.fill(t);
+		await input.press('Enter');
+		await expect(input).toHaveValue('');
+	}
+	await expect.poll(() => outline(page)).toEqual(['0:Erste', '0:Zweite']);
+
+	const grip = page
+		.getByTestId('task-row')
+		.nth(1)
+		.getByRole('button', { name: 'Ziehen zum Verschieben' });
+	const g = (await grip.boundingBox())!;
+	const first = (await page.getByTestId('task-row').first().boundingBox())!;
+	const cdp = await page.context().newCDPSession(page);
+	const touch = (type: string, x: number, y: number) =>
+		cdp.send('Input.dispatchTouchEvent', {
+			type,
+			touchPoints: type === 'touchEnd' ? [] : [{ x, y }]
+		});
+	const x = g.x + g.width / 2;
+	await touch('touchStart', x, g.y + g.height / 2);
+	for (let y = g.y + g.height / 2; y >= first.y + 4; y -= 6) await touch('touchMove', x, y);
+	await touch('touchEnd', x, first.y + 4);
+
+	await expect.poll(() => outline(page)).toEqual(['0:Zweite', '0:Erste']);
+});

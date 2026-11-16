@@ -11,10 +11,12 @@
 	import { live } from '#lib/state/live.svelte.ts';
 	import { q } from '#lib/state/queries.ts';
 	import { toast, ui } from '#lib/state/ui.svelte.ts';
+	import Badge from '#lib/ui/Badge.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import { swipe } from '#lib/ui/swipe.ts';
 
 	const pools = live(() => q.pools, []);
+	const projects = live(() => q.projects, []);
 	const tasks = live(() => q.poolTasks(INBOX_ID), []);
 	const agingDays = live(
 		() => q.setting('inboxAgingDays', DEFAULT_INBOX_AGING_DAYS),
@@ -34,9 +36,13 @@
 	const current = $derived(remaining[0]);
 	const total = $derived(handled + remaining.length);
 
-	async function assign(poolId: string) {
+	async function assign(poolId: string, projectId: string | null = null) {
 		if (!current) return;
-		await repo.moveToPool(current.id, poolId, mode === 'someday' ? { someday: true } : {});
+		await repo.moveTo(
+			current.id,
+			{ poolId, projectId },
+			mode === 'someday' ? { someday: true } : {}
+		);
 		handled++;
 		mode = 'normal';
 	}
@@ -111,9 +117,16 @@
 		<h2>{mode === 'someday' ? m.inbox.someDayPick : m.inbox.assignTo}</h2>
 		<div class="pools">
 			{#each targets as p, i (p.id)}
-				<button class="btn pool" onclick={() => assign(p.id)}>
-					<kbd>{i + 1}</kbd><span class="dot" style:background={p.color}></span>{p.name}
-				</button>
+				<div class="pool-row">
+					<button class="btn pool" onclick={() => assign(p.id)}>
+						<kbd>{i + 1}</kbd><Badge color={p.color} icon={p.icon} />{p.name}
+					</button>
+					{#each projects.current.filter((pr) => pr.poolId === p.id && !pr.archived) as pr (pr.id)}
+						<button class="btn project" onclick={() => assign(p.id, pr.id)}>
+							<Badge color={pr.color} icon={pr.icon} size={14} />{pr.name}
+						</button>
+					{/each}
+				</div>
 			{/each}
 		</div>
 
@@ -228,18 +241,28 @@
 		gap: 8px;
 		margin-bottom: 12px;
 	}
+	.pools {
+		flex-direction: column;
+		align-items: stretch;
+	}
+	.pool-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+		align-items: center;
+	}
 	.pool {
 		min-height: 44px;
+	}
+	.project {
+		min-height: 36px;
+		font-size: 14px;
+		color: var(--text-muted);
 	}
 	kbd {
 		font-size: 11px;
 		color: var(--text-faint);
 		font-family: inherit;
-	}
-	.dot {
-		width: 10px;
-		height: 10px;
-		border-radius: 50%;
 	}
 	.hint {
 		font-size: 12px;

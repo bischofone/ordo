@@ -42,6 +42,9 @@ Abhängigkeiten zeigen nur in eine Richtung: `domain ← db ← state ← ui/rou
 ## Bedienung (Kurzfassung)
 
 - **Schnelleingabe:** `Rechnung zahlen morgen 9:00 !1 #privat` – erkannte Teile erscheinen als Chips, ✕ macht sie wieder zu normalem Text.
+- **Unteraufgaben:** Knopf ↳ an der Zeile, oder Tab.
+- **Drag & Drop:** am Griff links der Zeile ziehen – hoch/runter = Position, links/rechts = Ebene; auf Pool oder Projekt in der Seitenleiste ablegen verschiebt dorthin.
+- **Projekte:** im Pool unten „Neues Projekt“; Farbe/Icon über den Stift-Knopf.
 - **Gliederung:** Enter = neue Zeile, Tab / Shift+Tab = ein-/ausrücken, Backspace in leerer Zeile = löschen, ↑/↓ = Zeile wechseln, Alt+↑/↓ = verschieben, Strg+Enter = erledigt.
 - **Handy:** Leiste über der Tastatur zum Ein-/Ausrücken; Zeile nach rechts wischen = erledigt, nach links = zurückschieben.
 - **Inbox aufräumen:** Tasten 1–9 = Pool, I = Irgendwann, Entf = löschen, → = überspringen.

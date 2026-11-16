@@ -4,6 +4,7 @@
  *   Uhrzeit:   9:00 (optional gefolgt von „Uhr“)
  *   Priorität: !1 !2 !3
  *   Pool:      #arbeit (Groß-/Kleinschreibung egal, Anfang des Namens reicht)
+ *   Projekt:   #umzug (Projektname) oder eindeutig #privat/umzug
  * Jede Art wird nur einmal erkannt (das erste Vorkommen). Alles andere bleibt Titel.
  * Erkannte Teile kommen als Tokens zurück und werden in der UI als Chips angezeigt.
  */
@@ -28,9 +29,16 @@ export interface PoolRef {
 	name: string;
 }
 
+export interface ProjectRef {
+	id: string;
+	name: string;
+	poolId: string;
+}
+
 export interface ParseContext {
 	now: Date;
 	pools: PoolRef[];
+	projects?: ProjectRef[];
 	/** Token-Schlüssel, die der Nutzer per Chip entfernt hat → werden als normaler Text behandelt. */
 	ignored?: readonly string[];
 }
@@ -41,6 +49,7 @@ export interface ParseResult {
 	due?: DateValue;
 	priority?: Priority;
 	poolId?: string;
+	projectId?: string;
 }
 
 const WEEKDAYS = ['sonntag', 'montag', 'dienstag', 'mittwoch', 'donnerstag', 'freitag', 'samstag'];
@@ -55,6 +64,44 @@ export function matchPool(query: string, pools: PoolRef[]): PoolRef | undefined 
 		pools.find((p) => normalizePoolName(p.name) === q) ??
 		pools.find((p) => normalizePoolName(p.name).startsWith(q))
 	);
+}
+
+export interface Target {
+	poolId: string;
+	projectId?: string;
+}
+
+/**
+ * `#…` auflösen. Reihenfolge: Pool exakt, Projekt exakt, Pool-Anfang, Projekt-Anfang.
+ * Mit Schrägstrich (`privat/umzug`) wird das Projekt nur im genannten Pool gesucht.
+ */
+export function matchTarget(query: string, pools: PoolRef[], projects: ProjectRef[] = []) {
+	const slash = query.indexOf('/');
+	if (slash >= 0) {
+		const pool = matchPool(query.slice(0, slash), pools);
+		if (!pool) return undefined;
+		const rest = query.slice(slash + 1);
+		if (!rest) return { poolId: pool.id };
+		const project = matchPool(
+			rest,
+			projects.filter((p) => p.poolId === pool.id)
+		) as ProjectRef | undefined;
+		return project ? { poolId: pool.id, projectId: project.id } : undefined;
+	}
+	const q = normalizePoolName(query);
+	if (!q) return undefined;
+	const exact = <T extends PoolRef>(list: T[]) => list.find((p) => normalizePoolName(p.name) === q);
+	const prefix = <T extends PoolRef>(list: T[]) =>
+		list.find((p) => normalizePoolName(p.name).startsWith(q));
+	const pool = exact(pools);
+	if (pool) return { poolId: pool.id };
+	const project = exact(projects);
+	if (project) return { poolId: project.poolId, projectId: project.id };
+	const poolPrefix = prefix(pools);
+	if (poolPrefix) return { poolId: poolPrefix.id };
+	const projectPrefix = prefix(projects);
+	if (projectPrefix) return { poolId: projectPrefix.poolId, projectId: projectPrefix.id };
+	return undefined;
 }
 
 function parseDateWord(word: string, now: Date): string | undefined {
@@ -127,9 +174,12 @@ export function parseQuickAdd(input: string, ctx: ParseContext): ParseResult {
 		if (text.startsWith('#') && text.length > 1 && !has('pool')) {
 			const name = text.slice(1).replace(TRAILING_PUNCT, '');
 			const raw = '#' + name;
-			const pool = matchPool(name, ctx.pools);
-			if (push('pool', raw, start + raw.length, pool ? undefined : 'Unbekannter Pool')) {
-				if (pool) result.poolId = pool.id;
+			const target = matchTarget(name, ctx.pools, ctx.projects);
+			if (push('pool', raw, start + raw.length, target ? undefined : 'Unbekannter Pool')) {
+				if (target) {
+					result.poolId = target.poolId;
+					result.projectId = target.projectId;
+				}
 			}
 			continue;
 		}

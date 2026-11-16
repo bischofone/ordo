@@ -5,9 +5,11 @@
 	import { live } from '#lib/state/live.svelte.ts';
 	import { q } from '#lib/state/queries.ts';
 	import { getTheme, setTheme, type Theme } from '#lib/state/theme.ts';
-	import PoolEditor from '#lib/ui/PoolEditor.svelte';
+	import type { Pool } from '#lib/domain/types.ts';
+	import Editor from '#lib/ui/Editor.svelte';
 
 	const pools = live(() => q.pools, []);
+	const projects = live(() => q.projects, []);
 	const agingDays = live(
 		() => q.setting('inboxAgingDays', DEFAULT_INBOX_AGING_DAYS),
 		DEFAULT_INBOX_AGING_DAYS
@@ -53,7 +55,17 @@
 <section>
 	<h2>{m.settings.pools}</h2>
 	{#each active as p (p.id)}
-		<PoolEditor pool={p} reorder />
+		{@render poolEditor(p, true)}
+		<div class="projects">
+			{#each projects.current.filter((pr) => pr.poolId === p.id) as pr (pr.id)}
+				<Editor
+					item={pr}
+					onupdate={(patch) => repo.updateProject(pr.id, patch)}
+					onmove={(dir) => repo.moveProject(pr.id, dir)}
+					onarchive={() => repo.updateProject(pr.id, { archived: !pr.archived })}
+				/>
+			{/each}
+		</div>
 	{/each}
 	<form
 		class="line"
@@ -75,12 +87,23 @@
 	{#if archived.length}
 		<h3>{m.pool.archived}</h3>
 		{#each archived as p (p.id)}
-			<PoolEditor pool={p} />
+			{@render poolEditor(p, false)}
 		{/each}
 	{/if}
 </section>
 
 <p class="about">{m.settings.about}</p>
+
+{#snippet poolEditor(p: Pool, reorder: boolean)}
+	<Editor
+		item={p}
+		onupdate={(patch) => repo.updatePool(p.id, patch)}
+		onmove={reorder && p.kind === 'pool' ? (dir) => repo.movePool(p.id, dir) : undefined}
+		onarchive={p.kind === 'pool'
+			? () => repo.updatePool(p.id, { archived: !p.archived })
+			: undefined}
+	/>
+{/snippet}
 
 <style>
 	h1 {
@@ -108,6 +131,11 @@
 	}
 	.line span {
 		flex: 1 1 200px;
+	}
+	.projects {
+		padding-left: 28px;
+		border-left: 2px solid var(--border);
+		margin: 0 0 8px 12px;
 	}
 	.about {
 		color: var(--text-faint);

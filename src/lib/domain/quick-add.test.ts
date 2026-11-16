@@ -8,7 +8,12 @@ const pools = [
 	{ id: 'privat', name: 'Privat' },
 	{ id: 'haus', name: 'Projekt Haus' }
 ];
-const ctx: ParseContext = { now, pools };
+const projects = [
+	{ id: 'umzug', name: 'Umzug', poolId: 'privat' },
+	{ id: 'website', name: 'Website', poolId: 'arbeit' },
+	{ id: 'priv-arb', name: 'Arbeitszimmer', poolId: 'privat' }
+];
+const ctx: ParseContext = { now, pools, projects };
 const parse = (s: string, extra: Partial<ParseContext> = {}) =>
 	parseQuickAdd(s, { ...ctx, ...extra });
 
@@ -73,6 +78,16 @@ describe('parseQuickAdd', () => {
 		expect(parse('x #ARBEIT').poolId).toBe('arbeit');
 		expect(parse('x #arb').poolId).toBe('arbeit');
 		expect(parse('x #projekthaus').poolId).toBe('haus');
+	});
+
+	it('Projekte: Name, Pool/Projekt, Pools haben Vorrang', () => {
+		expect(parse('x #umzug')).toMatchObject({ poolId: 'privat', projectId: 'umzug' });
+		expect(parse('x #web')).toMatchObject({ poolId: 'arbeit', projectId: 'website' });
+		expect(parse('x #privat/arb')).toMatchObject({ poolId: 'privat', projectId: 'priv-arb' });
+		expect(parse('x #privat/')).toMatchObject({ poolId: 'privat', projectId: undefined });
+		// „arb“ passt auf Pool „Arbeit“ und Projekt „Arbeitszimmer“ → Pool gewinnt
+		expect(parse('x #arb')).toMatchObject({ poolId: 'arbeit', projectId: undefined });
+		expect(parse('x #arbeit/umzug').poolId).toBeUndefined();
 	});
 
 	it('unbekannter Pool wird als fehlerhafter Chip markiert', () => {

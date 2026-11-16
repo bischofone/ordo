@@ -1,15 +1,20 @@
 <script lang="ts">
-	import { childrenMap, flattenTree } from '#lib/domain/tree.ts';
+	import { childrenMap, descendantIds, flattenTree, type Row } from '#lib/domain/tree.ts';
 	import { isDone, type Task } from '#lib/domain/types.ts';
 	import { postpone, toggleDone } from '#lib/state/actions.ts';
 	import { repo } from '#lib/state/app.ts';
-	import { beginKeyBuffer, requestFocus, ui } from '#lib/state/ui.svelte.ts';
+	import { m } from '#lib/i18n/index.ts';
+	import { beginKeyBuffer, requestFocus, toast, ui } from '#lib/state/ui.svelte.ts';
+	import { registerDropList, startDrag } from './drag.svelte';
 	import PostponeMenu from './PostponeMenu.svelte';
 	import TaskRow from './TaskRow.svelte';
 
 	let {
 		tasks,
 		roots,
+		poolId,
+		projectId,
+		section,
 		dim = false,
 		showScheduled = false,
 		agingDays
@@ -18,12 +23,38 @@
 		tasks: Task[];
 		/** Wurzeln dieses Bereichs in Anzeige-Reihenfolge. */
 		roots: Task[];
+		poolId: string;
+		projectId: string | null;
+		/** Bereich der Liste. Drag & Drop geht nur zwischen Listen desselben Bereichs. */
+		section: 'active' | 'later' | 'someday' | 'done';
 		dim?: boolean;
 		showScheduled?: boolean;
 		agingDays?: number;
 	} = $props();
 
 	const rows = $derived(flattenTree(tasks, roots));
+	const draggable = $derived(section === 'active' || section === 'someday');
+	let listEl = $state<HTMLElement>();
+
+	$effect(() => {
+		if (!listEl || !draggable) return;
+		return registerDropList({ el: listEl, poolId, projectId, section, rows: () => rows });
+	});
+
+	function dragStart(e: PointerEvent, row: Row) {
+		startDrag(
+			e,
+			{ row, section, moving: [row.task.id, ...descendantIds(tasks, row.task.id)] },
+			({ name }) => name && toast(m.task.moved(name))
+		);
+	}
+
+	async function addSubtask(row: Row) {
+		beginKeyBuffer();
+		if (row.task.collapsed) await repo.updateTask(row.task.id, { collapsed: false });
+		const id = await repo.createTask({ poolId: row.task.poolId, parentId: row.task.id, title: '' });
+		requestFocus(id);
+	}
 	const kids = $derived(childrenMap(tasks));
 	const progressOf = (id: string) => {
 		const k = kids.get(id);
@@ -122,7 +153,7 @@
 	}
 </script>
 
-<ul class="list">
+<ul class="list" bind:this={listEl} data-drop-list>
 	{#each rows as row (row.task.id)}
 		<li>
 			<TaskRow
@@ -132,6 +163,10 @@
 				{showScheduled}
 				{agingDays}
 				onkey={(e) => onkey(e, row.task.id)}
+				ondragstart={draggable ? (e) => dragStart(e, row) : undefined}
+				onaddsubtask={section === 'active' || section === 'someday'
+					? () => addSubtask(row)
+					: undefined}
 			/>
 			{#if ui.postponeId === row.task.id}
 				<div style:padding-left="calc({row.depth} * var(--indent) + 24px)">
@@ -150,5 +185,9 @@
 		list-style: none;
 		margin: 0;
 		padding: 0;
+	}
+	/* Leere Listen beim Ziehen als Ziel erreichbar machen */
+	:global(body.is-dragging) .list {
+		min-height: 36px;
 	}
 </style>

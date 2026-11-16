@@ -22,6 +22,9 @@ export const de = {
 		none: 'Keine',
 		add: 'Hinzufügen',
 		removeChip: 'Entfernen',
+		pickDate: 'Datum wählen',
+		target: 'Pool / Projekt',
+		noProject: 'ohne Projekt',
 		createPool: 'anlegen',
 		addedTo: (pool: string) => `In „${pool}“ angelegt`
 	},
@@ -35,6 +38,9 @@ export const de = {
 		postpone: 'Zurückschieben',
 		postponedTimes: (n: number) => `${n}× verschoben`,
 		addTask: 'Aufgabe hinzufügen',
+		addSubtask: 'Unteraufgabe hinzufügen',
+		drag: 'Ziehen zum Verschieben',
+		moved: (target: string) => `Nach „${target}“ verschoben`,
 		notes: 'Notizen',
 		notesPlaceholder: 'Notizen (Markdown)',
 		edit: 'Bearbeiten',
@@ -103,6 +109,23 @@ export const de = {
 	all: {
 		title: 'Alle Pools',
 		filter: 'Pools filtern'
+	},
+	picker: {
+		color: 'Farbe wählen',
+		customColor: 'Eigene Farbe …',
+		icon: 'Icon wählen',
+		noIcon: 'Kein Icon (Punkt)'
+	},
+	project: {
+		new: 'Neues Projekt',
+		newName: 'Name des neuen Projekts',
+		edit: 'Projekt bearbeiten',
+		delete: 'Projekt löschen',
+		deleteTitle: 'Projekt löschen?',
+		deleteText: (name: string) =>
+			`„${name}“ wird gelöscht. Die Aufgaben bleiben im Pool, nur ohne Projekt.`,
+		none: 'Ohne Projekt',
+		notFound: 'Projekt nicht gefunden.'
 	},
 	pool: {
 		edit: 'Pool bearbeiten',

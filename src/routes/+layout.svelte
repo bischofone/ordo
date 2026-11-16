@@ -8,6 +8,7 @@
 	import { q } from '#lib/state/queries.ts';
 	import { ui } from '#lib/state/ui.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
+	import DragLayer from '#lib/ui/DragLayer.svelte';
 	import MobileToolbar from '#lib/ui/MobileToolbar.svelte';
 	import Overlays from '#lib/ui/Overlays.svelte';
 	import Sidebar from '#lib/ui/Sidebar.svelte';
@@ -17,6 +18,7 @@
 	let { children }: LayoutProps = $props();
 
 	const pools = live(() => q.pools, []);
+	const projects = live(() => q.projects, []);
 	const tasks = live(() => q.allTasks, []);
 	const agingDays = live(
 		() => q.setting('inboxAgingDays', DEFAULT_INBOX_AGING_DAYS),
@@ -45,7 +47,12 @@
 </svelte:head>
 
 <div class="app">
-	<Sidebar pools={pools.current} tasks={tasks.current} agingDays={agingDays.current} />
+	<Sidebar
+		pools={pools.current}
+		projects={projects.current}
+		tasks={tasks.current}
+		agingDays={agingDays.current}
+	/>
 	<div class="main-col">
 		<header class="topbar">
 			<button class="icon-btn" aria-label={m.nav.menu} onclick={() => (ui.sidebarOpen = true)}>
@@ -59,7 +66,11 @@
 	</div>
 </div>
 
-<TaskDetail pools={pools.current.filter((p) => !p.archived)} />
+<TaskDetail
+	pools={pools.current.filter((p) => !p.archived)}
+	projects={projects.current.filter((p) => !p.archived)}
+/>
+<DragLayer />
 <Overlays />
 <MobileToolbar />
 

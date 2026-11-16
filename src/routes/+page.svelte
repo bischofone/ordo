@@ -6,10 +6,12 @@
 	import { m } from '#lib/i18n/index.ts';
 	import { live } from '#lib/state/live.svelte.ts';
 	import { q } from '#lib/state/queries.ts';
-	import PoolSection from '#lib/ui/PoolSection.svelte';
+	import Badge from '#lib/ui/Badge.svelte';
+	import PoolView from '#lib/ui/PoolView.svelte';
 	import QuickAdd from '#lib/ui/QuickAdd.svelte';
 
 	const pools = live(() => q.pools, []);
+	const projects = live(() => q.projects, []);
 	const tasks = live(() => q.allTasks, []);
 
 	const usable = $derived(pools.current.filter((p) => !p.archived));
@@ -42,15 +44,24 @@
 			aria-pressed={selected.includes(p.id)}
 			onclick={() => toggle(p.id)}
 		>
-			<span class="dot" style:background={p.color}></span>{p.name}
+			<Badge color={p.color} icon={p.icon} size={14} />{p.name}
 		</button>
 	{/each}
 </div>
 
-<QuickAdd pools={usable} defaultPoolId={shown.length === 1 ? shown[0].id : INBOX_ID} />
+<QuickAdd
+	pools={usable}
+	projects={projects.current}
+	defaultPoolId={shown.length === 1 ? shown[0].id : INBOX_ID}
+/>
 
 {#each shown as p (p.id)}
-	<PoolSection pool={p} tasks={tasksOf(p.id)} showHeader />
+	<PoolView
+		pool={p}
+		projects={projects.current.filter((pr) => pr.poolId === p.id && !pr.archived)}
+		tasks={tasksOf(p.id)}
+		showHeader
+	/>
 {/each}
 
 <style>
@@ -73,10 +84,5 @@
 		border-color: var(--accent);
 		color: var(--text);
 		background: color-mix(in srgb, var(--accent) 12%, var(--bg-raised));
-	}
-	.dot {
-		width: 8px;
-		height: 8px;
-		border-radius: 50%;
 	}
 </style>

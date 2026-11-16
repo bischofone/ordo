@@ -8,6 +8,7 @@ export function makeTask(overrides: Partial<Task> = {}): Task {
 	return {
 		id: overrides.id ?? `t${counter}`,
 		poolId: 'p1',
+		projectId: null,
 		parentId: null,
 		sortOrder: 'a0',
 		title: `Aufgabe ${counter}`,

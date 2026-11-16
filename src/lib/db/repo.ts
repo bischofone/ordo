@@ -18,19 +18,26 @@ import {
 } from '#lib/domain/tree.ts';
 import {
 	DEFAULT_POOL_SETTINGS,
+	NEUTRAL_COLOR,
 	POOL_COLORS,
 	type DateValue,
 	type Pool,
 	type Priority,
+	type Project,
 	type Task
 } from '#lib/domain/types.ts';
 import type { TasksDB } from './db';
 
 export const INBOX_ID = 'inbox';
 
+/** Farben für neue Pools/Projekte (ohne Grau, das ist der Inbox vorbehalten). */
+const PALETTE = POOL_COLORS.filter((c) => c !== NEUTRAL_COLOR);
+
 export interface NewTask {
 	poolId: string;
 	title: string;
+	/** Projekt (nur für Wurzeln relevant; Unteraufgaben erben es vom Elternteil). */
+	projectId?: string | null;
 	parentId?: string | null;
 	/** Direkt hinter dieser Aufgabe einfügen (gleiche Ebene). */
 	afterId?: string;
@@ -74,6 +81,25 @@ export function createRepo(db: TasksDB, clock: () => Date = () => new Date()) {
 		});
 	}
 
+	/** Wurzel bekommt `place`, alle Nachfahren übernehmen Pool und Projekt. */
+	async function moveSubtree(
+		task: Task,
+		place: { poolId: string; projectId: string | null; parentId: string | null; sortOrder: string },
+		patch: TaskPatch = {}
+	) {
+		const t = now();
+		const sub = descendantIds(await poolTasks(task.poolId), task.id);
+		if (place.parentId && sub.includes(place.parentId)) {
+			throw new Error('Aufgabe kann nicht in eine eigene Unteraufgabe verschoben werden');
+		}
+		await db.tasks.update(task.id, { ...patch, ...place, updatedAt: t });
+		await Promise.all(
+			sub.map((s) =>
+				db.tasks.update(s, { poolId: place.poolId, projectId: place.projectId, updatedAt: t })
+			)
+		);
+	}
+
 	const repo = {
 		// ---------- Pools ----------
 
@@ -88,7 +114,7 @@ export function createRepo(db: TasksDB, clock: () => Date = () => new Date()) {
 						id: INBOX_ID,
 						kind: 'inbox',
 						name: 'Inbox',
-						color: POOL_COLORS[8],
+						color: NEUTRAL_COLOR,
 						sortOrder: keys[0],
 						archived: false,
 						settings: structuredClone(DEFAULT_POOL_SETTINGS),
@@ -99,7 +125,7 @@ export function createRepo(db: TasksDB, clock: () => Date = () => new Date()) {
 						id: uid(),
 						kind: 'pool',
 						name,
-						color: POOL_COLORS[i === 0 ? 3 : 5],
+						color: PALETTE[i === 0 ? 3 : 5],
 						sortOrder: keys[i + 1],
 						archived: false,
 						settings: structuredClone(DEFAULT_POOL_SETTINGS),
@@ -119,7 +145,7 @@ export function createRepo(db: TasksDB, clock: () => Date = () => new Date()) {
 				id,
 				kind: 'pool',
 				name: name.trim(),
-				color: color ?? POOL_COLORS[(used * 3) % (POOL_COLORS.length - 1)],
+				color: color ?? PALETTE[(used * 3) % PALETTE.length],
 				sortOrder: keyAtEnd(pools),
 				archived: false,
 				settings: structuredClone(DEFAULT_POOL_SETTINGS),
@@ -129,7 +155,10 @@ export function createRepo(db: TasksDB, clock: () => Date = () => new Date()) {
 			return id;
 		},
 
-		async updatePool(id: string, patch: Partial<Pick<Pool, 'name' | 'color' | 'archived'>>) {
+		async updatePool(
+			id: string,
+			patch: Partial<Pick<Pool, 'name' | 'color' | 'icon' | 'archived'>>
+		) {
 			if (id === INBOX_ID && patch.archived)
 				throw new Error('Die Inbox kann nicht archiviert werden');
 			await db.pools.update(id, { ...patch, updatedAt: now() });
@@ -149,22 +178,85 @@ export function createRepo(db: TasksDB, clock: () => Date = () => new Date()) {
 			await db.pools.update(id, { sortOrder, updatedAt: now() });
 		},
 
+		// ---------- Projekte ----------
+
+		async createProject(
+			poolId: string,
+			name: string,
+			opts: { color?: string; icon?: string } = {}
+		) {
+			const siblings = (await db.projects.where('poolId').equals(poolId).toArray()).sort(
+				bySortOrder
+			);
+			const id = uid();
+			const t = now();
+			await db.projects.add({
+				id,
+				poolId,
+				name: name.trim(),
+				color: opts.color ?? PALETTE[(siblings.length * 5 + 1) % PALETTE.length],
+				icon: opts.icon ?? 'folder',
+				sortOrder: keyAtEnd(siblings),
+				archived: false,
+				createdAt: t,
+				updatedAt: t
+			});
+			return id;
+		},
+
+		async updateProject(
+			id: string,
+			patch: Partial<Pick<Project, 'name' | 'color' | 'icon' | 'archived'>>
+		) {
+			await db.projects.update(id, { ...patch, updatedAt: now() });
+		},
+
+		async moveProject(id: string, dir: -1 | 1) {
+			const project = await db.projects.get(id);
+			if (!project) return;
+			const list = (await db.projects.where('poolId').equals(project.poolId).toArray())
+				.filter((p) => !p.archived)
+				.sort(bySortOrder);
+			const idx = list.findIndex((p) => p.id === id);
+			const target = idx + dir;
+			if (target < 0 || target >= list.length) return;
+			const sortOrder =
+				dir === -1
+					? keyBetween(list[target - 1], list[target])
+					: keyBetween(list[target], list[target + 1]);
+			await db.projects.update(id, { sortOrder, updatedAt: now() });
+		},
+
+		/** Projekt löschen – die Aufgaben bleiben im Pool, nur ohne Projekt. */
+		async deleteProject(id: string) {
+			await db.transaction('rw', db.projects, db.tasks, async () => {
+				const t = now();
+				await db.tasks
+					.filter((task) => task.projectId === id)
+					.modify({ projectId: null, updatedAt: t });
+				await db.projects.delete(id);
+			});
+		},
+
 		// ---------- Aufgaben ----------
 
 		async createTask(input: NewTask) {
 			return db.transaction('rw', db.tasks, async () => {
 				const tasks = await poolTasks(input.poolId);
 				let parentId = input.parentId ?? null;
+				let projectId = input.projectId ?? null;
 				let sortOrder: string;
 				if (input.afterId) {
 					const after = tasks.find((t) => t.id === input.afterId);
 					if (!after) throw new Error('afterId nicht gefunden');
 					parentId = after.parentId;
+					projectId = after.projectId;
 					sortOrder = keyAfter(tasks, after);
 				} else if (input.beforeId) {
 					const before = tasks.find((t) => t.id === input.beforeId);
 					if (!before) throw new Error('beforeId nicht gefunden');
 					parentId = before.parentId;
+					projectId = before.projectId;
 					const sibs = childrenOf(tasks, parentId);
 					sortOrder = keyBetween(sibs[sibs.findIndex((t) => t.id === before.id) - 1], before);
 				} else if (input.first) {
@@ -172,10 +264,12 @@ export function createRepo(db: TasksDB, clock: () => Date = () => new Date()) {
 				} else {
 					sortOrder = keyAtEnd(childrenOf(tasks, parentId));
 				}
+				if (parentId) projectId = tasks.find((t) => t.id === parentId)?.projectId ?? null;
 				const t = now();
 				const task: Task = {
 					id: uid(),
 					poolId: input.poolId,
+					projectId,
 					parentId,
 					sortOrder,
 					title: input.title,
@@ -273,25 +367,50 @@ export function createRepo(db: TasksDB, clock: () => Date = () => new Date()) {
 			);
 		},
 
-		/** Verschiebt eine Aufgabe samt Unteraufgaben in einen anderen Pool (als Wurzel ans Ende). */
-		async moveToPool(id: string, poolId: string, patch: TaskPatch = {}) {
+		/** Verschiebt eine Aufgabe samt Unteraufgaben in einen anderen Pool (ohne Projekt, ans Ende). */
+		moveToPool(id: string, poolId: string, patch: TaskPatch = {}) {
+			return repo.moveTo(id, { poolId, projectId: null }, patch);
+		},
+
+		/**
+		 * Verschiebt eine Aufgabe samt Unteraufgaben in einen Pool/ein Projekt – als Wurzel ans Ende.
+		 * Liegt sie dort schon als Wurzel, wird nur `patch` angewendet.
+		 */
+		async moveTo(
+			id: string,
+			target: { poolId: string; projectId: string | null },
+			patch: TaskPatch = {}
+		) {
 			await db.transaction('rw', db.tasks, async () => {
 				const task = await getTask(id);
-				if (task.poolId === poolId) {
-					if (Object.keys(patch).length) await db.tasks.update(id, { ...patch, updatedAt: now() });
+				const t = now();
+				if (
+					task.poolId === target.poolId &&
+					task.projectId === target.projectId &&
+					task.parentId === null
+				) {
+					if (Object.keys(patch).length) await db.tasks.update(id, { ...patch, updatedAt: t });
 					return;
 				}
-				const sub = descendantIds(await poolTasks(task.poolId), id);
-				const target = childrenOf(await poolTasks(poolId), null);
-				const t = now();
-				await db.tasks.update(id, {
-					...patch,
-					poolId,
-					parentId: null,
-					sortOrder: keyAtEnd(target),
-					updatedAt: t
-				});
-				await Promise.all(sub.map((s) => db.tasks.update(s, { poolId, updatedAt: t })));
+				const roots = childrenOf(await poolTasks(target.poolId), null);
+				await moveSubtree(task, { ...target, parentId: null, sortOrder: keyAtEnd(roots) }, patch);
+			});
+		},
+
+		/** Drag & Drop: Aufgabe samt Unteraufgaben an eine berechnete Stelle legen. */
+		async placeTask(
+			id: string,
+			place: {
+				poolId: string;
+				projectId: string | null;
+				parentId: string | null;
+				sortOrder: string;
+			}
+		) {
+			await db.transaction('rw', db.tasks, async () => {
+				const task = await getTask(id);
+				if (place.parentId === id) throw new Error('Aufgabe kann nicht in sich selbst liegen');
+				await moveSubtree(task, place);
 			});
 		},
 

@@ -36,6 +36,12 @@ kein eigener App-Server.
 - **Jeder Pool = eine eigene CalDAV-Aufgabenliste.** Server/Konto/Liste pro Pool
   wählbar (Arbeit darf auf einem anderen Server liegen als Privat).
 - Pools sind strikt getrennt. Ansichten zeigen einen, mehrere oder alle Pools.
+- **Projekte innerhalb eines Pools** (eine Ebene): ordnen Aufgaben im Pool, z. B.
+  Privat › Umzug. Projekte lassen sich anlegen, umbenennen, einfärben, mit Icon
+  versehen, sortieren, archivieren und löschen (Aufgaben bleiben dann im Pool).
+  Sie erscheinen in der Seitenleiste unter ihrem Pool und haben eine eigene Ansicht.
+- **Farbe und Icon** für Pools und Projekte: je ein Knopf, der eine Auswahl öffnet
+  (Farbpalette + eigene Farbe; Icon-Sammlung).
 - **Kontext-Modi** (z. B. „Arbeit“, „Feierabend“, „Urlaub“): legen fest, welche
   Pools sichtbar sind und welche benachrichtigen dürfen. Umschaltbar per Klick
   oder automatisch nach Zeitplan (z. B. Mo–Fr 8–17 Uhr = Arbeit).
@@ -55,6 +61,10 @@ niedrig/mittel/hoch), Wiederholung, Status, erfasste Zeit.
 - **Beliebig viele Ebenen** (Sub-Sub-Tasks).
 - Gliederungs-Bedienung: **Enter** = neue Aufgabe auf gleicher Ebene,
   **Tab / Shift+Tab** = ein-/ausrücken. Kein Dialog nötig, direkt in der Liste tippen.
+- Sichtbarer Knopf „Unteraufgabe hinzufügen“ an jeder Zeile.
+- **Drag & Drop** (Maus und Finger, am Griff der Zeile): umsortieren, waagrecht
+  ein-/ausrücken, in andere Projekte/Pools ziehen – auch auf Pools und Projekte in
+  der Seitenleiste. Unteraufgaben wandern mit.
 - Am Handy: Buttons zum Ein-/Ausrücken über der Tastatur, Wischgesten.
 - Fortschritt der Unteraufgaben am Elternteil sichtbar (z. B. 3/5).
 - Unteraufgaben ein-/ausklappbar.
@@ -65,12 +75,14 @@ Nur wenige, intuitive Kürzel – alles andere über Buttons:
 
 - Datum in normalen Worten (Deutsch): `heute`, `morgen`, `Freitag`, `15.12.`, `9:00`
 - Priorität: `!1` `!2` `!3`
-- Pool: `#arbeit`
+- Pool oder Projekt: `#arbeit`, `#umzug`, eindeutig `#privat/umzug`
 - Beispiel: `Rechnung zahlen morgen !1 #privat`
 - Erkannte Teile werden live als farbige Chips angezeigt und sind per Klick
   entfernbar. Nichts wird „heimlich“ interpretiert.
-- Daneben eine sichtbare Button-Leiste (Datum, Priorität, Pool) für alle, die
-  keine Kürzel nutzen wollen.
+- Daneben eine sichtbare Leiste für alle, die keine Kürzel nutzen wollen – **jede
+  Option mit einem Klick**, ohne Zwischenmenü: Heute · Morgen · Kalender ·
+  !1 !2 !3 · Pool/Projekt-Auswahl. Die Leiste zeigt auch an, was per Kürzel erkannt
+  wurde.
 
 ### Zurückschieben (statt verstecken)
 
@@ -159,6 +171,7 @@ Nur wenige, intuitive Kürzel – alles andere über Buttons:
 | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | Titel / Notizen                                                                   | `SUMMARY` / `DESCRIPTION`                                               |
 | Unteraufgabe (beliebig tief)                                                      | `RELATED-TO;RELTYPE=PARENT`                                             |
+| Projekt (Vorschlag, in Phase 2 final)                                             | `X-MYTASKS-PROJECT` (ID) + `CATEGORIES` (Name, sichtbar in Tasks.org)   |
 | Priorität 1/2/3                                                                   | `PRIORITY` 1/5/9                                                        |
 | Fälligkeit                                                                        | `DUE`                                                                   |
 | Geplantes Datum                                                                   | `DTSTART`                                                               |
@@ -230,6 +243,10 @@ jederzeit geändert werden – dann wird es hier angepasst.
 - **Sortierung:** Fractional Indexing (Text-Schlüssel); beim Sync auf
   `X-APPLE-SORT-ORDER` abgebildet.
 - **Löschen:** als Tombstone (`deletedAt`), damit der Sync Löschungen übertragen kann.
+- **Projekte:** eigene Tabelle; Aufgaben tragen `projectId`, Unteraufgaben immer das
+  Projekt ihrer Wurzel. DB-Version 2 (Migration vorhandener Daten automatisch).
+- **Drag & Drop:** eigene Pointer-Event-Lösung (keine Bibliothek), Zielberechnung als
+  reine, getestete Funktion (`domain/dnd.ts`).
 
 ### Verhalten
 
@@ -247,8 +264,17 @@ jederzeit geändert werden – dann wird es hier angepasst.
   - Jede Kürzel-Art wird nur einmal erkannt (das erste Vorkommen).
   - `#pool`: Groß/Klein egal, Anfang des Namens reicht.
   - Unbekannter Pool → roter Chip mit „anlegen“.
-  - Ein über die Button-Leiste gesetzter Wert hat Vorrang; das passende Kürzel wird
-    dann wieder normaler Text.
+  - Ein über die Leiste gesetzter Wert hat Vorrang; das passende Kürzel wird
+    dann wieder normaler Text. Erneuter Klick auf einen aktiven Knopf hebt ihn auf.
+  - `#name` sucht zuerst Pools, dann Projekte (exakt vor Wortanfang).
+  - Das Eingabefeld wird sofort geleert, damit man direkt die nächste Aufgabe tippen kann.
+- **Drag & Drop:**
+  - Senkrecht = Position, waagrecht = Ebene (ca. 22 px pro Ebene), begrenzt auf das
+    an der Stelle Mögliche; nicht in eingeklappte Aufgaben hinein.
+  - Nur zwischen Listen desselben Bereichs (aktiv ↔ aktiv, Irgendwann ↔ Irgendwann);
+    „Später“ (nach Datum sortiert) und „Erledigt“ sind nicht ziehbar.
+  - Auf Pool/Projekt in der Seitenleiste ablegen = als oberste Aufgabe ans Ende.
+  - Escape bricht ab.
 - **Gliederung:**
   - Enter mitten im Text teilt die Zeile.
   - Enter am Zeilenanfang fügt eine leere Zeile darüber ein.
@@ -268,6 +294,8 @@ jederzeit geändert werden – dann wird es hier angepasst.
 
 ### Offen (spätere Phasen)
 
+- Projekte nur eine Ebene tief – reicht das, oder werden verschachtelte Projekte gebraucht?
+- Abbildung von Projekten im CalDAV (siehe Tabelle Abschnitt 7) – in Phase 2 festlegen.
 - App-Name und Android-App-ID (vor Phase 2/3 festlegen, bestimmt auch das `X-`-Präfix).
 - Hosting der PWA und CORS-Setup (Phase 2).
 - Speicherung von CalDAV-Passwörtern im Browser (Phase 2).

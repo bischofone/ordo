@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { addDaysIso, formatDateValue, todayIso } from '#lib/domain/dates.ts';
 	import { parseQuickAdd, type Token, type TokenKind } from '#lib/domain/quick-add.ts';
-	import type { DateValue, Pool, Priority } from '#lib/domain/types.ts';
+	import type { DateValue, Pool, Priority, Project } from '#lib/domain/types.ts';
 	import { m } from '#lib/i18n/index.ts';
 	import { repo } from '#lib/state/app.ts';
 	import { toast, ui } from '#lib/state/ui.svelte.ts';
@@ -9,23 +9,57 @@
 
 	let {
 		pools,
+		projects = [],
 		defaultPoolId,
+		defaultProjectId = null,
 		placeholder = m.quickAdd.placeholder
-	}: { pools: Pool[]; defaultPoolId: string; placeholder?: string } = $props();
+	}: {
+		pools: Pool[];
+		projects?: Project[];
+		defaultPoolId: string;
+		defaultProjectId?: string | null;
+		placeholder?: string;
+	} = $props();
+
+	interface Target {
+		poolId: string;
+		projectId: string | null;
+	}
 
 	let text = $state('');
 	let ignored = $state.raw<string[]>([]);
-	/** Über die Buttons gesetzte Werte. Sie haben Vorrang vor erkannten Kürzeln. */
-	// $state.raw: nur ganze Zuweisungen, keine Proxies – die Werte gehen direkt in IndexedDB.
-	let manual = $state.raw<{ due?: DateValue; priority?: Priority; poolId?: string }>({});
-	let menu = $state<'date' | 'priority' | 'pool' | null>(null);
+	/**
+	 * Über die Leiste gesetzte Werte – sie haben Vorrang vor erkannten Kürzeln.
+	 * `null` heißt „bewusst keins“. ($state.raw: keine Proxies, die Werte gehen in IndexedDB.)
+	 */
+	let manual = $state.raw<{ due?: DateValue | null; priority?: Priority | null; target?: Target }>(
+		{}
+	);
 	let input = $state<HTMLInputElement>();
+	let dateInput = $state<HTMLInputElement>();
 
-	const parsed = $derived(parseQuickAdd(text, { now: ui.now, pools, ignored }));
-	const due = $derived(manual.due ?? parsed.due);
-	const priority = $derived(manual.priority ?? parsed.priority);
-	const poolId = $derived(manual.poolId ?? parsed.poolId ?? defaultPoolId);
+	const parsed = $derived(parseQuickAdd(text, { now: ui.now, pools, projects, ignored }));
+	const due = $derived(manual.due !== undefined ? (manual.due ?? undefined) : parsed.due);
+	const priority = $derived(
+		manual.priority !== undefined ? (manual.priority ?? undefined) : parsed.priority
+	);
+	const target = $derived<Target>(
+		manual.target ??
+			(parsed.poolId
+				? { poolId: parsed.poolId, projectId: parsed.projectId ?? null }
+				: { poolId: defaultPoolId, projectId: defaultProjectId })
+	);
+
+	const today = $derived(todayIso(ui.now));
+	const tomorrow = $derived(addDaysIso(ui.now, 1));
+	const otherDate = $derived(due && due.date !== today && due.date !== tomorrow);
+
 	const poolName = (id: string) => pools.find((p) => p.id === id)?.name ?? '';
+	const targetName = (t: Target) => {
+		const project = projects.find((p) => p.id === t.projectId);
+		return project ? `${poolName(t.poolId)} › ${project.name}` : poolName(t.poolId);
+	};
+	const targetKey = (t: Target) => `${t.poolId}|${t.projectId ?? ''}`;
 
 	function chipLabel(t: Token) {
 		switch (t.kind) {
@@ -36,19 +70,32 @@
 			case 'priority':
 				return `${m.quickAdd.priority} ${parsed.priority}`;
 			case 'pool':
-				return t.error ? `${t.raw} – ${t.error}` : poolName(parsed.poolId!);
+				return t.error
+					? `${t.raw} – ${t.error}`
+					: targetName({ poolId: parsed.poolId!, projectId: parsed.projectId ?? null });
 		}
 	}
 	const chipIcon = { date: 'calendar', time: 'clock', priority: 'flag', pool: 'hash' } as const;
 
-	/** Manuelle Auswahl: ein erkanntes Kürzel derselben Art wird wieder normaler Text. */
+	/** Auswahl über die Leiste: ein erkanntes Kürzel derselben Art wird wieder normaler Text. */
 	function setManual<K extends keyof typeof manual>(key: K, value: (typeof manual)[K]) {
-		const kinds: TokenKind[] = key === 'due' ? ['date', 'time'] : [key as TokenKind];
+		const kinds: TokenKind[] =
+			key === 'due' ? ['date', 'time'] : key === 'target' ? ['pool'] : ['priority'];
 		const keys = parsed.tokens.filter((t) => kinds.includes(t.kind)).map((t) => t.key);
-		ignored = [...ignored, ...keys];
+		if (keys.length) ignored = [...ignored, ...keys];
 		manual = { ...manual, [key]: value };
-		menu = null;
 		input?.focus();
+	}
+
+	const toggleDate = (date: string) =>
+		setManual('due', due?.date === date ? null : { date, time: due?.time });
+
+	function openDatePicker() {
+		try {
+			dateInput?.showPicker();
+		} catch {
+			dateInput?.focus();
+		}
 	}
 
 	async function createPoolFromChip(t: Token) {
@@ -58,12 +105,21 @@
 	async function submit() {
 		const title = parsed.title;
 		if (!title) return;
-		await repo.createTask({ poolId, title, due, priority: priority ?? null });
-		if (poolId !== defaultPoolId) toast(m.quickAdd.addedTo(poolName(poolId)));
+		const task = {
+			poolId: target.poolId,
+			projectId: target.projectId,
+			title,
+			due,
+			priority: priority ?? null
+		};
+		// Sofort leeren – wer gleich weitertippt, beginnt schon die nächste Aufgabe.
 		text = '';
 		ignored = [];
 		manual = {};
-		menu = null;
+		await repo.createTask(task);
+		if (task.poolId !== defaultPoolId || task.projectId !== defaultProjectId) {
+			toast(m.quickAdd.addedTo(targetName(task)));
+		}
 	}
 </script>
 
@@ -88,125 +144,93 @@
 		<button class="btn primary" type="submit" disabled={!parsed.title}>{m.quickAdd.add}</button>
 	</div>
 
+	{#if parsed.tokens.length}
+		<div class="chips">
+			{#each parsed.tokens as t (t.key)}
+				<span class="chip kind-{t.kind}" class:error={t.error} data-testid="chip">
+					<Icon name={chipIcon[t.kind]} size={13} />
+					{chipLabel(t)}
+					{#if t.error}
+						<button type="button" class="link" onclick={() => createPoolFromChip(t)}>
+							{m.quickAdd.createPool}
+						</button>
+					{/if}
+					<button
+						type="button"
+						class="x"
+						aria-label="{m.quickAdd.removeChip}: {t.raw}"
+						onclick={() => (ignored = [...ignored, t.key])}><Icon name="x" size={12} /></button
+					>
+				</span>
+			{/each}
+		</div>
+	{/if}
+
 	<div class="bar">
-		{#each parsed.tokens as t (t.key)}
-			<span class="chip kind-{t.kind}" class:error={t.error} data-testid="chip">
-				<Icon name={chipIcon[t.kind]} size={13} />
-				{chipLabel(t)}
-				{#if t.error}
-					<button type="button" class="link" onclick={() => createPoolFromChip(t)}>
-						{m.quickAdd.createPool}
-					</button>
-				{/if}
-				<button
-					type="button"
-					class="x"
-					aria-label="{m.quickAdd.removeChip}: {t.raw}"
-					onclick={() => (ignored = [...ignored, t.key])}><Icon name="x" size={12} /></button
-				>
-			</span>
-		{/each}
-		{#if manual.due}
-			<span class="chip kind-date" data-testid="chip">
-				<Icon name="calendar" size={13} />{formatDateValue(manual.due, ui.now)}
-				<button
-					type="button"
-					class="x"
-					aria-label={m.quickAdd.removeChip}
-					onclick={() => (manual = { ...manual, due: undefined })}
-					><Icon name="x" size={12} /></button
-				>
-			</span>
-		{/if}
-		{#if manual.priority}
-			<span class="chip kind-priority" data-testid="chip">
-				<Icon name="flag" size={13} />{m.quickAdd.priority}
-				{manual.priority}
-				<button
-					type="button"
-					class="x"
-					aria-label={m.quickAdd.removeChip}
-					onclick={() => (manual = { ...manual, priority: undefined })}
-					><Icon name="x" size={12} /></button
-				>
-			</span>
-		{/if}
-		{#if manual.poolId}
-			<span class="chip kind-pool" data-testid="chip">
-				<Icon name="hash" size={13} />{poolName(manual.poolId)}
-				<button
-					type="button"
-					class="x"
-					aria-label={m.quickAdd.removeChip}
-					onclick={() => (manual = { ...manual, poolId: undefined })}
-					><Icon name="x" size={12} /></button
-				>
-			</span>
-		{/if}
-
-		<span class="spacer"></span>
-
-		<button
-			type="button"
-			class="btn ghost"
-			aria-expanded={menu === 'date'}
-			onclick={() => (menu = menu === 'date' ? null : 'date')}
-		>
-			<Icon name="calendar" size={16} /><span class="label">{m.quickAdd.date}</span>
-		</button>
-		<button
-			type="button"
-			class="btn ghost"
-			aria-expanded={menu === 'priority'}
-			onclick={() => (menu = menu === 'priority' ? null : 'priority')}
-		>
-			<Icon name="flag" size={16} /><span class="label">{m.quickAdd.priority}</span>
-		</button>
-		<button
-			type="button"
-			class="btn ghost"
-			aria-expanded={menu === 'pool'}
-			onclick={() => (menu = menu === 'pool' ? null : 'pool')}
-		>
-			<Icon name="hash" size={16} /><span class="label">{m.quickAdd.pool}</span>
-		</button>
-	</div>
-
-	{#if menu === 'date'}
-		<div class="menu">
-			<button type="button" class="btn" onclick={() => setManual('due', { date: todayIso(ui.now) })}
+		<div class="seg" role="group" aria-label={m.quickAdd.date}>
+			<button type="button" aria-pressed={due?.date === today} onclick={() => toggleDate(today)}
 				>{m.quickAdd.today}</button
 			>
 			<button
 				type="button"
-				class="btn"
-				onclick={() => setManual('due', { date: addDaysIso(ui.now, 1) })}
-				>{m.quickAdd.tomorrow}</button
+				aria-pressed={due?.date === tomorrow}
+				onclick={() => toggleDate(tomorrow)}>{m.quickAdd.tomorrow}</button
 			>
+			<button
+				type="button"
+				class="date-btn"
+				aria-pressed={!!otherDate}
+				aria-label={m.quickAdd.pickDate}
+				title={m.quickAdd.pickDate}
+				onclick={openDatePicker}
+			>
+				<Icon name="calendar" size={15} />
+				{#if otherDate}<span>{formatDateValue({ date: due!.date }, ui.now)}</span>{/if}
+			</button>
 			<input
-				class="field"
+				bind:this={dateInput}
+				class="hidden-date"
 				type="date"
-				aria-label={m.quickAdd.date}
-				onchange={(e) => e.currentTarget.value && setManual('due', { date: e.currentTarget.value })}
+				tabindex="-1"
+				aria-hidden="true"
+				value={due?.date ?? ''}
+				onchange={(e) =>
+					setManual('due', e.currentTarget.value ? { date: e.currentTarget.value } : null)}
 			/>
 		</div>
-	{:else if menu === 'priority'}
-		<div class="menu">
+
+		<div class="seg" role="group" aria-label={m.quickAdd.priority}>
 			{#each [1, 2, 3] as const as p (p)}
-				<button type="button" class="btn prio-{p}" onclick={() => setManual('priority', p)}
-					>!{p}</button
+				<button
+					type="button"
+					class="prio-{p}"
+					aria-pressed={priority === p}
+					onclick={() => setManual('priority', priority === p ? null : p)}>!{p}</button
 				>
 			{/each}
 		</div>
-	{:else if menu === 'pool'}
-		<div class="menu">
-			{#each pools as p (p.id)}
-				<button type="button" class="btn" onclick={() => setManual('poolId', p.id)}>
-					<span class="dot" style:background={p.color}></span>{p.name}
-				</button>
-			{/each}
-		</div>
-	{/if}
+
+		<label class="target">
+			<Icon name="hash" size={15} />
+			<select
+				aria-label={m.quickAdd.target}
+				value={targetKey(target)}
+				onchange={(e) => {
+					const [poolId, projectId] = e.currentTarget.value.split('|');
+					setManual('target', { poolId, projectId: projectId || null });
+				}}
+			>
+				{#each pools as p (p.id)}
+					<option value={targetKey({ poolId: p.id, projectId: null })}>{p.name}</option>
+					{#each projects.filter((pr) => pr.poolId === p.id && !pr.archived) as pr (pr.id)}
+						<option value={targetKey({ poolId: p.id, projectId: pr.id })}>
+							&nbsp;&nbsp;{p.name} › {pr.name}
+						</option>
+					{/each}
+				{/each}
+			</select>
+		</label>
+	</div>
 </form>
 
 <style>
@@ -214,7 +238,7 @@
 		background: var(--bg-raised);
 		border: 1px solid var(--border);
 		border-radius: var(--radius);
-		padding: 6px 8px;
+		padding: 6px 8px 8px;
 		margin-bottom: 12px;
 	}
 	.input-row {
@@ -236,21 +260,86 @@
 		opacity: 0.4;
 		cursor: default;
 	}
-	.bar {
+	.chips {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 6px;
+		padding: 2px 0 6px;
+	}
+	.bar {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
 		align-items: center;
 		padding-top: 4px;
 	}
-	.spacer {
-		flex: 1;
+	.seg {
+		display: inline-flex;
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		overflow: hidden;
+		position: relative;
 	}
-	.bar .btn {
+	.seg button {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
 		min-height: 30px;
-		padding: 0 8px;
-		color: var(--text-muted);
+		padding: 0 10px;
 		font-size: 14px;
+		color: var(--text-muted);
+		border-right: 1px solid var(--border);
+	}
+	.seg button:last-of-type {
+		border-right: 0;
+	}
+	.seg button:hover {
+		background: var(--bg-hover);
+	}
+	.seg button[aria-pressed='true'] {
+		background: var(--accent);
+		color: var(--accent-contrast);
+	}
+	.seg .prio-1:not([aria-pressed='true']) {
+		color: var(--prio-1);
+	}
+	.seg .prio-2:not([aria-pressed='true']) {
+		color: var(--prio-2);
+	}
+	.seg .prio-3:not([aria-pressed='true']) {
+		color: var(--prio-3);
+	}
+	.hidden-date {
+		position: absolute;
+		right: 0;
+		bottom: 0;
+		width: 1px;
+		height: 1px;
+		opacity: 0;
+		pointer-events: none;
+	}
+	.target {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		min-height: 32px;
+		padding: 0 4px 0 8px;
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		color: var(--text-muted);
+		max-width: 100%;
+	}
+	.target select {
+		border: 0;
+		background: transparent;
+		font-size: 14px;
+		color: var(--text);
+		max-width: 220px;
+		padding: 4px 0;
+		outline: none;
+	}
+	.target select option {
+		background: var(--bg-raised);
 	}
 	.chip .x {
 		display: grid;
@@ -284,30 +373,5 @@
 	.link {
 		text-decoration: underline;
 		font-size: 13px;
-	}
-	.menu {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 6px;
-		padding: 8px 0 4px;
-	}
-	.dot {
-		width: 10px;
-		height: 10px;
-		border-radius: 50%;
-	}
-	.prio-1 {
-		color: var(--prio-1);
-	}
-	.prio-2 {
-		color: var(--prio-2);
-	}
-	.prio-3 {
-		color: var(--prio-3);
-	}
-	@media (max-width: 520px) {
-		.label {
-			display: none;
-		}
 	}
 </style>
