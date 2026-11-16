@@ -6,6 +6,7 @@
 	import { m } from '#lib/i18n/index.ts';
 	import { toggleDone } from '#lib/state/actions.ts';
 	import { db, repo } from '#lib/state/app.ts';
+	import { appearance } from '#lib/state/appearance.svelte.ts';
 	import { replayKeys, ui } from '#lib/state/ui.svelte.ts';
 	import { drag } from './drag.svelte';
 	import Icon from './Icon.svelte';
@@ -41,6 +42,37 @@
 		agingDays !== undefined && row.depth === 0 && !done && isAged(task, ui.now, agingDays)
 	);
 	let input = $state<HTMLInputElement>();
+	const selected = $derived(ui.detailId === task.id);
+
+	/**
+	 * Unsichtbare Kopie des Titels: Das Eingabefeld ist dadurch nur so breit wie sein Text.
+	 * Der Rest der Zeile bleibt frei – ein Klick/Tipp dorthin öffnet die Details.
+	 */
+	let mirror = $state('');
+	$effect(() => {
+		const title = task.title;
+		if (document.activeElement !== input) mirror = title;
+	});
+
+	/**
+	 * Klick auf die Zeile öffnet die Details (abschaltbar in den Einstellungen).
+	 * - Knöpfe der Zeile behalten ihre eigene Funktion.
+	 * - Klick in den Titel: Am PC (Details als Spalte daneben) wird zusätzlich der Cursor
+	 *   gesetzt; am Handy/schmalen Fenster nur bearbeitet, damit das Tippen frei bleibt.
+	 */
+	function onrowclick(e: MouseEvent) {
+		if (!appearance.current.openDetailOnClick) return;
+		const target = e.target as HTMLElement;
+		if (target.closest('button, a')) return;
+		if (target === input && !ui.docked) return;
+		ui.detailId = task.id;
+	}
+
+	function onfocus() {
+		ui.editingId = task.id;
+		// Offene Detail-Spalte folgt der Zeile, in der man gerade ist (auch per Tastatur).
+		if (ui.docked && ui.detailId && appearance.current.openDetailOnClick) ui.detailId = task.id;
+	}
 
 	// Fokus-Anfragen (nach Enter, Tab, Pfeiltasten …) erfüllen, sobald die Zeile existiert.
 	$effect(() => {
@@ -56,6 +88,7 @@
 
 	function onblur() {
 		if (ui.editingId === task.id) ui.editingId = null;
+		if (input) mirror = input.value;
 		// Leere Zeilen ohne Unteraufgaben verschwinden beim Verlassen.
 		if (input?.value.trim() || row.hasChildren) return;
 		const id = task.id;
@@ -71,6 +104,7 @@
 	class="row"
 	class:dim
 	class:done
+	class:selected
 	class:moving={drag.moving.includes(task.id)}
 	style:--depth={row.depth}
 	data-testid="task-row"
@@ -80,6 +114,8 @@
 		onright: () => toggleDone(task),
 		onleft: () => (ui.postponeId = task.id)
 	}}
+	onclick={onrowclick}
+	role="presentation"
 >
 	{#if ondragstart}
 		<button
@@ -117,19 +153,26 @@
 		{#if done}<Icon name="check" size={14} />{/if}
 	</button>
 
-	<input
-		bind:this={input}
-		class="title"
-		use:syncValue={task.title}
-		placeholder={m.task.newPlaceholder}
-		aria-label={m.task.title}
-		enterkeyhint="next"
-		autocomplete="off"
-		oninput={(e) => repo.updateTask(task.id, { title: e.currentTarget.value })}
-		onkeydown={onkey}
-		onfocus={() => (ui.editingId = task.id)}
-		{onblur}
-	/>
+	<span class="title-wrap" data-value={mirror || m.task.newPlaceholder}>
+		<input
+			bind:this={input}
+			class="title"
+			size="1"
+			use:syncValue={task.title}
+			placeholder={m.task.newPlaceholder}
+			aria-label={m.task.title}
+			enterkeyhint="next"
+			autocomplete="off"
+			oninput={(e) => {
+				mirror = e.currentTarget.value;
+				repo.updateTask(task.id, { title: e.currentTarget.value });
+			}}
+			onkeydown={onkey}
+			{onfocus}
+			{onblur}
+		/>
+	</span>
+	<span class="spacer"></span>
 
 	<span class="meta">
 		{#if aged}
@@ -279,8 +322,34 @@
 		background: var(--text-faint);
 		border-color: var(--text-faint);
 	}
-	.title {
+	.row.selected {
+		background: color-mix(in srgb, var(--accent) 12%, transparent);
+	}
+	/* Feld und unsichtbare Textkopie liegen übereinander → Feld ist so breit wie der Text */
+	.title-wrap {
+		display: inline-grid;
+		flex: 0 1 auto;
+		min-width: 0;
+	}
+	.title-wrap::after {
+		content: attr(data-value) ' ';
+		grid-area: 1 / 1;
+		visibility: hidden;
+		white-space: pre;
+		height: 0;
+		padding: 0 8px;
+		overflow: hidden;
+	}
+	.spacer {
 		flex: 1;
+		align-self: stretch;
+		min-width: 12px;
+		cursor: pointer;
+	}
+	.title {
+		grid-area: 1 / 1;
+		/* size="1" + 100 %: die Breite kommt allein von der Textkopie */
+		width: 100%;
 		min-width: 0;
 		border: 0;
 		background: transparent;

@@ -41,7 +41,17 @@
 		};
 	});
 
+	// Ab dieser Breite stehen die Details als Spalte neben der Liste.
+	$effect(() => {
+		const mq = matchMedia('(min-width: 1100px)');
+		const update = () => (ui.docked = mq.matches);
+		update();
+		mq.addEventListener('change', update);
+		return () => mq.removeEventListener('change', update);
+	});
+
 	afterNavigate(() => {
+		ui.detailId = null;
 		ui.sidebarOpen = false;
 		ui.postponeId = null;
 	});
@@ -51,7 +61,7 @@
 	<title>{m.appName}</title>
 </svelte:head>
 
-<div class="app">
+<div class="app" class:with-detail={ui.docked && !!ui.detailId}>
 	<Sidebar
 		pools={pools.current}
 		projects={projects.current}
@@ -87,6 +97,9 @@
 	.main-col {
 		flex: 1;
 		min-width: 0;
+	}
+	.with-detail .main-col {
+		padding-right: var(--detail-w);
 	}
 	main {
 		max-width: 820px;

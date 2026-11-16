@@ -99,6 +99,19 @@
 			onchange={(e) => appearance.set({ tintGroups: e.currentTarget.checked })}
 		/>
 	</label>
+	<label class="line">
+		<span>
+			{m.settings.openDetailOnClick}
+			<small>{m.settings.openDetailOnClickHint}</small>
+		</span>
+		<input
+			type="checkbox"
+			class="switch"
+			role="switch"
+			checked={a.openDetailOnClick}
+			onchange={(e) => appearance.set({ openDetailOnClick: e.currentTarget.checked })}
+		/>
+	</label>
 	<div class="line end">
 		<button class="btn ghost" onclick={() => appearance.reset()}>
 			{m.settings.resetAppearance}

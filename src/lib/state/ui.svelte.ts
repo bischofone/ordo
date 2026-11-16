@@ -25,6 +25,11 @@ class UiState {
 	/** Aktuell bearbeitete Zeile (für die Mobil-Leiste). */
 	editingId = $state<string | null>(null);
 	detailId = $state<string | null>(null);
+	/**
+	 * Breiter Bildschirm: Details stehen als Spalte neben der Liste (statt als Fenster darüber).
+	 * Wird im Layout per Media Query gepflegt.
+	 */
+	docked = $state(false);
 	postponeId = $state<string | null>(null);
 	sidebarOpen = $state(false);
 	dialog = $state<DialogRequest | null>(null);

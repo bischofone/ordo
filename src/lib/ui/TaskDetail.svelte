@@ -2,7 +2,7 @@
 	import DOMPurify from 'dompurify';
 	import { marked } from 'marked';
 	import { childrenOf } from '#lib/domain/tree.ts';
-	import type { DateValue, Energy, Pool, Priority, Project } from '#lib/domain/types.ts';
+	import type { DateValue, Energy, Pool, Priority, Project, Task } from '#lib/domain/types.ts';
 	import { m } from '#lib/i18n/index.ts';
 	import { deleteTask } from '#lib/state/actions.ts';
 	import { db, repo } from '#lib/state/app.ts';
@@ -13,11 +13,22 @@
 
 	let { pools, projects }: { pools: Pool[]; projects: Project[] } = $props();
 
-	const task = live(() => {
-		const id = ui.detailId;
-		return () => (id ? db.tasks.get(id) : undefined);
-	}, undefined);
-	const t = $derived(task.current && !task.current.deletedAt ? task.current : undefined);
+	// Ergebnis merkt sich, zu welcher ID es gehört (beim Wechsel ist kurz noch die alte Aufgabe da).
+	const task = live(
+		() => {
+			const id = ui.detailId;
+			return async () => ({ id, task: id ? await db.tasks.get(id) : undefined });
+		},
+		{ id: null as string | null, task: undefined as Task | undefined }
+	);
+	const t = $derived(
+		task.current.task && !task.current.task.deletedAt ? task.current.task : undefined
+	);
+
+	// Aufgabe gibt es nicht (mehr) → Details schließen
+	$effect(() => {
+		if (ui.detailId && task.current.id === ui.detailId && !t) ui.detailId = null;
+	});
 
 	let preview = $state(true);
 	const html = $derived(
@@ -44,8 +55,10 @@
 <svelte:window onkeydown={(e) => e.key === 'Escape' && ui.detailId && close()} />
 
 {#if ui.detailId && t}
-	<button class="backdrop" aria-label={m.task.close} onclick={close}></button>
-	<aside class="panel" aria-label={m.task.details}>
+	{#if !ui.docked}
+		<button class="backdrop" aria-label={m.task.close} onclick={close}></button>
+	{/if}
+	<aside class="panel" class:docked={ui.docked} aria-label={m.task.details} data-testid="detail">
 		<header>
 			<input
 				class="title"
@@ -202,6 +215,12 @@
 		flex-direction: column;
 		gap: 16px;
 	}
+	.panel.docked {
+		width: var(--detail-w);
+		box-shadow: none;
+		border-left: 1px solid var(--border);
+		z-index: 25;
+	}
 	@media (max-width: 640px) {
 		.panel {
 			top: auto;
@@ -227,7 +246,7 @@
 	}
 	.grid {
 		display: grid;
-		grid-template-columns: max-content 1fr;
+		grid-template-columns: max-content minmax(0, 1fr);
 		gap: 10px 12px;
 		align-items: center;
 	}

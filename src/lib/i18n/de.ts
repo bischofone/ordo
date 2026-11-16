@@ -168,6 +168,9 @@ export const de = {
 		fontSizes: { small: 'Klein', normal: 'Normal', large: 'Groß' },
 		tintGroups: 'Farbige Gruppen',
 		tintGroupsHint: 'Kopfzeilen von Pools und Projekten leicht in ihrer Farbe tönen',
+		openDetailOnClick: 'Details beim Anklicken öffnen',
+		openDetailOnClickHint:
+			'Am PC: Klick auf eine Aufgabe zeigt die Details rechts daneben. Am Handy: neben den Titel tippen.',
 		resetAppearance: 'Darstellung zurücksetzen',
 		appearanceHint: 'Gilt nur für dieses Gerät.',
 		poolsHint: 'Farbe, Icon, Name und Reihenfolge. Projekte stehen eingerückt unter ihrem Pool.',

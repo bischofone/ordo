@@ -71,3 +71,25 @@ test('Handy: Aufgabe mit dem Finger am Griff verschieben', async ({ page }) => {
 
 	await expect.poll(() => outline(page)).toEqual(['0:Zweite', '0:Erste']);
 });
+
+test('Handy: Tipp auf den Titel bearbeitet, Tipp daneben öffnet die Details', async ({ page }) => {
+	await page.goto('/inbox');
+	const input = page.getByTestId('quick-add');
+	await input.fill('Kurz');
+	await input.press('Enter');
+	const row = page.getByTestId('task-row').first();
+	const detail = page.getByTestId('detail');
+
+	// Titel antippen → nur bearbeiten (Tastatur), keine Details darüber
+	await row.getByRole('textbox').tap();
+	await expect(row.getByRole('textbox')).toBeFocused();
+	await expect(detail).toHaveCount(0);
+
+	// Freie Fläche rechts vom Titel antippen → Details als Blatt von unten
+	const title = (await row.getByRole('textbox').boundingBox())!;
+	const box = (await row.boundingBox())!;
+	expect(title.width).toBeLessThan(box.width / 2); // Feld ist nur so breit wie der Text
+	await page.touchscreen.tap(title.x + title.width + 30, box.y + box.height / 2);
+	await expect(detail).toBeVisible();
+	await expect(detail.getByRole('textbox', { name: 'Titel' })).toHaveValue('Kurz');
+});

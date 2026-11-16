@@ -66,7 +66,7 @@ test('Darstellung anpassen: Akzentfarbe, Dichte, Schriftgröße, farbige Gruppen
 	expect(await css('--accent')).toBe('#ffc53d');
 	expect(await css('--accent-contrast')).toBe('#111111');
 
-	await card.getByRole('switch').uncheck();
+	await card.getByRole('switch', { name: /Farbige Gruppen/ }).uncheck();
 	await expect(page.locator('html')).toHaveAttribute('data-tint', 'off');
 
 	// Bleibt nach dem Neuladen (und wirkt schon vor dem ersten Rendern)

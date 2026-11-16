@@ -15,6 +15,8 @@ export interface Appearance {
 	fontSize: FontSize;
 	/** Gruppen (Pools/Projekte) in ihrer Farbe tönen */
 	tintGroups: boolean;
+	/** Klick auf eine Aufgabe öffnet ihre Details */
+	openDetailOnClick: boolean;
 }
 
 export const DEFAULT_APPEARANCE: Appearance = {
@@ -22,7 +24,8 @@ export const DEFAULT_APPEARANCE: Appearance = {
 	accent: null,
 	density: 'normal',
 	fontSize: 'normal',
-	tintGroups: true
+	tintGroups: true,
+	openDetailOnClick: true
 };
 
 const KEY = 'appearance';

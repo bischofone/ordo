@@ -290,6 +290,15 @@ jederzeit geändert werden – dann wird es hier angepasst.
   - Alt+↑/↓ verschiebt, Strg+Enter hakt ab.
   - Leere Zeilen verschwinden beim Verlassen.
   - Tastendrücke zwischen Enter und dem Erscheinen der neuen Zeile werden gepuffert.
+- **Details öffnen per Klick auf die Aufgabe** (abschaltbar unter Darstellung):
+  - Breites Fenster (ab 1100 px): Klick irgendwo in die Zeile – auch in den Titel – zeigt
+    die Details als Spalte rechts neben der Liste, ohne Abdunkeln. Der Cursor bleibt im
+    Titel, direktes Tippen geht weiter. Die Spalte folgt der Zeile, in der man gerade ist
+    (auch mit Pfeiltasten/Enter), bis man sie mit ✕ oder Escape schließt.
+  - Handy/schmales Fenster: Tipp auf den Titel bearbeitet ihn (wie bisher); Tipp auf die
+    freie Fläche der Zeile daneben öffnet die Details als Blatt von unten. Dafür ist das
+    Titelfeld nur so breit wie sein Text. Bei sehr langen Titeln bleiben die drei Punkte.
+  - Knöpfe der Zeile (Abhaken, Unteraufgabe, Zurückschieben, Griff) öffnen nichts.
 - **Abhaken mit offenen Unteraufgaben:** Nachfrage „Alle erledigen / Nur diese“.
 - **Erledigte** Aufgaben: eingeklappter Bereich „Erledigt“ pro Pool.
 - **Status „In Arbeit“** ist (noch) nicht direkt setzbar – vorgesehen für den Timer (Phase 5).
