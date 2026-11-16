@@ -91,6 +91,7 @@ export const de = {
 	inbox: {
 		title: 'Inbox',
 		triage: 'Aufräumen',
+		edit: 'Inbox bearbeiten',
 		empty: 'Die Inbox ist leer.',
 		aged: (n: number) => `${n} Eintr${n === 1 ? 'ag liegt' : 'äge liegen'} schon länger hier.`,
 		agedBadge: 'alt',
@@ -151,9 +152,9 @@ export const de = {
 			'Alle Daten liegen lokal auf diesem Gerät – und, falls verbunden, auf deinem CalDAV-Server.'
 	},
 	sync: {
-		title: 'Synchronisation (CalDAV)',
+		title: 'CalDAV-Konten',
 		intro:
-			'Jeder Pool kann mit einer Aufgabenliste auf einem CalDAV-Server (z. B. Radicale, Nextcloud) abgeglichen werden. Zugangsdaten bleiben nur auf diesem Gerät.',
+			'Du kannst mehrere CalDAV-Konten verbinden (z. B. privat und Arbeit, Radicale oder Nextcloud). Zugangsdaten bleiben nur auf diesem Gerät.',
 		accounts: 'Konten',
 		addAccount: 'Konto hinzufügen',
 		accountName: 'Name (optional)',
@@ -167,11 +168,17 @@ export const de = {
 		removeTitle: 'Konto entfernen?',
 		removeText: (name: string) =>
 			`Die Verbindung zu „${name}“ wird gelöst. Aufgaben bleiben auf diesem Gerät und auf dem Server erhalten.`,
-		poolsTitle: 'Pools und Listen',
+		poolLabel: 'Synchronisation',
+		noAccount: 'Noch kein Konto verbunden.',
+		usedBy: (pool: string) => `(Pool „${pool}“)`,
+		linkedTo: (pool: string) => `Pool „${pool}“`,
+		accountLists: 'Listen in diesem Konto',
+		noLists: 'Noch keine Aufgabenlisten.',
+		syncedWith: (account: string) => `Wird mit „${account}“ synchronisiert`,
+		poolHint:
+			'Welcher Pool wohin synchronisiert, stellst du im jeweiligen Pool ein (Stift neben dem Namen).',
 		notSynced: 'Nicht synchronisieren',
 		newList: (account: string) => `Neue Liste in „${account}“`,
-		lists: 'Vorhandene Listen',
-		unboundLists: 'Listen auf dem Server ohne Pool',
 		adopt: 'Als Pool übernehmen',
 		syncNow: 'Jetzt synchronisieren',
 		syncing: 'Synchronisiere …',

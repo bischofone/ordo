@@ -41,13 +41,19 @@ test('zwei Geräte synchronisieren über CalDAV, Konflikt wird gelöst', async (
 	await name.press('Enter');
 	await expect(a.getByRole('heading', { level: 1, name: listName })).toBeVisible();
 
-	await a.goto('/einstellungen');
+	// Sync-Ziel direkt im Pool wählen
 	await a
-		.getByRole('combobox', { name: `Sync ${listName}` })
+		.getByRole('combobox', { name: 'Synchronisation' })
 		.selectOption({ label: 'Neue Liste in „127.0.0.1:5390“' });
+	await expect(a.getByTestId('pool-sync')).toContainText('vor');
+	await expect(a.getByTestId('sync-chip')).toHaveText('127.0.0.1:5390');
+	await a.getByRole('button', { name: 'Pool bearbeiten' }).click();
+
+	// In den Einstellungen steht die Liste beim Konto, verknüpft mit dem Pool
+	await a.goto('/einstellungen');
 	await expect(
-		a.getByTestId('pool-binding').filter({ has: a.locator('.pool-name', { hasText: listName }) })
-	).toContainText('vor');
+		a.getByTestId('account').locator('.list-row').filter({ hasText: listName })
+	).toContainText(`Pool „${listName}“`);
 
 	await openPool(a, listName);
 	await quickAdd(a, 'Einkaufen !1');
@@ -107,8 +113,10 @@ test('nach dem Verbinden kehrt Ruhe ein (keine Sync-Schleife)', async ({ page })
 	let requests = 0;
 	page.on('request', (r) => r.url().startsWith(SERVER) && requests++);
 	await addAccount(page);
+	await openPool(page, 'Arbeit');
+	await page.getByRole('button', { name: 'Pool bearbeiten' }).click();
 	await page
-		.getByRole('combobox', { name: 'Sync Arbeit' })
+		.getByRole('combobox', { name: 'Synchronisation' })
 		.selectOption({ label: 'Neue Liste in „127.0.0.1:5390“' });
 	await expect(page.getByTestId('sync-status')).toHaveText(/Synchron/);
 	const after = requests;
@@ -125,4 +133,47 @@ test('falsches Passwort wird verständlich gemeldet', async ({ page }) => {
 	await form.getByLabel('Passwort').fill('falsch');
 	await form.getByRole('button', { name: 'Verbinden' }).click();
 	await expect(form.getByRole('alert')).toContainText('Anmeldung fehlgeschlagen');
+});
+
+test('mehrere Konten; Inbox und Pool hängen an verschiedenen Zielen', async ({ page }) => {
+	// Zweites „Konto“: derselbe Testserver unter anderer Adresse und eigenem Namen
+	await addAccount(page);
+	const settings = page.getByTestId('sync-settings');
+	await settings.getByRole('button', { name: 'Konto hinzufügen' }).click();
+	await settings.getByLabel('Server-Adresse').fill('http://localhost:5390/');
+	await settings.getByLabel('Benutzer').fill('test');
+	await settings.getByLabel('Passwort').fill('test');
+	await settings.getByLabel('Name (optional)').fill('Arbeit-Server');
+	await settings.getByRole('button', { name: 'Verbinden' }).click();
+	await expect(settings.getByTestId('account')).toHaveCount(2);
+
+	// Ohne Konto-Auswahl im Pool wäre das nicht möglich: Inbox → Konto 1, Arbeit → Konto 2
+	await page.goto('/inbox');
+	await page.getByRole('button', { name: 'Inbox bearbeiten' }).click();
+	const select = page.getByRole('combobox', { name: 'Synchronisation' });
+	await expect(select.locator('optgroup')).toHaveCount(2);
+	await select.selectOption({ label: 'Neue Liste in „127.0.0.1:5390“' });
+	await expect(page.getByTestId('sync-chip')).toHaveText('127.0.0.1:5390');
+
+	await openPool(page, 'Arbeit');
+	await page.getByRole('button', { name: 'Pool bearbeiten' }).click();
+	await page
+		.getByRole('combobox', { name: 'Synchronisation' })
+		.selectOption({ label: 'Neue Liste in „Arbeit-Server“' });
+	await expect(page.getByTestId('sync-chip')).toHaveText('Arbeit-Server');
+
+	// Verbindung wieder lösen
+	await page
+		.getByRole('combobox', { name: 'Synchronisation' })
+		.selectOption({ label: 'Nicht synchronisieren' });
+	await expect(page.getByTestId('sync-chip')).toHaveCount(0);
+});
+
+test('ohne Konto verweist der Pool auf die Einstellungen', async ({ page }) => {
+	await page.goto('/');
+	await openPool(page, 'Privat');
+	await page.getByRole('button', { name: 'Pool bearbeiten' }).click();
+	await expect(page.getByTestId('pool-sync')).toContainText('Noch kein Konto verbunden');
+	await page.getByTestId('pool-sync').getByRole('link', { name: 'Konto hinzufügen' }).click();
+	await expect(page.getByRole('heading', { level: 1, name: 'Einstellungen' })).toBeVisible();
 });

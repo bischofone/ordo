@@ -8,6 +8,8 @@
 	import { q } from '#lib/state/queries.ts';
 	import { ui } from '#lib/state/ui.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
+	import PoolSync from '#lib/ui/PoolSync.svelte';
+	import SyncChip from '#lib/ui/SyncChip.svelte';
 	import TaskGroup from '#lib/ui/TaskGroup.svelte';
 	import QuickAdd from '#lib/ui/QuickAdd.svelte';
 
@@ -22,16 +24,27 @@
 	const inbox = $derived(pools.current.find((p) => p.id === INBOX_ID));
 	const open = $derived(tasks.current.filter((t) => t.parentId === null && isOpen(t)));
 	const aged = $derived(open.filter((t) => isAged(t, ui.now, agingDays.current)).length);
+	let editing = $state(false);
 </script>
 
 <header>
 	<h1>{m.inbox.title}</h1>
+	<button
+		class="icon-btn"
+		aria-label={m.inbox.edit}
+		aria-expanded={editing}
+		onclick={() => (editing = !editing)}><Icon name="edit" size={16} /></button
+	>
+	{#if inbox}<SyncChip pool={inbox} onclick={() => (editing = !editing)} />{/if}
+	<span class="spacer"></span>
 	{#if open.length}
 		<a class="btn" href={resolve('/inbox/aufraeumen')}
 			><Icon name="broom" size={16} />{m.inbox.triage}</a
 		>
 	{/if}
 </header>
+
+{#if editing && inbox}<PoolSync pool={inbox} />{/if}
 
 {#if aged}
 	<p class="hint">{m.inbox.aged(aged)}</p>
@@ -55,10 +68,13 @@
 {/if}
 
 <style>
+	.spacer {
+		flex: 1;
+	}
 	header {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
+		gap: 8px;
 		margin-bottom: 12px;
 	}
 	h1 {

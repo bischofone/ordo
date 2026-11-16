@@ -322,6 +322,13 @@ jederzeit geändert werden – dann wird es hier angepasst.
 - **Automatisch:** beim Start, alle 5 Minuten (wenn sichtbar), wenn das Netz zurückkommt
   und 3 Sekunden nach lokalen Änderungen. Nie zwei Läufe gleichzeitig (auch nicht aus
   mehreren Tabs: Web Locks).
+- **Bedienung:** Das Sync-Ziel wird **im jeweiligen Pool** gewählt (Stift neben dem
+  Namen → „Synchronisation“; auch in der Inbox): nicht synchronisieren, neue Liste oder
+  vorhandene Liste eines Kontos. Neben dem Pool-Namen zeigt ein kleines Schild das Konto
+  (rot bei Fehler). Die Einstellungen enthalten nur die Konten – je Konto die Listen auf
+  dem Server mit dem verknüpften Pool bzw. „Als Pool übernehmen“.
+- **Mehrere Konten** (verschiedene Server oder Benutzer) sind möglich; jeder Pool wählt
+  sein Konto selbst. Eine Liste gehört zu genau einem Pool.
 - **Konten** und Passwörter liegen lokal; im Browser unverschlüsselt in IndexedDB
   (Android: Secure Storage in Phase 3).
 - **Server:** `docker/` mit Radicale + Caddy; App und CalDAV unter einer Adresse

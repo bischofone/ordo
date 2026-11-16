@@ -7,7 +7,9 @@
 	import Badge from '#lib/ui/Badge.svelte';
 	import Editor from '#lib/ui/Editor.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
+	import PoolSync from '#lib/ui/PoolSync.svelte';
 	import PoolView from '#lib/ui/PoolView.svelte';
+	import SyncChip from '#lib/ui/SyncChip.svelte';
 	import QuickAdd from '#lib/ui/QuickAdd.svelte';
 
 	const pools = live(() => q.pools, []);
@@ -32,6 +34,7 @@
 			aria-expanded={editing}
 			onclick={() => (editing = !editing)}><Icon name="edit" size={16} /></button
 		>
+		<SyncChip {pool} onclick={() => (editing = !editing)} />
 	</header>
 	{#if editing}
 		<Editor
@@ -41,6 +44,7 @@
 				? () => repo.updatePool(pool.id, { archived: !pool.archived })
 				: undefined}
 		/>
+		<PoolSync {pool} />
 	{/if}
 
 	<QuickAdd pools={usable} projects={projects.current} defaultPoolId={pool.id} />
