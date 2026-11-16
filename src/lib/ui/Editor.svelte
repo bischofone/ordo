@@ -39,22 +39,40 @@
 	/>
 	<div class="actions">
 		{#if onmove && !item.archived}
-			<button class="icon-btn" aria-label={m.pool.moveUp} onclick={() => onmove(-1)}
-				><Icon name="up" size={16} /></button
+			<button
+				class="icon-btn"
+				aria-label={m.pool.moveUp}
+				title={m.pool.moveUp}
+				onclick={() => onmove(-1)}><Icon name="up" size={16} /></button
 			>
-			<button class="icon-btn" aria-label={m.pool.moveDown} onclick={() => onmove(1)}
-				><Icon name="down" size={16} /></button
+			<button
+				class="icon-btn"
+				aria-label={m.pool.moveDown}
+				title={m.pool.moveDown}
+				onclick={() => onmove(1)}><Icon name="down" size={16} /></button
 			>
 		{/if}
 		{#if onarchive}
-			<button class="btn" onclick={onarchive}>
-				<Icon name="archive" size={16} />{item.archived ? m.pool.unarchive : m.pool.archive}
+			{@const label = item.archived ? m.pool.unarchive : m.pool.archive}
+			<button
+				class="icon-btn"
+				class:on={item.archived}
+				aria-label={label}
+				title={label}
+				onclick={onarchive}
+			>
+				<Icon name="archive" size={16} />
 			</button>
 		{/if}
 		{#if ondelete}
-			<button class="btn danger" onclick={ondelete}
-				><Icon name="trash" size={16} />{m.task.delete}</button
+			<button
+				class="icon-btn danger"
+				aria-label={m.task.delete}
+				title={m.task.delete}
+				onclick={ondelete}
 			>
+				<Icon name="trash" size={16} />
+			</button>
 		{/if}
 	</div>
 </div>
@@ -79,5 +97,11 @@
 		display: flex;
 		gap: 4px;
 		align-items: center;
+	}
+	.icon-btn.on {
+		color: var(--accent);
+	}
+	.icon-btn.danger:hover {
+		color: var(--danger);
 	}
 </style>
