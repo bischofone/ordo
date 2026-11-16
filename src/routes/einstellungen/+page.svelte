@@ -136,19 +136,21 @@
 		<h2 class="card-title">{m.timeSettings.title}</h2>
 		<span class="hint">{m.timeSettings.hint}</span>
 	</header>
-	<label class="line">
-		<span>
-			{m.timeSettings.enable}
-			<small>{m.timeSettings.enableHint}</small>
-		</span>
-		<input
-			type="checkbox"
-			class="switch"
-			role="switch"
-			checked={timeSettings.enabled}
-			onchange={(e) => timeSettings.set({ enabled: e.currentTarget.checked })}
-		/>
-	</label>
+	{#if timeSettings.loaded}
+		<label class="line">
+			<span>
+				{m.timeSettings.enable}
+				<small>{m.timeSettings.enableHint}</small>
+			</span>
+			<input
+				type="checkbox"
+				class="switch"
+				role="switch"
+				checked={timeSettings.enabled}
+				onchange={(e) => timeSettings.set({ enabled: e.currentTarget.checked })}
+			/>
+		</label>
+	{/if}
 	{#if timeSettings.enabled}
 		<div class="line">
 			<span>
