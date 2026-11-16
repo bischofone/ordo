@@ -102,6 +102,8 @@ export interface Task {
 	someday: boolean;
 	postponeCount: number;
 	waitingFor?: WaitingFor;
+	/** Erfasste Zeiten (fehlt bei älteren Aufgaben = keine) */
+	timeEntries?: TimeEntry[];
 	blockedBy: string[];
 	/** Nur lokal (UI-Zustand), wird nicht gesynct. */
 	collapsed: boolean;
@@ -111,12 +113,20 @@ export interface Task {
 	deletedAt?: number;
 }
 
+/** Erfasste Zeit an einer Aufgabe: Dauer an einem Tag. */
 export interface TimeEntry {
 	id: string;
+	/** Tag, an dem die Zeit angefallen ist ('YYYY-MM-DD') */
+	date: string;
+	minutes: number;
+	note?: string;
+}
+
+/** Laufender Timer (pro Gerät, wird nicht synchronisiert) */
+export interface RunningTimer {
 	taskId: string;
+	/** Startzeit in Millisekunden – die Dauer wird daraus berechnet, nicht hochgezählt */
 	start: number;
-	/** null = Timer läuft */
-	end: number | null;
 }
 
 export interface TemplateNode {
