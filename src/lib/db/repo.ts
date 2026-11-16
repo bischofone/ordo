@@ -3,6 +3,7 @@
  * (Phase 2 hängt hier die Sync-Warteschlange an.)
  */
 import { generateNKeysBetween } from 'fractional-indexing';
+import { uuid } from '#lib/domain/id.ts';
 import { needsPostponeReview, postponePatch } from '#lib/domain/postpone.ts';
 import {
 	bySortOrder,
@@ -56,7 +57,7 @@ export type TaskPatch = Partial<Omit<Task, 'id' | 'createdAt'>>;
 
 export function createRepo(db: TasksDB, clock: () => Date = () => new Date()) {
 	const now = () => clock().getTime();
-	const uid = () => crypto.randomUUID();
+	const uid = uuid;
 
 	const poolTasks = (poolId: string) =>
 		db.tasks

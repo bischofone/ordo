@@ -3,6 +3,7 @@
  * Die HTTP-Schicht ist austauschbar (`Transport`): fetch im Browser, später native
  * Requests in der Android-App (ohne CORS) oder in Tauri.
  */
+import { uuid } from '#lib/domain/id.ts';
 import { XMLParser } from 'fast-xml-parser';
 
 // ---------- Transport ----------
@@ -234,7 +235,7 @@ export function createClient(account: Account, transport: Transport = fetchTrans
 
 		/** Legt eine neue Aufgabenliste (nur VTODO) im Home-Verzeichnis an. */
 		async createList(homeUrl: string, name: string, color?: string): Promise<string> {
-			const slug = `${crypto.randomUUID()}/`;
+			const slug = `${uuid()}/`;
 			const url = new URL(slug, homeUrl.endsWith('/') ? homeUrl : `${homeUrl}/`).toString();
 			await request('MKCALENDAR', url, {
 				ok: [201],

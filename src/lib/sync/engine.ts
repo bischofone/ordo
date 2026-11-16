@@ -11,6 +11,7 @@
  * von ihrem letzten synchronisierten Stand unterscheidet. Offline passiert einfach nichts,
  * beim nächsten Lauf geht alles raus.
  */
+import { uuid } from '#lib/domain/id.ts';
 import { bySortOrder, childrenOf, keyAtEnd } from '#lib/domain/tree.ts';
 import {
 	DEFAULT_POOL_SETTINGS,
@@ -418,7 +419,7 @@ export function createSyncEngine(
 		}) {
 			const serverUrl = data.serverUrl.endsWith('/') ? data.serverUrl : `${data.serverUrl}/`;
 			const account: Account = {
-				id: crypto.randomUUID(),
+				id: uuid(),
 				name: data.name?.trim() || new URL(serverUrl).host,
 				serverUrl,
 				username: data.username,
@@ -482,7 +483,7 @@ export function createSyncEngine(
 		async adoptList(accountId: string, list: { url: string; displayName: string; color?: string }) {
 			const pools = (await db.pools.toArray()).sort(bySortOrder);
 			const t = now();
-			const id = crypto.randomUUID();
+			const id = uuid();
 			await db.pools.add({
 				id,
 				kind: 'pool',
