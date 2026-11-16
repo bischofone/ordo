@@ -9,10 +9,25 @@
 		<link rel="icon" href="%sveltekit.assets%/icon.svg" type="image/svg+xml" />
 		<link rel="apple-touch-icon" href="%sveltekit.assets%/apple-touch-icon.png" />
 		<script>
-			// Farbschema vor dem ersten Rendern setzen (kein Aufblitzen)
+			// Darstellung vor dem ersten Rendern setzen (kein Aufblitzen).
+			// Kurzform von applyAppearance in src/lib/state/appearance.svelte.ts
 			try {
-				const t = localStorage.getItem('theme');
-				if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+				const a = JSON.parse(localStorage.getItem('appearance') || '{}');
+				const legacy = localStorage.getItem('theme');
+				const theme = a.theme || legacy;
+				const root = document.documentElement;
+				if (theme === 'light' || theme === 'dark') root.dataset.theme = theme;
+				root.dataset.density = a.density || 'normal';
+				root.dataset.font = a.fontSize || 'normal';
+				root.dataset.tint = a.tintGroups === false ? 'off' : 'on';
+				if (/^#[0-9a-f]{6}$/i.test(a.accent || '')) {
+					const n = parseInt(a.accent.slice(1), 16);
+					const lum = [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+						.map((c) => ((c /= 255) <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4))
+						.reduce((s, c, i) => s + c * [0.2126, 0.7152, 0.0722][i], 0);
+					root.style.setProperty('--accent', a.accent);
+					root.style.setProperty('--accent-contrast', lum > 0.4 ? '#111111' : '#ffffff');
+				}
 			} catch {}
 		</script>
 		%sveltekit.head%

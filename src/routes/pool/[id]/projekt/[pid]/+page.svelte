@@ -60,7 +60,7 @@
 		defaultPoolId={pool.id}
 		defaultProjectId={project.id}
 	/>
-	<section data-testid="pool-section">
+	<section class="card group" data-testid="pool-section">
 		<TaskGroup poolId={pool.id} projectId={project.id} tasks={tasks.current} />
 	</section>
 {:else if projects.loaded && pools.loaded}
@@ -68,6 +68,9 @@
 {/if}
 
 <style>
+	.group {
+		padding: var(--card-pad) 6px;
+	}
 	header {
 		margin-bottom: 12px;
 	}
@@ -75,7 +78,7 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;
-		font-size: 14px;
+		font-size: 0.875rem;
 		color: var(--text-muted);
 	}
 	.title-row {
@@ -84,14 +87,14 @@
 		gap: 8px;
 	}
 	h1 {
-		font-size: 24px;
+		font-size: 1.5rem;
 		margin: 2px 0 0;
 		display: flex;
 		align-items: center;
 		gap: 10px;
 	}
 	.tag {
-		font-size: 12px;
+		font-size: 0.75rem;
 		padding: 2px 8px;
 		border-radius: 6px;
 		background: var(--bg-sunken);

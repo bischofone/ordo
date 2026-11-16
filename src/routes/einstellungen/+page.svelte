@@ -5,9 +5,11 @@
 	import { repo } from '#lib/state/app.ts';
 	import { live } from '#lib/state/live.svelte.ts';
 	import { q } from '#lib/state/queries.ts';
-	import { getTheme, setTheme, type Theme } from '#lib/state/theme.ts';
+	import { appearance } from '#lib/state/appearance.svelte.ts';
 	import type { Pool } from '#lib/domain/types.ts';
+	import ColorPicker from '#lib/ui/ColorPicker.svelte';
 	import Editor from '#lib/ui/Editor.svelte';
+	import Segmented from '#lib/ui/Segmented.svelte';
 	import SyncSettings from '#lib/ui/SyncSettings.svelte';
 
 	const pools = live(() => q.pools, []);
@@ -17,7 +19,19 @@
 		DEFAULT_INBOX_AGING_DAYS
 	);
 
-	let theme = $state<Theme>(getTheme());
+	const a = $derived(appearance.current);
+	/** Standard-Akzent des aktuellen Farbschemas (für die Anzeige im Farbknopf) */
+	let defaultAccent = $state('#0b6bcb');
+	$effect(() => {
+		void a.theme;
+		if (!a.accent) {
+			defaultAccent = getComputedStyle(document.documentElement)
+				.getPropertyValue('--accent')
+				.trim();
+		}
+	});
+	const opts = <T extends string>(labels: Record<T, string>) =>
+		(Object.entries(labels) as [T, string][]).map(([value, label]) => ({ value, label }));
 	let newName = $state('');
 
 	const active = $derived(pools.current.filter((p) => !p.archived));
@@ -26,24 +40,78 @@
 
 <h1>{m.settings.title}</h1>
 
-<section>
-	<h2>{m.settings.appearance}</h2>
-	<label class="line">
+<section class="card" data-testid="appearance">
+	<header>
+		<h2 class="card-title">{m.settings.appearance}</h2>
+		<span class="hint">{m.settings.appearanceHint}</span>
+	</header>
+	<div class="line">
 		<span>{m.settings.theme}</span>
-		<select class="field" bind:value={theme} onchange={() => setTheme(theme)}>
-			{#each Object.entries(m.settings.themes) as [value, label] (value)}
-				<option {value}>{label}</option>
-			{/each}
-		</select>
+		<Segmented
+			label={m.settings.theme}
+			value={a.theme}
+			options={opts(m.settings.themes)}
+			onchange={(theme) => appearance.set({ theme })}
+		/>
+	</div>
+	<div class="line">
+		<span>{m.settings.accent}</span>
+		<div class="accent">
+			<ColorPicker
+				value={a.accent ?? defaultAccent}
+				onchange={(accent) => appearance.set({ accent })}
+			/>
+			{#if a.accent}
+				<button class="btn ghost" onclick={() => appearance.set({ accent: null })}>
+					{m.settings.accentDefault}
+				</button>
+			{/if}
+		</div>
+	</div>
+	<div class="line">
+		<span>{m.settings.density}</span>
+		<Segmented
+			label={m.settings.density}
+			value={a.density}
+			options={opts(m.settings.densities)}
+			onchange={(density) => appearance.set({ density })}
+		/>
+	</div>
+	<div class="line">
+		<span>{m.settings.fontSize}</span>
+		<Segmented
+			label={m.settings.fontSize}
+			value={a.fontSize}
+			options={opts(m.settings.fontSizes)}
+			onchange={(fontSize) => appearance.set({ fontSize })}
+		/>
+	</div>
+	<label class="line">
+		<span>
+			{m.settings.tintGroups}
+			<small>{m.settings.tintGroupsHint}</small>
+		</span>
+		<input
+			type="checkbox"
+			class="switch"
+			role="switch"
+			checked={a.tintGroups}
+			onchange={(e) => appearance.set({ tintGroups: e.currentTarget.checked })}
+		/>
 	</label>
+	<div class="line end">
+		<button class="btn ghost" onclick={() => appearance.reset()}>
+			{m.settings.resetAppearance}
+		</button>
+	</div>
 </section>
 
-<section>
-	<h2>{m.settings.inbox}</h2>
+<section class="card">
+	<header><h2 class="card-title">{m.settings.inbox}</h2></header>
 	<label class="line">
 		<span>{m.settings.agingDays}</span>
 		<input
-			class="field"
+			class="field number"
 			type="number"
 			min="1"
 			max="90"
@@ -54,24 +122,31 @@
 	</label>
 </section>
 
-<section>
-	<h2>{m.settings.pools}</h2>
+<section class="card">
+	<header>
+		<h2 class="card-title">{m.settings.pools}</h2>
+		<span class="hint">{m.settings.poolsHint}</span>
+	</header>
 	{#each active as p (p.id)}
-		{@render poolEditor(p, true)}
-		<div class="projects">
-			{#each projects.current.filter((pr) => pr.poolId === p.id) as pr (pr.id)}
-				<Editor
-					item={pr}
-					onupdate={(patch) => repo.updateProject(pr.id, patch)}
-					onmove={(dir) => repo.moveProject(pr.id, dir)}
-					onarchive={() => repo.updateProject(pr.id, { archived: !pr.archived })}
-					ondelete={() => deleteProject(pr)}
-				/>
-			{/each}
+		<div class="pool-block">
+			{@render poolEditor(p, true)}
+			{#if projects.current.some((pr) => pr.poolId === p.id)}
+				<div class="projects">
+					{#each projects.current.filter((pr) => pr.poolId === p.id) as pr (pr.id)}
+						<Editor
+							item={pr}
+							onupdate={(patch) => repo.updateProject(pr.id, patch)}
+							onmove={(dir) => repo.moveProject(pr.id, dir)}
+							onarchive={() => repo.updateProject(pr.id, { archived: !pr.archived })}
+							ondelete={() => deleteProject(pr)}
+						/>
+					{/each}
+				</div>
+			{/if}
 		</div>
 	{/each}
 	<form
-		class="line"
+		class="line new-pool"
 		onsubmit={async (e) => {
 			e.preventDefault();
 			if (newName.trim()) await repo.createPool(newName);
@@ -90,12 +165,14 @@
 	{#if archived.length}
 		<h3>{m.pool.archived}</h3>
 		{#each archived as p (p.id)}
-			{@render poolEditor(p, false)}
+			<div class="pool-block">{@render poolEditor(p, false)}</div>
 		{/each}
 	{/if}
 </section>
 
-<SyncSettings />
+<section class="card">
+	<SyncSettings />
+</section>
 
 <p class="about">{m.settings.about}</p>
 
@@ -113,38 +190,108 @@
 
 <style>
 	h1 {
-		font-size: 24px;
+		font-size: 1.5rem;
 		margin: 0 0 16px;
 	}
 	section {
-		margin-bottom: 28px;
+		margin-bottom: var(--gap);
+		padding: 14px 16px;
 	}
-	h2 {
-		font-size: 16px;
-		margin: 0 0 8px;
+	header {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 4px 12px;
+		margin-bottom: 8px;
+	}
+	.hint {
+		font-size: 0.8125rem;
+		color: var(--text-faint);
 	}
 	h3 {
-		font-size: 14px;
+		font-size: 0.875rem;
 		color: var(--text-muted);
-		margin: 16px 0 0;
+		margin: 16px 0 4px;
 	}
 	.line {
 		display: flex;
 		align-items: center;
 		gap: 12px;
 		flex-wrap: wrap;
-		padding: 6px 0;
+		min-height: 44px;
+		padding: 4px 0;
+		border-top: 1px solid var(--border);
 	}
-	.line span {
-		flex: 1 1 200px;
+	header + .line {
+		border-top: 0;
+	}
+	.line > span {
+		flex: 1 1 110px;
+	}
+	.line small {
+		display: block;
+		font-size: 0.8125rem;
+		color: var(--text-muted);
+	}
+	.line.end {
+		justify-content: flex-end;
+	}
+	.accent {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+	.number {
+		width: 90px;
+	}
+	.switch {
+		appearance: none;
+		width: 40px;
+		height: 24px;
+		border-radius: 12px;
+		background: var(--border-strong);
+		position: relative;
+		cursor: pointer;
+		flex: none;
+		transition: background 120ms;
+	}
+	.switch::after {
+		content: '';
+		position: absolute;
+		top: 3px;
+		left: 3px;
+		width: 18px;
+		height: 18px;
+		border-radius: 50%;
+		background: #fff;
+		transition: transform 120ms;
+	}
+	.switch:checked {
+		background: var(--accent);
+	}
+	.switch:checked::after {
+		transform: translateX(16px);
+	}
+	.pool-block {
+		border-top: 1px solid var(--border);
+		padding: 2px 0;
+	}
+	header + .pool-block {
+		border-top: 0;
 	}
 	.projects {
-		padding-left: 28px;
+		padding-left: 20px;
 		border-left: 2px solid var(--border);
-		margin: 0 0 8px 12px;
+		margin: 0 0 6px 13px;
+	}
+	.new-pool {
+		padding-top: 10px;
+	}
+	.new-pool .field {
+		flex: 1 1 200px;
 	}
 	.about {
 		color: var(--text-faint);
-		font-size: 13px;
+		font-size: 0.8125rem;
 	}
 </style>

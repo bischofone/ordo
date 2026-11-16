@@ -57,7 +57,7 @@
 />
 
 {#if inbox}
-	<section data-testid="pool-section">
+	<section class="card group" data-testid="pool-section">
 		<TaskGroup
 			poolId={inbox.id}
 			projectId={null}
@@ -68,6 +68,9 @@
 {/if}
 
 <style>
+	.group {
+		padding: var(--card-pad) 6px;
+	}
 	.spacer {
 		flex: 1;
 	}
@@ -78,7 +81,7 @@
 		margin-bottom: 12px;
 	}
 	h1 {
-		font-size: 24px;
+		font-size: 1.5rem;
 		margin: 0;
 	}
 	.hint {

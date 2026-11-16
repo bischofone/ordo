@@ -180,7 +180,7 @@
 		transform: rotate(180deg);
 	}
 	h1 {
-		font-size: 24px;
+		font-size: 1.5rem;
 		margin: 0;
 		flex: 1;
 	}
@@ -205,7 +205,7 @@
 	}
 	.title {
 		width: 100%;
-		font-size: 20px;
+		font-size: 1.25rem;
 		font-weight: 600;
 		border: 0;
 		background: transparent;
@@ -218,7 +218,7 @@
 	}
 	.meta {
 		margin: 12px 0 0;
-		font-size: 13px;
+		font-size: 0.8125rem;
 		color: var(--text-faint);
 		display: flex;
 		align-items: center;
@@ -230,7 +230,7 @@
 		font-weight: 600;
 	}
 	h2 {
-		font-size: 14px;
+		font-size: 0.875rem;
 		color: var(--text-muted);
 		margin: 0 0 8px;
 	}
@@ -256,16 +256,16 @@
 	}
 	.project {
 		min-height: 36px;
-		font-size: 14px;
+		font-size: 0.875rem;
 		color: var(--text-muted);
 	}
 	kbd {
-		font-size: 11px;
+		font-size: 0.6875rem;
 		color: var(--text-faint);
 		font-family: inherit;
 	}
 	.hint {
-		font-size: 12px;
+		font-size: 0.75rem;
 		color: var(--text-faint);
 	}
 	@media (pointer: coarse) {
@@ -277,6 +277,6 @@
 	.done {
 		text-align: center;
 		padding: 48px 0;
-		font-size: 18px;
+		font-size: 1.125rem;
 	}
 </style>

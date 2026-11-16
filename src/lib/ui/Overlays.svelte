@@ -62,7 +62,7 @@
 	}
 	h2 {
 		margin: 0 0 8px;
-		font-size: 18px;
+		font-size: 1.125rem;
 	}
 	p {
 		margin: 0 0 16px;

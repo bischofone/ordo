@@ -123,7 +123,7 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;
-		font-size: 14px;
+		font-size: 0.875rem;
 		color: var(--text-muted);
 	}
 	select {
@@ -133,14 +133,14 @@
 	}
 	.muted {
 		color: var(--text-muted);
-		font-size: 14px;
+		font-size: 0.875rem;
 	}
 	.muted a {
 		color: var(--accent);
 		text-decoration: underline;
 	}
 	.status {
-		font-size: 13px;
+		font-size: 0.8125rem;
 	}
 	.ok {
 		display: inline-flex;
@@ -150,7 +150,7 @@
 	}
 	.error {
 		color: var(--danger);
-		font-size: 13px;
+		font-size: 0.8125rem;
 		margin: 0;
 	}
 	.spin {

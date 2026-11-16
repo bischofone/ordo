@@ -69,7 +69,7 @@
 		align-items: center;
 		gap: 8px;
 		margin-top: 10px;
-		font-size: 13px;
+		font-size: 0.8125rem;
 		color: var(--text-muted);
 		cursor: pointer;
 	}

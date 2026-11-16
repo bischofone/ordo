@@ -218,7 +218,7 @@
 	}
 	.title {
 		flex: 1;
-		font-size: 19px;
+		font-size: 1.1875rem;
 		font-weight: 600;
 		border: 0;
 		background: transparent;
@@ -232,7 +232,7 @@
 		align-items: center;
 	}
 	.lbl {
-		font-size: 13px;
+		font-size: 0.8125rem;
 		color: var(--text-muted);
 	}
 	.row {
@@ -299,7 +299,7 @@
 		gap: 8px;
 	}
 	.meta {
-		font-size: 12px;
+		font-size: 0.75rem;
 		color: var(--text-faint);
 	}
 </style>

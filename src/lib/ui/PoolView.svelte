@@ -46,22 +46,37 @@
 	{#if showHeader}
 		<h2>
 			<a href={resolve('/pool/[id]', { id: pool.id })}>
-				<Badge color={pool.color} icon={pool.icon} />{pool.name}
+				<Badge color={pool.color} icon={pool.icon} size={18} />{pool.name}
 			</a>
 		</h2>
 	{/if}
 
-	<TaskGroup
-		poolId={pool.id}
-		projectId={null}
-		{tasks}
-		{agingDays}
-		emptyText={projects.length ? '' : undefined}
-	/>
+	<div class="group card" style:--group-color={pool.color} data-testid="group-card">
+		{#if projects.length}
+			<div class="group-head plain">
+				<span class="group-title muted">{m.project.none}</span>
+			</div>
+		{/if}
+		<div class="group-body">
+			<TaskGroup
+				poolId={pool.id}
+				projectId={null}
+				{tasks}
+				{agingDays}
+				emptyText={projects.length ? '' : undefined}
+			/>
+		</div>
+	</div>
 
 	{#each projects as p (p.id)}
-		<div class="project" data-testid="project-group" data-project={p.name}>
-			<div class="project-head">
+		<div
+			class="group card"
+			class:collapsed={collapsed[p.id]}
+			style:--group-color={p.color}
+			data-testid="project-group"
+			data-project={p.name}
+		>
+			<div class="group-head">
 				<button
 					class="twisty"
 					class:open={!collapsed[p.id]}
@@ -70,7 +85,10 @@
 				>
 					<Icon name="chevron" size={14} />
 				</button>
-				<a href={resolve('/pool/[id]/projekt/[pid]', { id: pool.id, pid: p.id })}>
+				<a
+					class="group-title"
+					href={resolve('/pool/[id]/projekt/[pid]', { id: pool.id, pid: p.id })}
+				>
 					<Badge color={p.color} icon={p.icon} />
 					<span>{p.name}</span>
 				</a>
@@ -97,7 +115,9 @@
 				</div>
 			{/if}
 			{#if !collapsed[p.id]}
-				<TaskGroup poolId={pool.id} projectId={p.id} {tasks} emptyText="" />
+				<div class="group-body">
+					<TaskGroup poolId={pool.id} projectId={p.id} {tasks} emptyText="" />
+				</div>
 			{/if}
 		</div>
 	{/each}
@@ -125,51 +145,71 @@
 
 <style>
 	.pool {
-		margin-bottom: 28px;
+		margin-bottom: calc(var(--gap) * 2);
 	}
 	h2 {
-		font-size: 15px;
-		margin: 0 0 6px;
-		color: var(--text-muted);
+		font-size: 1.125rem;
+		margin: 0 0 10px;
 	}
 	h2 a {
 		display: inline-flex;
 		align-items: center;
 		gap: 8px;
 	}
-	.project {
-		margin-top: 14px;
+	.group {
+		margin-bottom: var(--gap);
 	}
-	.project-head {
+	.group-head {
 		display: flex;
 		align-items: center;
 		gap: 4px;
-		padding: 4px 0;
+		min-height: 40px;
+		padding: 2px 6px 2px 4px;
 		border-bottom: 1px solid var(--border);
-		margin-bottom: 2px;
+		/* kein overflow am Kärtchen (Popover der Farbwahl würde abgeschnitten) → Ecken selbst runden */
+		border-radius: calc(var(--radius-card) - 1px) calc(var(--radius-card) - 1px) 0 0;
 	}
-	.project-head a {
+	.group.collapsed .group-head {
+		border-bottom: 0;
+		border-radius: calc(var(--radius-card) - 1px);
+	}
+	.group-head.plain {
+		padding-left: 14px;
+	}
+	.group-title {
 		display: inline-flex;
 		align-items: center;
 		gap: 8px;
 		font-weight: 600;
 		flex: 1;
+		min-width: 0;
 	}
-	.project-head .icon-btn {
+	.group-title.muted {
+		color: var(--text-muted);
+		font-size: 0.875rem;
+	}
+	/* Farbige Gruppen (Einstellung): Kopfzeile dezent in der Farbe des Pools/Projekts */
+	:global(:root[data-tint='on']) .group-head {
+		background: color-mix(in srgb, var(--group-color) 9%, var(--bg-raised));
+	}
+	.group-body {
+		padding: var(--card-pad) 6px;
+	}
+	.group-head .icon-btn {
 		width: 28px;
 		height: 28px;
 		color: var(--text-faint);
 	}
 	.project-editor {
-		padding-left: 38px;
+		padding: 0 12px;
+		border-bottom: 1px solid var(--border);
 	}
 	.twisty {
-		width: 20px;
-		height: 24px;
+		width: 24px;
+		height: 28px;
 		display: grid;
 		place-items: center;
 		color: var(--text-faint);
-		margin-left: 14px;
 	}
 	.twisty :global(svg) {
 		transition: transform 120ms;
@@ -178,23 +218,26 @@
 		transform: rotate(90deg);
 	}
 	.count {
-		font-size: 13px;
+		font-size: 0.8125rem;
 		color: var(--text-faint);
-		padding-right: 8px;
+		padding-right: 4px;
 	}
 	.new-project {
-		margin: 14px 0 0 38px;
+		margin: 0 0 0 4px;
 	}
 	.new-project-btn {
 		display: flex;
 		align-items: center;
 		gap: 8px;
-		margin-top: 14px;
-		padding: 6px 4px 6px 38px;
-		color: var(--text-faint);
-		font-size: 14px;
+		padding: 8px 12px;
+		border: 1px dashed var(--border-strong);
+		border-radius: var(--radius-card);
+		color: var(--text-muted);
+		font-size: 0.875rem;
+		width: 100%;
 	}
 	.new-project-btn:hover {
-		color: var(--text-muted);
+		color: var(--text);
+		background: var(--bg-hover);
 	}
 </style>

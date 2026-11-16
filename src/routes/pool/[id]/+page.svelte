@@ -69,14 +69,14 @@
 		margin-bottom: 12px;
 	}
 	h1 {
-		font-size: 24px;
+		font-size: 1.5rem;
 		margin: 0;
 		display: flex;
 		align-items: center;
 		gap: 10px;
 	}
 	.tag {
-		font-size: 12px;
+		font-size: 0.75rem;
 		padding: 2px 8px;
 		border-radius: 6px;
 		background: var(--bg-sunken);

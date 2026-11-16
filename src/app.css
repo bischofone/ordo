@@ -1,13 +1,14 @@
 /* Design-Tokens. Dark Mode über prefers-color-scheme oder data-theme am <html>. */
 :root {
-	--bg: #fbfbfa;
+	--bg: #f4f4f1;
 	--bg-raised: #ffffff;
-	--bg-sunken: #f1f1ef;
-	--bg-hover: #ececea;
+	--bg-sunken: #ebebe7;
+	--bg-hover: #efefec;
 	--text: #1c1c1a;
 	--text-muted: #6b6b66;
 	--text-faint: #a3a39e;
-	--border: #e3e3df;
+	--border: #e2e2dd;
+	--border-strong: #cfcfc9;
 	--accent: #0b6bcb;
 	--accent-contrast: #ffffff;
 	--danger: #d4343a;
@@ -17,8 +18,12 @@
 	--prio-2: #e08a00;
 	--prio-3: #0b6bcb;
 	--shadow: 0 4px 24px rgb(0 0 0 / 0.12);
+	--shadow-card: 0 1px 2px rgb(0 0 0 / 0.05);
 	--radius: 10px;
+	--radius-card: 14px;
 	--row-h: 40px;
+	--card-pad: 10px;
+	--gap: 16px;
 	--indent: 22px;
 	--font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 	color-scheme: light;
@@ -26,10 +31,12 @@
 
 @media (prefers-color-scheme: dark) {
 	:root:not([data-theme='light']) {
-		--bg: #161615;
-		--bg-raised: #1f1f1e;
-		--bg-sunken: #121211;
+		--bg: #141413;
+		--bg-raised: #1e1e1d;
+		--bg-sunken: #0f0f0e;
 		--bg-hover: #2a2a28;
+		--border-strong: #3d3d3a;
+		--shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
 		--text: #ececea;
 		--text-muted: #a3a39e;
 		--text-faint: #6b6b66;
@@ -48,10 +55,12 @@
 }
 
 :root[data-theme='dark'] {
-	--bg: #161615;
-	--bg-raised: #1f1f1e;
-	--bg-sunken: #121211;
+	--bg: #141413;
+	--bg-raised: #1e1e1d;
+	--bg-sunken: #0f0f0e;
 	--bg-hover: #2a2a28;
+	--border-strong: #3d3d3a;
+	--shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
 	--text: #ececea;
 	--text-muted: #a3a39e;
 	--text-faint: #6b6b66;
@@ -68,6 +77,24 @@
 	color-scheme: dark;
 }
 
+/* Dichte und Schriftgröße (Einstellungen → Darstellung) */
+:root[data-density='compact'] {
+	--row-h: 32px;
+	--card-pad: 6px;
+	--gap: 10px;
+}
+:root[data-density='cozy'] {
+	--row-h: 48px;
+	--card-pad: 14px;
+	--gap: 22px;
+}
+:root[data-font='small'] {
+	font-size: 14px;
+}
+:root[data-font='large'] {
+	font-size: 18px;
+}
+
 *,
 *::before,
 *::after {
@@ -80,7 +107,6 @@ body {
 	background: var(--bg);
 	color: var(--text);
 	font-family: var(--font);
-	font-size: 16px;
 	line-height: 1.4;
 	-webkit-tap-highlight-color: transparent;
 }
@@ -168,7 +194,7 @@ a {
 	height: 26px;
 	padding: 0 4px 0 10px;
 	border-radius: 13px;
-	font-size: 13px;
+	font-size: 0.8125rem;
 	background: var(--bg-sunken);
 	border: 1px solid var(--border);
 }
@@ -179,4 +205,23 @@ a {
 	overflow: hidden;
 	clip: rect(0 0 0 0);
 	white-space: nowrap;
+}
+
+/* Karte: fasst Zusammengehöriges sichtbar zusammen */
+.card {
+	background: var(--bg-raised);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-card);
+	box-shadow: var(--shadow-card);
+}
+.card-title {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--text-muted);
+	margin: 0;
+}
+h1 {
+	letter-spacing: -0.01em;
 }

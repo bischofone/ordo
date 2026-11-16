@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openPool } from './helpers';
 
 test('App ist installierbar und startet offline', async ({ page, context }) => {
 	await page.goto('/inbox');
@@ -23,9 +24,90 @@ test('Dark Mode folgt dem System und lässt sich umstellen', async ({ page }) =>
 	await page.emulateMedia({ colorScheme: 'dark' });
 	await page.goto('/einstellungen');
 	const bg = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-	expect(await bg()).toBe('rgb(22, 22, 21)');
-	await page.getByRole('combobox', { name: 'Farbschema' }).selectOption('light');
-	expect(await bg()).toBe('rgb(251, 251, 250)');
+	expect(await bg()).toBe('rgb(20, 20, 19)');
+	await page
+		.getByRole('radiogroup', { name: 'Farbschema' })
+		.getByRole('radio', { name: 'Hell' })
+		.click();
+	expect(await bg()).toBe('rgb(244, 244, 241)');
 	await page.reload();
-	expect(await bg()).toBe('rgb(251, 251, 250)');
+	expect(await bg()).toBe('rgb(244, 244, 241)');
+});
+
+test('Darstellung anpassen: Akzentfarbe, Dichte, Schriftgröße, farbige Gruppen', async ({
+	page
+}) => {
+	await page.goto('/einstellungen');
+	const card = page.getByTestId('appearance');
+	const css = (name: string) =>
+		page.evaluate(
+			(n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim(),
+			name
+		);
+	const rootFont = () => page.evaluate(() => getComputedStyle(document.documentElement).fontSize);
+
+	expect(await css('--row-h')).toBe('40px');
+	await card
+		.getByRole('radiogroup', { name: 'Dichte' })
+		.getByRole('radio', { name: 'Kompakt' })
+		.click();
+	expect(await css('--row-h')).toBe('32px');
+
+	expect(await rootFont()).toBe('16px');
+	await card
+		.getByRole('radiogroup', { name: 'Schriftgröße' })
+		.getByRole('radio', { name: 'Groß' })
+		.click();
+	expect(await rootFont()).toBe('18px');
+
+	// Akzentfarbe: ein Knopf, Auswahl im Aufklappfenster; helle Farbe → dunkle Schrift
+	await card.getByRole('button', { name: 'Farbe wählen' }).click();
+	await page.getByRole('radio', { name: '#ffc53d' }).click();
+	expect(await css('--accent')).toBe('#ffc53d');
+	expect(await css('--accent-contrast')).toBe('#111111');
+
+	await card.getByRole('switch').uncheck();
+	await expect(page.locator('html')).toHaveAttribute('data-tint', 'off');
+
+	// Bleibt nach dem Neuladen (und wirkt schon vor dem ersten Rendern)
+	await page.reload();
+	expect(await css('--row-h')).toBe('32px');
+	expect(await rootFont()).toBe('18px');
+	expect(await css('--accent')).toBe('#ffc53d');
+	await expect(
+		card.getByRole('radiogroup', { name: 'Dichte' }).getByRole('radio', { name: 'Kompakt' })
+	).toHaveAttribute('aria-checked', 'true');
+
+	// Zeilen sind im Pool wirklich niedriger
+	await page.goto('/inbox');
+	await page.getByTestId('quick-add').fill('Zeile');
+	await page.getByTestId('quick-add').press('Enter');
+	const h = (await page.getByTestId('task-row').first().boundingBox())!.height;
+	expect(h).toBeLessThan(40);
+
+	// Zurücksetzen stellt alles wieder her
+	await page.goto('/einstellungen');
+	await card.getByRole('button', { name: 'Darstellung zurücksetzen' }).click();
+	expect(await css('--row-h')).toBe('40px');
+	expect(await rootFont()).toBe('16px');
+	await expect(page.locator('html')).toHaveAttribute('data-tint', 'on');
+});
+
+test('Gruppen stehen in Karten, Projekte in ihrer Farbe', async ({ page }) => {
+	await page.goto('/');
+	await openPool(page, 'Privat');
+	await page.getByRole('button', { name: 'Neues Projekt' }).click();
+	await page.getByRole('textbox', { name: 'Name des neuen Projekts' }).fill('Umzug');
+	await page.keyboard.press('Enter');
+	const project = page.getByTestId('project-group');
+	await expect(project).toBeVisible();
+	await expect(page.getByTestId('group-card')).toContainText('Ohne Projekt');
+	// Kein farbiger Seitenrand; die Farbe steckt nur dezent in der Kopfzeile (abschaltbar)
+	const border = () => project.evaluate((el) => getComputedStyle(el).borderLeftWidth);
+	const headBg = () =>
+		project.locator('.group-head').evaluate((el) => getComputedStyle(el).backgroundColor);
+	expect(await border()).toBe('1px');
+	const tinted = await headBg();
+	await page.evaluate(() => (document.documentElement.dataset.tint = 'off'));
+	expect(await headBg()).not.toBe(tinted);
 });

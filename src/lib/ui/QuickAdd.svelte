@@ -237,9 +237,13 @@
 	.quick-add {
 		background: var(--bg-raised);
 		border: 1px solid var(--border);
-		border-radius: var(--radius);
-		padding: 6px 8px 8px;
-		margin-bottom: 12px;
+		border-radius: var(--radius-card);
+		box-shadow: var(--shadow-card);
+		padding: 6px 10px 10px;
+		margin-bottom: var(--gap);
+	}
+	.quick-add:focus-within {
+		border-color: var(--accent);
 	}
 	.input-row {
 		display: flex;
@@ -286,7 +290,7 @@
 		gap: 4px;
 		min-height: 30px;
 		padding: 0 10px;
-		font-size: 14px;
+		font-size: 0.875rem;
 		color: var(--text-muted);
 		border-right: 1px solid var(--border);
 	}
@@ -332,7 +336,7 @@
 	.target select {
 		border: 0;
 		background: transparent;
-		font-size: 14px;
+		font-size: 0.875rem;
 		color: var(--text);
 		max-width: 220px;
 		padding: 4px 0;
@@ -372,6 +376,6 @@
 	}
 	.link {
 		text-decoration: underline;
-		font-size: 13px;
+		font-size: 0.8125rem;
 	}
 </style>

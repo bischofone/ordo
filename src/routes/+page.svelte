@@ -66,7 +66,7 @@
 
 <style>
 	h1 {
-		font-size: 24px;
+		font-size: 1.5rem;
 		margin: 0 0 12px;
 	}
 	.filter {

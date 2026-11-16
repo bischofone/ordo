@@ -38,7 +38,7 @@
 	}
 </script>
 
-<div class="group-body" data-testid="task-group">
+<div data-testid="task-group">
 	<TaskList {tasks} roots={s.active} {poolId} {projectId} section="active" {agingDays} />
 	{#if !s.active.length && emptyText}
 		<p class="empty">{emptyText}</p>
@@ -82,15 +82,16 @@
 <style>
 	.empty {
 		color: var(--text-faint);
-		margin: 4px 0 4px 44px;
-		font-size: 14px;
+		margin: 6px 0 4px 44px;
+		font-size: 0.875rem;
 	}
 	.add {
 		display: flex;
 		align-items: center;
 		gap: 8px;
 		color: var(--text-faint);
-		padding: 8px 4px 8px 40px;
+		min-height: var(--row-h);
+		padding: 0 4px 0 40px;
 		width: 100%;
 		border-radius: 8px;
 	}
@@ -100,12 +101,14 @@
 	}
 	.section {
 		margin-top: 6px;
+		padding-top: 4px;
+		border-top: 1px solid var(--border);
 	}
 	.section-head {
 		display: flex;
 		align-items: center;
 		gap: 6px;
-		font-size: 14px;
+		font-size: 0.875rem;
 		font-weight: 600;
 		color: var(--text-muted);
 		padding: 6px 4px 6px 18px;

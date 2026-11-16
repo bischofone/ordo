@@ -63,7 +63,7 @@
 </script>
 
 <section class="sync" data-testid="sync-settings">
-	<h2>{m.sync.title}</h2>
+	<h2 class="card-title">{m.sync.title}</h2>
 	<p class="muted">{m.sync.intro}</p>
 	{#if accounts.current.length}<p class="muted">{m.sync.poolHint}</p>{/if}
 
@@ -150,23 +150,24 @@
 
 <style>
 	h2 {
-		font-size: 16px;
-		margin: 0 0 4px;
+		margin-bottom: 8px;
 	}
 	.muted {
 		color: var(--text-muted);
-		font-size: 14px;
+		font-size: 0.875rem;
 		margin: 0 0 8px;
 	}
 	.small {
-		font-size: 12px;
+		font-size: 0.75rem;
 	}
 	.card {
 		border: 1px solid var(--border);
 		border-radius: var(--radius);
 		padding: 12px;
 		margin-bottom: 10px;
-		background: var(--bg-raised);
+		background: var(--bg);
+		box-shadow: none;
+		border-radius: var(--radius);
 	}
 	.acc-head {
 		display: flex;
@@ -189,7 +190,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 4px;
-		font-size: 13px;
+		font-size: 0.8125rem;
 		color: var(--text-muted);
 		flex: 1;
 	}
@@ -203,7 +204,7 @@
 		flex-wrap: wrap;
 	}
 	.label {
-		font-size: 13px;
+		font-size: 0.8125rem;
 		color: var(--text-muted);
 		margin: 10px 0 4px;
 	}
@@ -220,7 +221,7 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;
-		font-size: 14px;
+		font-size: 0.875rem;
 		color: var(--text-muted);
 	}
 	.linked:hover {
@@ -233,7 +234,7 @@
 	}
 	.error {
 		color: var(--danger);
-		font-size: 13px;
+		font-size: 0.8125rem;
 	}
 	.btn[disabled] {
 		opacity: 0.5;

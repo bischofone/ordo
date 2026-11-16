@@ -198,7 +198,6 @@
 		padding-right: 4px;
 		border-radius: 8px;
 		touch-action: pan-y;
-		background: var(--bg);
 		position: relative;
 	}
 	.row:hover,
@@ -285,14 +284,16 @@
 		min-width: 0;
 		border: 0;
 		background: transparent;
-		padding: 8px 6px;
+		/* Höhe folgt der Dichte-Einstellung */
+		height: calc(var(--row-h) - 2px);
+		padding: 0 6px;
 		outline: none;
 	}
 	.meta {
 		display: flex;
 		gap: 6px;
 		align-items: center;
-		font-size: 12px;
+		font-size: 0.75rem;
 		color: var(--text-muted);
 		flex: none;
 	}

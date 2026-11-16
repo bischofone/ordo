@@ -207,6 +207,12 @@ Nur wenige, intuitive Kürzel – alles andere über Buttons:
 - Export/Import als JSON (komplett und pro Pool), automatische lokale Backups.
 - Suche über Titel/Notizen (respektiert aktiven Kontext-Modus).
 - Dark Mode, schnelle schlichte UI, Mobile-first.
+- **Zusammengehöriges ist sichtbar gruppiert:** Aufgaben eines Pools bzw. Projekts stehen
+  jeweils in einer Karte mit Kopfzeile; Einstellungen sind in Karten je Bereich gegliedert.
+  Keine farbigen Seitenränder an Karten.
+- **Darstellung anpassbar (pro Gerät):** Farbschema (System/Hell/Dunkel), Akzentfarbe,
+  Dichte (Kompakt/Normal/Luftig), Schriftgröße (Klein/Normal/Groß), farbige Gruppen
+  (Kopfzeilen leicht in Pool-/Projektfarbe getönt, abschaltbar), Zurücksetzen.
 - UI-Sprache Deutsch, i18n-fähig.
 - Tests: Datenmodell, VTODO-Mapping (Hin- und Rückweg ohne Datenverlust),
   Sync-Konflikte, Score-Funktion, KI-Kontexttrennung, Benachrichtigungsregeln.
@@ -291,7 +297,10 @@ jederzeit geändert werden – dann wird es hier angepasst.
 - **Inbox-Altern:** markiert nach mehr als 7 Tagen (einstellbar), Badge wird orange.
 - **Aufräum-Modus:** Wischen links = löschen (mit Rückgängig), rechts = überspringen;
   Tasten 1–9 / I / Entf / →.
-- **Farbschema** (System/Hell/Dunkel) gilt pro Gerät.
+- **Darstellung** gilt pro Gerät (localStorage, wird vor dem ersten Rendern angewendet).
+  Schriftgrößen sind in `rem`, damit die Einstellung überall wirkt; die Zeilenhöhe folgt
+  der Dichte. Bei eigener Akzentfarbe wird die Schriftfarbe darauf (hell/dunkel)
+  automatisch nach Kontrast gewählt.
 
 ### Sync (Phase 2)
 

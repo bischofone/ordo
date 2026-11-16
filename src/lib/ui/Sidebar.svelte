@@ -53,6 +53,10 @@
 </script>
 
 <nav class="sidebar" class:open={ui.sidebarOpen} aria-label="Navigation">
+	<div class="brand">
+		<span class="logo"><Icon name="check" size={16} /></span>
+		{m.appName}
+	</div>
 	<a
 		class="item"
 		class:current={path.startsWith('/inbox')}
@@ -169,7 +173,7 @@
 		gap: 2px;
 	}
 	h3 {
-		font-size: 12px;
+		font-size: 0.75rem;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		color: var(--text-faint);
@@ -179,7 +183,7 @@
 		display: flex;
 		align-items: center;
 		gap: 10px;
-		min-height: 38px;
+		min-height: max(32px, calc(var(--row-h) - 2px));
 		padding: 0 10px;
 		border-radius: 8px;
 		color: var(--text-muted);
@@ -191,14 +195,36 @@
 		color: var(--text);
 	}
 	.item.current {
-		background: var(--bg-hover);
+		background: color-mix(in srgb, var(--accent) 14%, transparent);
 		color: var(--text);
 		font-weight: 600;
 	}
+	.brand {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 4px 10px 12px;
+		font-weight: 700;
+		font-size: 1.0625rem;
+	}
+	.logo {
+		display: grid;
+		place-items: center;
+		width: 26px;
+		height: 26px;
+		border-radius: 8px;
+		background: var(--accent);
+		color: var(--accent-contrast);
+	}
 	.item.sub {
-		min-height: 32px;
-		padding-left: 30px;
-		font-size: 14px;
+		min-height: max(28px, calc(var(--row-h) - 8px));
+		margin-left: 17px;
+		padding-left: 12px;
+		width: calc(100% - 17px);
+		font-size: 0.875rem;
+		/* Linie zeigt: gehört zum Pool darüber */
+		border-left: 1px solid var(--border-strong);
+		border-radius: 0 8px 8px 0;
 	}
 	.item.drop-over {
 		background: color-mix(in srgb, var(--accent) 20%, transparent);
@@ -215,7 +241,7 @@
 		white-space: nowrap;
 	}
 	.count {
-		font-size: 13px;
+		font-size: 0.8125rem;
 		color: var(--text-faint);
 	}
 	.badge {
@@ -223,7 +249,7 @@
 		height: 20px;
 		padding: 0 6px;
 		border-radius: 10px;
-		font-size: 12px;
+		font-size: 0.75rem;
 		font-weight: 600;
 		display: grid;
 		place-items: center;
@@ -250,7 +276,7 @@
 		color: var(--warn);
 	}
 	.item.sync {
-		font-size: 14px;
+		font-size: 0.875rem;
 	}
 	.item.sync.error {
 		color: var(--danger);

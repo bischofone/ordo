@@ -52,7 +52,7 @@
 		background: var(--bg-raised);
 		border: 1px solid var(--accent);
 		box-shadow: var(--shadow);
-		font-size: 14px;
+		font-size: 0.875rem;
 	}
 	:global(body.is-dragging) {
 		cursor: grabbing;
