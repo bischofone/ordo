@@ -150,7 +150,7 @@ describe('Projekte', () => {
 		const p = await repo.createProject(pid, 'Weg damit');
 		const t = await repo.createTask({ poolId: pid, projectId: p, title: 'bleibt' });
 		await repo.deleteProject(p);
-		expect(await db.projects.count()).toBe(0);
+		expect((await db.projects.get(p))?.deletedAt).toBeTruthy();
 		expect((await db.tasks.get(t))?.projectId).toBeNull();
 	});
 

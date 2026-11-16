@@ -4,7 +4,11 @@ import { db } from './app';
 /** Lesende Abfragen für `live(...)`. */
 export const q = {
 	pools: () => db.pools.toArray().then((ps) => ps.sort(bySortOrder)),
-	projects: () => db.projects.toArray().then((ps) => ps.sort(bySortOrder)),
+	projects: () =>
+		db.projects
+			.filter((p) => !p.deletedAt)
+			.toArray()
+			.then((ps) => ps.sort(bySortOrder)),
 	allTasks: () => db.tasks.filter((t) => !t.deletedAt).toArray(),
 	poolTasks: (poolId: string) => () =>
 		db.tasks

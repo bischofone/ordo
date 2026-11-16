@@ -32,6 +32,17 @@ export interface CaldavBinding {
 	collectionUrl: string;
 }
 
+/** CalDAV-Konto. Zugangsdaten bleiben lokal auf dem Gerät. */
+export interface Account {
+	id: string;
+	name: string;
+	serverUrl: string;
+	username: string;
+	password: string;
+	homeUrl?: string;
+	createdAt: number;
+}
+
 export interface Pool {
 	id: string;
 	kind: 'pool' | 'inbox';
@@ -58,6 +69,8 @@ export interface Project {
 	archived: boolean;
 	createdAt: number;
 	updatedAt: number;
+	/** Gelöscht (bleibt für den Sync als Tombstone erhalten) */
+	deletedAt?: number;
 }
 
 export interface WaitingFor {

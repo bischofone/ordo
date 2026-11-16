@@ -24,3 +24,7 @@ vite.config.ts.timestamp-*
 # Playwright
 test-results
 playwright-report
+# Lokaler Radicale (scripts/radicale.sh)
+dev/radicale/.venv
+dev/radicale/data
+dev/radicale/users

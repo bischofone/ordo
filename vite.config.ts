@@ -17,6 +17,8 @@ export default defineConfig({
 	test: {
 		expect: { requireAssertions: true },
 		environment: 'node',
-		include: ['src/**/*.test.ts']
+		include: ['src/**/*.test.ts'],
+		// Startet einen lokalen Radicale für die CalDAV-Integrationstests
+		globalSetup: ['src/lib/sync/test/radicale-setup.ts']
 	}
 });

@@ -48,7 +48,9 @@
 		"date-fns": "^4.4.0",
 		"dexie": "^4.4.7",
 		"dompurify": "^3.4.18",
+		"fast-xml-parser": "^5.12.1",
 		"fractional-indexing": "^4.0.0",
+		"ical.js": "^2.2.1",
 		"marked": "^18.2.0"
 	}
 }

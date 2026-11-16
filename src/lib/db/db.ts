@@ -1,5 +1,7 @@
 import Dexie, { type EntityTable } from 'dexie';
+import type { Conflict, SyncRecord, SyncState } from '#lib/sync/model.ts';
 import type {
+	Account,
 	ContextMode,
 	Pool,
 	Project,
@@ -17,6 +19,10 @@ export class TasksDB extends Dexie {
 	templates!: EntityTable<Template, 'id'>;
 	contextModes!: EntityTable<ContextMode, 'id'>;
 	settings!: EntityTable<Setting, 'key'>;
+	accounts!: EntityTable<Account, 'id'>;
+	syncState!: EntityTable<SyncState, 'poolId'>;
+	syncRecords!: EntityTable<SyncRecord, 'taskId'>;
+	conflicts!: EntityTable<Conflict, 'id'>;
 
 	constructor(name = 'tasks-app') {
 		super(name);
@@ -40,5 +46,12 @@ export class TasksDB extends Dexie {
 						t.projectId ??= null;
 					})
 			);
+		// v3: CalDAV-Sync
+		this.version(3).stores({
+			accounts: 'id',
+			syncState: 'poolId',
+			syncRecords: 'taskId, poolId, url',
+			conflicts: 'id, taskId'
+		});
 	}
 }

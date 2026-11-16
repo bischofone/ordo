@@ -185,9 +185,9 @@ export function createRepo(db: TasksDB, clock: () => Date = () => new Date()) {
 			name: string,
 			opts: { color?: string; icon?: string } = {}
 		) {
-			const siblings = (await db.projects.where('poolId').equals(poolId).toArray()).sort(
-				bySortOrder
-			);
+			const siblings = (await db.projects.where('poolId').equals(poolId).toArray())
+				.filter((p) => !p.deletedAt)
+				.sort(bySortOrder);
 			const id = uid();
 			const t = now();
 			await db.projects.add({
@@ -215,7 +215,7 @@ export function createRepo(db: TasksDB, clock: () => Date = () => new Date()) {
 			const project = await db.projects.get(id);
 			if (!project) return;
 			const list = (await db.projects.where('poolId').equals(project.poolId).toArray())
-				.filter((p) => !p.archived)
+				.filter((p) => !p.archived && !p.deletedAt)
 				.sort(bySortOrder);
 			const idx = list.findIndex((p) => p.id === id);
 			const target = idx + dir;
@@ -227,14 +227,14 @@ export function createRepo(db: TasksDB, clock: () => Date = () => new Date()) {
 			await db.projects.update(id, { sortOrder, updatedAt: now() });
 		},
 
-		/** Projekt löschen – die Aufgaben bleiben im Pool, nur ohne Projekt. */
+		/** Projekt löschen – die Aufgaben bleiben im Pool, nur ohne Projekt. (Tombstone für den Sync) */
 		async deleteProject(id: string) {
 			await db.transaction('rw', db.projects, db.tasks, async () => {
 				const t = now();
 				await db.tasks
 					.filter((task) => task.projectId === id)
 					.modify({ projectId: null, updatedAt: t });
-				await db.projects.delete(id);
+				await db.projects.update(id, { deletedAt: t, updatedAt: t });
 			});
 		},
 
