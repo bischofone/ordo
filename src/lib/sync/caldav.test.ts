@@ -1,8 +1,9 @@
 import { describe, expect, inject, it } from 'vitest';
 import { makeTask } from '#lib/domain/test-helpers.ts';
 import { createClient, PreconditionFailed } from './caldav';
-import { pickSyncFields } from './fields';
+import { normalize, pickSyncFields } from './fields';
 import { parseTodo, writeTodo } from './vtodo';
+import { full } from './test/fixtures';
 
 const serverUrl = inject('radicaleUrl');
 const user = () => ({ serverUrl, username: 'test', password: 'test' });
@@ -56,6 +57,17 @@ describe.skipIf(!serverUrl)('CalDAV-Client gegen Radicale', () => {
 		const after = await c.changesSince(listUrl, changes.token!);
 		expect(after.deleted).toEqual([url]);
 		await c.deleteItem(url); // 404 ist kein Fehler
+	});
+
+	it('alle Felder überstehen den Weg über den Server unverändert', async () => {
+		const c = createClient(user());
+		const { homeUrl } = await c.discover();
+		const listUrl = await c.createList(homeUrl, 'Rundreise');
+		const f = full();
+		const url = `${listUrl}rund.ics`;
+		await c.putItem(url, writeTodo('rund', f), { create: true });
+		const [item] = await c.fetchItems(listUrl, [url]);
+		expect(parseTodo(item.ics).fields).toEqual(normalize(f));
 	});
 
 	it('Projekte und Name als Eigenschaften der Liste', async () => {

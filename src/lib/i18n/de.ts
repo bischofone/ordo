@@ -244,7 +244,8 @@ export const de = {
 			postponeCount: 'Verschoben',
 			estimateMin: 'Zeitschätzung',
 			energy: 'Energie',
-			waitingFor: 'Wartet auf'
+			waitingFor: 'Wartet auf',
+			timeEntries: 'Erfasste Zeit'
 		} as Record<string, string>
 	},
 	toolbar: {

@@ -7,7 +7,14 @@
  * Eigenschaften, Erinnerungen (VALARM), Zeitzonen, Kategorien usw.
  */
 import ICAL from 'ical.js';
-import type { DateValue, Energy, Priority, TaskStatus, WaitingFor } from '#lib/domain/types.ts';
+import type {
+	DateValue,
+	Energy,
+	Priority,
+	TaskStatus,
+	TimeEntry,
+	WaitingFor
+} from '#lib/domain/types.ts';
 import { changedFields, normalize, type SyncField, type SyncFields } from './fields';
 
 export const X = {
@@ -17,7 +24,8 @@ export const X = {
 	postponed: 'X-MYTASKS-POSTPONED',
 	estimate: 'X-MYTASKS-ESTIMATE',
 	energy: 'X-MYTASKS-ENERGY',
-	waiting: 'X-MYTASKS-WAITING'
+	waiting: 'X-MYTASKS-WAITING',
+	time: 'X-MYTASKS-TIME'
 } as const;
 
 const PRODID = '-//Tasks App//DE';
@@ -101,6 +109,32 @@ function str(comp: ICAL.Component, name: string): string | undefined {
 	return v === null || v === undefined ? undefined : String(v);
 }
 
+/**
+ * JSON in eigenen X-Eigenschaften wird URL-kodiert gespeichert. Server wie Radicale
+ * behandeln Kommas und Strichpunkte in unbekannten Eigenschaften als Trennzeichen und
+ * schneiden den Wert sonst ab.
+ */
+const encodeJson = (value: unknown) => encodeURIComponent(JSON.stringify(value));
+
+function decodeJson<T>(raw: string | undefined): T | undefined {
+	if (!raw) return undefined;
+	for (const candidate of [() => decodeURIComponent(raw), () => raw]) {
+		try {
+			return JSON.parse(candidate()) as T;
+		} catch {
+			/* nächster Versuch (unkodiertes JSON aus älteren Ständen) */
+		}
+	}
+	return undefined;
+}
+
+function parseTime(raw: string | undefined): TimeEntry[] {
+	const v = decodeJson<TimeEntry[]>(raw);
+	return Array.isArray(v)
+		? v.filter((e) => e && typeof e.id === 'string' && typeof e.date === 'string' && e.minutes > 0)
+		: [];
+}
+
 // ---------- Lesen ----------
 
 export function parseTodo(ics: string): ParsedTodo {
@@ -126,14 +160,7 @@ export function parseTodo(ics: string): ParsedTodo {
 	const created = time('created');
 	const rrule = todo.getFirstPropertyValue('rrule');
 
-	let waitingFor: WaitingFor | undefined;
-	if (waiting) {
-		try {
-			waitingFor = JSON.parse(waiting);
-		} catch {
-			waitingFor = undefined;
-		}
-	}
+	const waitingFor = decodeJson<WaitingFor>(waiting);
 
 	const fields = normalize({
 		title: str(todo, 'summary') ?? '',
@@ -159,7 +186,8 @@ export function parseTodo(ics: string): ParsedTodo {
 			? Number(str(todo, X.estimate.toLowerCase()))
 			: undefined,
 		energy: (str(todo, X.energy.toLowerCase()) as Energy | undefined) || undefined,
-		waitingFor
+		waitingFor,
+		timeEntries: parseTime(str(todo, X.time.toLowerCase()))
 	});
 
 	return {
@@ -256,7 +284,10 @@ export function writeTodo(
 		set(X.postponed, f.postponeCount ? String(f.postponeCount) : undefined);
 	if (touch('estimateMin')) set(X.estimate, f.estimateMin ? String(f.estimateMin) : undefined);
 	if (touch('energy')) set(X.energy, f.energy);
-	if (touch('waitingFor')) set(X.waiting, f.waitingFor ? JSON.stringify(f.waitingFor) : undefined);
+	if (touch('waitingFor')) set(X.waiting, f.waitingFor ? encodeJson(f.waitingFor) : undefined);
+	if (touch('timeEntries')) {
+		set(X.time, f.timeEntries?.length ? encodeJson(f.timeEntries) : undefined);
+	}
 
 	set('dtstamp', utcNow());
 	set('last-modified', utcNow());

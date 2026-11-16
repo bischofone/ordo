@@ -214,6 +214,78 @@ describe('Zurückschieben', () => {
 	});
 });
 
+describe('Zeiterfassung', () => {
+	const day = (d: number, h = 10, m = 0, s = 0) => new Date(2025, 10, d, h, m, s);
+
+	it('Zeit erfassen (heute als Standard), ändern und löschen', async () => {
+		clock = day(12);
+		const id = await repo.createTask({ poolId: INBOX_ID, title: 'Angebot' });
+		const e1 = await repo.addTime(id, { minutes: 30 });
+		await repo.addTime(id, { minutes: 45, date: '2025-11-10' });
+		expect(e1.date).toBe('2025-11-12');
+		expect((await db.tasks.get(id))?.timeEntries?.map((e) => [e.date, e.minutes])).toEqual([
+			['2025-11-12', 30],
+			['2025-11-10', 45]
+		]);
+		await repo.updateTime(id, e1.id, { minutes: 60, date: '2025-11-11' });
+		await repo.deleteTime(id, (await db.tasks.get(id))!.timeEntries![1].id);
+		expect((await db.tasks.get(id))?.timeEntries).toEqual([
+			{ id: e1.id, date: '2025-11-11', minutes: 60 }
+		]);
+		await expect(repo.addTime(id, { minutes: 0 })).rejects.toThrow();
+	});
+
+	it('Timer: nur einer läuft, Wechsel erfasst den alten, übersteht „Neustart“', async () => {
+		const a = await repo.createTask({ poolId: INBOX_ID, title: 'A' });
+		const b = await repo.createTask({ poolId: INBOX_ID, title: 'B' });
+		clock = day(12, 9, 0);
+		await repo.startTimer(a);
+		expect(await repo.getTimer()).toEqual({ taskId: a, start: clock.getTime() });
+
+		// „Neustart“: ein neues Repository auf derselben Datenbank sieht den Timer weiter
+		clock = day(12, 9, 20);
+		const again = createRepo(db, () => clock);
+		expect((await again.getTimer())?.taskId).toBe(a);
+
+		// Wechsel auf B stoppt A und erfasst 20 Minuten
+		await again.startTimer(b);
+		expect((await db.tasks.get(a))?.timeEntries).toMatchObject([
+			{ date: '2025-11-12', minutes: 20 }
+		]);
+		expect((await repo.getTimer())?.taskId).toBe(b);
+
+		// Stoppen nach 90 Sekunden → 2 Minuten (gerundet)
+		clock = day(12, 9, 21, 30);
+		expect((await repo.stopTimer())?.entry.minutes).toBe(2);
+		expect(await repo.getTimer()).toBeNull();
+		expect(await repo.stopTimer()).toBeNull();
+	});
+
+	it('Timer unter 30 Sekunden wird verworfen; über Mitternacht zählt der Starttag', async () => {
+		const a = await repo.createTask({ poolId: INBOX_ID, title: 'A' });
+		clock = day(12, 9, 0, 0);
+		await repo.startTimer(a);
+		clock = day(12, 9, 0, 20);
+		expect(await repo.stopTimer()).toBeNull();
+		expect((await db.tasks.get(a))?.timeEntries ?? []).toEqual([]);
+
+		clock = day(12, 23, 30);
+		await repo.startTimer(a);
+		clock = day(13, 0, 30);
+		expect((await repo.stopTimer())?.entry).toMatchObject({ date: '2025-11-12', minutes: 60 });
+	});
+
+	it('Timer einer gelöschten Aufgabe läuft ins Leere', async () => {
+		const a = await repo.createTask({ poolId: INBOX_ID, title: 'A' });
+		clock = day(12, 9);
+		await repo.startTimer(a);
+		await repo.deleteTask(a);
+		clock = day(12, 10);
+		expect(await repo.stopTimer()).toBeNull();
+		expect(await repo.getTimer()).toBeNull();
+	});
+});
+
 describe('Einstellungen', () => {
 	it('liefert Standardwert und speichert', async () => {
 		expect(await repo.getSetting('inboxAgingDays', 7)).toBe(7);

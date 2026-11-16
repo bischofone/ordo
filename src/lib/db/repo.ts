@@ -3,7 +3,9 @@
  * (Phase 2 hängt hier die Sync-Warteschlange an.)
  */
 import { generateNKeysBetween } from 'fractional-indexing';
+import { toIsoDate } from '#lib/domain/dates.ts';
 import { uuid } from '#lib/domain/id.ts';
+import { timerMinutes } from '#lib/domain/time.ts';
 import { needsPostponeReview, postponePatch } from '#lib/domain/postpone.ts';
 import {
 	bySortOrder,
@@ -25,11 +27,14 @@ import {
 	type Pool,
 	type Priority,
 	type Project,
-	type Task
+	type RunningTimer,
+	type Task,
+	type TimeEntry
 } from '#lib/domain/types.ts';
 import type { TasksDB } from './db';
 
 export const INBOX_ID = 'inbox';
+export const TIMER_KEY = 'timer';
 
 /** Farben für neue Pools/Projekte (ohne Grau, das ist der Inbox vorbehalten). */
 const PALETTE = POOL_COLORS.filter((c) => c !== NEUTRAL_COLOR);
@@ -173,18 +178,9 @@ export function createRepo(db: TasksDB, clock: () => Date = () => new Date()) {
 			if (id === INBOX_ID) throw new Error('Die Inbox kann nicht gelöscht werden');
 			await db.transaction(
 				'rw',
-				[
-					db.pools,
-					db.projects,
-					db.tasks,
-					db.timeEntries,
-					db.syncRecords,
-					db.syncState,
-					db.conflicts
-				],
+				[db.pools, db.projects, db.tasks, db.syncRecords, db.syncState, db.conflicts],
 				async () => {
 					const taskIds = (await db.tasks.where('poolId').equals(id).primaryKeys()) as string[];
-					await db.timeEntries.where('taskId').anyOf(taskIds).delete();
 					await db.conflicts.where('taskId').anyOf(taskIds).delete();
 					await db.syncRecords.where('poolId').equals(id).delete();
 					await db.syncState.delete(id);
@@ -456,6 +452,83 @@ export function createRepo(db: TasksDB, clock: () => Date = () => new Date()) {
 			if (!opts.force && needsPostponeReview(task)) return 'review' as const;
 			await db.tasks.update(id, { ...postponePatch(task, date), updatedAt: now() });
 			return 'ok' as const;
+		},
+
+		// ---------- Zeiterfassung ----------
+
+		/** Zeit an einer Aufgabe erfassen. Ohne Datum gilt der heutige Tag. */
+		async addTime(taskId: string, input: { minutes: number; date?: string; note?: string }) {
+			if (!(input.minutes > 0)) throw new Error('Dauer muss größer als 0 sein');
+			const entry: TimeEntry = {
+				id: uid(),
+				date: input.date ?? toIsoDate(clock()),
+				minutes: Math.round(input.minutes),
+				...(input.note ? { note: input.note } : {})
+			};
+			await db.transaction('rw', db.tasks, async () => {
+				const task = await getTask(taskId);
+				await db.tasks.update(taskId, {
+					timeEntries: [...(task.timeEntries ?? []), entry],
+					updatedAt: now()
+				});
+			});
+			return entry;
+		},
+
+		async updateTime(taskId: string, entryId: string, patch: Partial<Omit<TimeEntry, 'id'>>) {
+			await db.transaction('rw', db.tasks, async () => {
+				const task = await getTask(taskId);
+				await db.tasks.update(taskId, {
+					timeEntries: (task.timeEntries ?? []).map((e) =>
+						e.id === entryId ? { ...e, ...patch } : e
+					),
+					updatedAt: now()
+				});
+			});
+		},
+
+		async deleteTime(taskId: string, entryId: string) {
+			await db.transaction('rw', db.tasks, async () => {
+				const task = await getTask(taskId);
+				await db.tasks.update(taskId, {
+					timeEntries: (task.timeEntries ?? []).filter((e) => e.id !== entryId),
+					updatedAt: now()
+				});
+			});
+		},
+
+		getTimer: (): Promise<RunningTimer | null> =>
+			db.settings.get(TIMER_KEY).then((s) => (s?.value as RunningTimer | undefined) ?? null),
+
+		/**
+		 * Timer starten. Es läuft immer nur einer: ein anderer wird gestoppt und erfasst.
+		 * Läuft der Timer schon für diese Aufgabe, passiert nichts.
+		 */
+		async startTimer(taskId: string) {
+			const running = await repo.getTimer();
+			if (running?.taskId === taskId) return;
+			if (running) await repo.stopTimer();
+			await getTask(taskId);
+			await db.settings.put({ key: TIMER_KEY, value: { taskId, start: now() } });
+		},
+
+		/**
+		 * Timer stoppen und die Zeit erfassen (am Tag des Starts).
+		 * Liefert den Eintrag – oder null, wenn kein Timer lief, er zu kurz war oder die
+		 * Aufgabe inzwischen gelöscht wurde.
+		 */
+		async stopTimer(): Promise<{ taskId: string; entry: TimeEntry } | null> {
+			const running = await repo.getTimer();
+			if (!running) return null;
+			await db.settings.delete(TIMER_KEY);
+			const minutes = timerMinutes(running.start, now());
+			const task = await db.tasks.get(running.taskId);
+			if (minutes === null || !task || task.deletedAt) return null;
+			const entry = await repo.addTime(running.taskId, {
+				minutes,
+				date: toIsoDate(new Date(running.start))
+			});
+			return { taskId: running.taskId, entry };
 		},
 
 		// ---------- Einstellungen ----------

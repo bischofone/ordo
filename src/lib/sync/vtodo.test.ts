@@ -1,34 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { makeTask } from '#lib/domain/test-helpers.ts';
-import { normalize, pickSyncFields, type SyncFields } from './fields';
+import { normalize } from './fields';
+import { full } from './test/fixtures';
 import { parseTodo, priorityFromIcal, sortKeyToNumber, writeTodo } from './vtodo';
-
-const full = (): SyncFields =>
-	pickSyncFields(
-		makeTask({
-			title: 'Steuer, Teil 2; mit Sonderzeichen ä ö ü – „ok“',
-			notes: 'Zeile 1\nZeile 2, mit Komma',
-			priority: 2,
-			due: { date: '2026-12-15', time: '09:30' },
-			scheduled: { date: '2026-12-01' },
-			rrule: 'FREQ=WEEKLY;BYDAY=MO,FR',
-			status: 'completed',
-			completedAt: Date.UTC(2026, 10, 16, 8, 0),
-			parentId: 'eltern-uid',
-			blockedBy: ['b-uid', 'a-uid'],
-			sortOrder: 'a0V',
-			projectId: 'proj-1',
-			someday: true,
-			postponeCount: 3,
-			estimateMin: 45,
-			energy: 'low',
-			waitingFor: {
-				type: 'mail',
-				text: 'Antwort von Bank, bitte',
-				followUp: { date: '2026-12-03' }
-			}
-		})
-	);
 
 /** So ähnlich legt Tasks.org (via DAVx⁵) Aufgaben an. */
 const TASKS_ORG = `BEGIN:VCALENDAR
@@ -87,6 +60,15 @@ describe('VTODO-Mapping', () => {
 		expect(parseTodo(writeTodo('uid-1', back.fields, { previous: ics })).fields).toEqual(
 			back.fields
 		);
+	});
+
+	it('eigene JSON-Felder enthalten keine Trennzeichen (Server schneiden sonst ab)', () => {
+		const lines = writeTodo('uid-1', full())
+			.replace(/\r\n /g, '')
+			.split('\r\n')
+			.filter((l) => /^X-MYTASKS-(TIME|WAITING):/.test(l));
+		expect(lines).toHaveLength(2);
+		for (const l of lines) expect(l.slice(l.indexOf(':') + 1)).not.toMatch(/[,;"\\]/);
 	});
 
 	it('schreibt Standard-Eigenschaften, die andere Clients verstehen', () => {

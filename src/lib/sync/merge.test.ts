@@ -44,6 +44,21 @@ describe('Zusammenführen pro Feld', () => {
 		expect(merge3(done, w({}), done).merged.completedAt).toBeUndefined();
 	});
 
+	it('Zeiteinträge von zwei Geräten werden zusammengeführt statt zu kollidieren', () => {
+		const e = (id: string, minutes: number) => ({ id, date: '2026-11-16', minutes });
+		const b = w({ timeEntries: [e('alt', 10), e('weg', 5), e('geändert', 20)] });
+		const l = w({ timeEntries: [e('alt', 10), e('geändert', 20), e('handy', 30)] }); // „weg“ gelöscht
+		const r = w({ timeEntries: [e('alt', 10), e('weg', 5), e('geändert', 25), e('pc', 60)] });
+		const m = merge3(b, l, r);
+		expect(m.conflicts).toEqual([]);
+		expect(m.merged.timeEntries?.map((x) => [x.id, x.minutes])).toEqual([
+			['alt', 10],
+			['geändert', 25],
+			['handy', 30],
+			['pc', 60]
+		]);
+	});
+
 	it('Datum und Listen werden inhaltlich verglichen', () => {
 		const l = w({ due: { date: '2026-01-01' }, blockedBy: ['b', 'a'] });
 		const r = w({ due: { date: '2026-01-01', time: undefined }, blockedBy: ['a', 'b'] });

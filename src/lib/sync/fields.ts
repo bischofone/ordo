@@ -21,7 +21,8 @@ export const SYNC_FIELDS = [
 	'postponeCount',
 	'estimateMin',
 	'energy',
-	'waitingFor'
+	'waitingFor',
+	'timeEntries'
 ] as const satisfies readonly (keyof Task)[];
 
 export type SyncField = (typeof SYNC_FIELDS)[number];
@@ -49,6 +50,7 @@ export function normalize(f: SyncFields): SyncFields {
 	out.someday = !!out.someday;
 	out.postponeCount ??= 0;
 	out.notes ??= '';
+	out.timeEntries = [...(out.timeEntries ?? [])].sort((a, b) => (a.id < b.id ? -1 : 1));
 	if (out.due && !out.due.time) out.due = { date: out.due.date };
 	if (out.scheduled && !out.scheduled.time) out.scheduled = { date: out.scheduled.date };
 	return out;

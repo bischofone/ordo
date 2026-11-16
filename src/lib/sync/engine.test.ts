@@ -279,6 +279,28 @@ describe.skipIf(!serverUrl)('Sync zwischen zwei Geräten über Radicale', () => 
 		expect((await b.db.syncState.get(poolB))?.lastError).toContain('nicht mehr');
 	});
 
+	it('Zeiteinträge: beide Geräte erfassen Zeit an derselben Aufgabe', async () => {
+		const { a, b, accB, list, privatA } = await twoDevices();
+		const id = await a.repo.createTask({ poolId: privatA.id, title: 'Projektarbeit' });
+		await a.repo.addTime(id, { minutes: 30, date: '2026-11-16' });
+		await a.sync.syncPool(privatA.id);
+		const poolB = await b.sync.adoptList(accB.id, list);
+		await b.sync.syncPool(poolB);
+		expect((await b.db.tasks.get(id))?.timeEntries).toMatchObject([{ minutes: 30 }]);
+
+		await a.repo.addTime(id, { minutes: 60, date: '2026-11-17' });
+		await b.repo.addTime(id, { minutes: 15, date: '2026-11-17' });
+		await a.sync.syncPool(privatA.id);
+		expect(await b.sync.syncPool(poolB)).toMatchObject({ conflicts: 0, pushed: 1 });
+		await a.sync.syncPool(privatA.id);
+		for (const d of [a, b]) {
+			const minutes = (await d.db.tasks.get(id))!
+				.timeEntries!.map((e) => e.minutes)
+				.sort((x, y) => x - y);
+			expect(minutes).toEqual([15, 30, 60]);
+		}
+	});
+
 	it('Inbox lässt sich ebenfalls verbinden', async () => {
 		const a = await device();
 		const acc = await a.sync.addAccount(creds());

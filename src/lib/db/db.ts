@@ -7,15 +7,13 @@ import type {
 	Project,
 	Setting,
 	Task,
-	Template,
-	TimeEntry
+	Template
 } from '#lib/domain/types.ts';
 
 export class TasksDB extends Dexie {
 	pools!: EntityTable<Pool, 'id'>;
 	projects!: EntityTable<Project, 'id'>;
 	tasks!: EntityTable<Task, 'id'>;
-	timeEntries!: EntityTable<TimeEntry, 'id'>;
 	templates!: EntityTable<Template, 'id'>;
 	contextModes!: EntityTable<ContextMode, 'id'>;
 	settings!: EntityTable<Setting, 'key'>;
@@ -53,5 +51,8 @@ export class TasksDB extends Dexie {
 			syncRecords: 'taskId, poolId, url',
 			conflicts: 'id, taskId'
 		});
+		// v4: Zeiteinträge liegen direkt an der Aufgabe (werden mit ihr synchronisiert);
+		// die bisher ungenutzte eigene Tabelle entfällt.
+		this.version(4).stores({ timeEntries: null });
 	}
 }
