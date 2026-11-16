@@ -5,7 +5,7 @@ test('Aufgabenbaum nur mit der Tastatur anlegen, Fortschritt, Neuladen', async (
 	await page.goto('/');
 	await openPool(page, 'Privat');
 
-	await page.getByRole('button', { name: 'Aufgabe hinzufügen' }).click();
+	await page.getByRole('button', { name: 'Aufgabe hinzufügen', exact: true }).click();
 	// Schnell hintereinander tippen – der Tastenpuffer darf nichts verlieren.
 	const kb = page.keyboard;
 	await kb.type('Urlaub');
@@ -72,7 +72,7 @@ test('Text hinter dem Cursor wandert mit Enter in die neue Zeile; Backspace lös
 }) => {
 	await page.goto('/');
 	await openPool(page, 'Arbeit');
-	await page.getByRole('button', { name: 'Aufgabe hinzufügen' }).click();
+	await page.getByRole('button', { name: 'Aufgabe hinzufügen', exact: true }).click();
 	await page.keyboard.type('Bericht schreiben');
 	for (let i = 0; i < ' schreiben'.length; i++) await page.keyboard.press('ArrowLeft');
 	await page.keyboard.press('Enter');
@@ -90,7 +90,7 @@ test('Text hinter dem Cursor wandert mit Enter in die neue Zeile; Backspace lös
 test('Löschen mit Unteraufgaben fragt nach und lässt sich rückgängig machen', async ({ page }) => {
 	await page.goto('/');
 	await openPool(page, 'Privat');
-	await page.getByRole('button', { name: 'Aufgabe hinzufügen' }).click();
+	await page.getByRole('button', { name: 'Aufgabe hinzufügen', exact: true }).click();
 	await page.keyboard.type('Eltern');
 	await page.keyboard.press('Enter');
 	await page.keyboard.press('Tab');

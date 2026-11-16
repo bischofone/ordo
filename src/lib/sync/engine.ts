@@ -55,7 +55,25 @@ export function createSyncEngine(
 	const isDirty = (task: Task, rec: SyncRecord) =>
 		changedFields(pickSyncFields(task), rec.base).length > 0;
 
-	async function syncPool(poolId: string): Promise<SyncReport> {
+	/**
+	 * Nie zwei Abgleiche desselben Pools gleichzeitig – auch nicht aus zwei Browser-Tabs
+	 * (Web Locks, falls vorhanden; sonst innerhalb dieser Seite per Warteschlange).
+	 */
+	const running = new Map<string, Promise<unknown>>();
+	function exclusive<T>(poolId: string, fn: () => Promise<T>): Promise<T> {
+		const prev = running.get(poolId) ?? Promise.resolve();
+		const locks = (globalThis.navigator as Navigator | undefined)?.locks;
+		const run = () => (locks ? locks.request(`tasks-sync-${poolId}`, fn) : fn());
+		const next = prev.catch(() => undefined).then(run);
+		running.set(poolId, next);
+		return next as Promise<T>;
+	}
+
+	function syncPool(poolId: string): Promise<SyncReport> {
+		return exclusive(poolId, () => syncPoolNow(poolId));
+	}
+
+	async function syncPoolNow(poolId: string): Promise<SyncReport> {
 		const pool = await db.pools.get(poolId);
 		if (!pool?.caldav) throw new Error('Pool ist nicht verbunden');
 		const account = await db.accounts.get(pool.caldav.accountId);
@@ -199,9 +217,13 @@ export function createSyncEngine(
 				return 0;
 			}
 
-			const base = record?.base ?? pickSyncFields(task);
-			const { merged, conflicts } = merge3(base, pickSyncFields(task), remote);
-			await db.tasks.update(task.id, { ...merged, poolId: pool.id, updatedAt: t });
+			const local = pickSyncFields(task);
+			const base = record?.base ?? local;
+			const { merged, conflicts } = merge3(base, local, remote);
+			// Nur schreiben, wenn sich lokal wirklich etwas ändert (sonst würde das einen neuen Sync auslösen).
+			if (changedFields(local, merged).length) {
+				await db.tasks.update(task.id, { ...merged, updatedAt: t });
+			}
 			await db.syncRecords.put({
 				taskId: task.id,
 				poolId: pool.id,

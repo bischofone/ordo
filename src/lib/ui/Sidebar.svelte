@@ -6,7 +6,9 @@
 	import { isAged } from '#lib/domain/views.ts';
 	import { isLater } from '#lib/domain/postpone.ts';
 	import { m } from '#lib/i18n/index.ts';
-	import { repo } from '#lib/state/app.ts';
+	import { db, repo } from '#lib/state/app.ts';
+	import { live } from '#lib/state/live.svelte.ts';
+	import { syncNow, syncStatus } from '#lib/state/sync.svelte.ts';
 	import { ui } from '#lib/state/ui.svelte.ts';
 	import Badge from './Badge.svelte';
 	import { drag } from './drag.svelte';
@@ -44,6 +46,10 @@
 	}
 
 	const path = $derived(page.url.pathname);
+	const conflictCount = live(() => () => db.conflicts.count(), 0);
+	const syncLabel = $derived(
+		syncStatus.running ? m.sync.syncing : syncStatus.error ? m.sync.error : m.sync.ok
+	);
 </script>
 
 <nav class="sidebar" class:open={ui.sidebarOpen} aria-label="Navigation">
@@ -119,6 +125,25 @@
 	{/if}
 
 	<div class="bottom">
+		{#if conflictCount.current}
+			<a class="item warn" class:current={path === '/konflikte'} href={resolve('/konflikte')}>
+				<Icon name="x" /><span class="name">{m.sync.conflicts(conflictCount.current)}</span>
+			</a>
+		{/if}
+		{#if syncStatus.enabled}
+			<button
+				class="item sync"
+				class:error={!!syncStatus.error}
+				data-testid="sync-status"
+				data-last-run={syncStatus.lastRun}
+				data-running={syncStatus.running}
+				title={syncStatus.error ?? m.sync.syncNow}
+				onclick={() => syncNow()}
+			>
+				<span class:spin={syncStatus.running}><Icon name="repeat" /></span>
+				<span class="name">{syncLabel}</span>
+			</button>
+		{/if}
 		<a class="item" class:current={path === '/einstellungen'} href={resolve('/einstellungen')}>
 			<Icon name="settings" /><span class="name">{m.nav.settings}</span>
 		</a>
@@ -220,6 +245,24 @@
 	}
 	.scrim {
 		display: none;
+	}
+	.item.warn {
+		color: var(--warn);
+	}
+	.item.sync {
+		font-size: 14px;
+	}
+	.item.sync.error {
+		color: var(--danger);
+	}
+	.spin {
+		display: inline-grid;
+		animation: spin 1s linear infinite;
+	}
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
 	}
 	@media (max-width: 800px) {
 		.sidebar {

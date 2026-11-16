@@ -19,7 +19,8 @@
 		"test:unit": "vitest",
 		"test": "pnpm test:unit --run && pnpm test:e2e",
 		"test:e2e": "playwright test",
-		"serve": "sirv build --single --port 4173"
+		"serve": "sirv build --single --port 4173",
+		"radicale": "scripts/radicale.sh"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",

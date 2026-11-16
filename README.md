@@ -2,7 +2,8 @@
 
 Local-first Aufgaben-App mit getrennten Pools. Spezifikation und Fortschritt: [SPEC.md](SPEC.md).
 
-**Stand:** Phase 1 (MVP lokal) ist fertig. Alle Daten liegen nur im Browser (IndexedDB), es gibt noch keinen Sync.
+**Stand:** Phase 2 ist fertig – lokal im Browser (IndexedDB) und per CalDAV synchronisiert (z. B. Radicale).
+Server-Einrichtung: [docker/README.md](docker/README.md).
 
 ## Voraussetzungen
 
@@ -32,12 +33,25 @@ src/lib/domain/   reine Logik (Baum, Schnelleingabe, Zurückschieben …) – ke
 src/lib/db/       Dexie-Schema und Repository (alle Schreibzugriffe)
 src/lib/state/    App-Zustand, reaktive Abfragen, Aktionen mit Rückfragen
 src/lib/ui/       Komponenten
+src/lib/sync/     CalDAV: VTODO-Mapping, Client, Zusammenführen, Sync-Engine
 src/lib/i18n/     UI-Texte (Deutsch)
 src/routes/       Seiten: / (alle Pools), /pool/[id], /inbox, /inbox/aufraeumen, /einstellungen
 e2e/              Playwright-Tests
+docker/           Server: Radicale + Caddy (docker compose)
+scripts/          radicale.sh (lokaler Testserver)
 ```
 
-Abhängigkeiten zeigen nur in eine Richtung: `domain ← db ← state ← ui/routes`.
+Abhängigkeiten zeigen nur in eine Richtung: `domain ← db ← sync ← state ← ui/routes`.
+
+## Sync ausprobieren (lokal)
+
+```bash
+pnpm radicale     # Terminal 1
+pnpm dev          # Terminal 2
+```
+
+In der App: Einstellungen → Synchronisation → Server-Adresse `http://localhost:5173/dav/`,
+Benutzer `test`, Passwort `test` → bei einem Pool „Neue Liste in …“ wählen.
 
 ## Bedienung (Kurzfassung)
 

@@ -231,6 +231,15 @@ describe.skipIf(!serverUrl)('Sync zwischen zwei Geräten über Radicale', () => 
 		expect(await b.db.pools.get(poolB)).toMatchObject({ name: 'Zuhause', color: '#e5484d' });
 	});
 
+	it('gleichzeitige Abgleiche laufen nacheinander, nichts doppelt', async () => {
+		const { a, listUrl, privatA } = await twoDevices();
+		for (let i = 0; i < 5; i++) await a.repo.createTask({ poolId: privatA.id, title: `T${i}` });
+		const reports = await Promise.all([1, 2, 3].map(() => a.sync.syncPool(privatA.id)));
+		expect(reports.reduce((n, r) => n + r.pushed, 0)).toBe(5);
+		expect(reports.reduce((n, r) => n + r.conflicts, 0)).toBe(0);
+		expect(await createClient(creds()).listItems(listUrl)).toHaveLength(5);
+	});
+
 	it('Inbox lässt sich ebenfalls verbinden', async () => {
 		const a = await device();
 		const acc = await a.sync.addAccount(creds());

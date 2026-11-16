@@ -15,7 +15,7 @@ test('Projekt anlegen, Farbe und Icon wählen, bearbeiten und löschen', async (
 	await expect(nav.getByRole('link', { name: 'Garten' })).toBeVisible();
 	await page
 		.getByTestId('project-group')
-		.getByRole('button', { name: 'Aufgabe hinzufügen' })
+		.getByRole('button', { name: 'Aufgabe hinzufügen', exact: true })
 		.click();
 	await page.keyboard.type('Rasen mähen');
 	await expect

@@ -1,0 +1,17 @@
+# ALTERNATIVE: CalDAV auf einer eigenen Adresse (z. B. dav.example.de), die App woanders
+# (z. B. tasks.example.de). Dann muss der Server dem Browser die Zugriffe per CORS erlauben.
+# Nur nötig, wenn du NICHT die Variante aus „Caddyfile“ (alles unter einer Adresse) nutzt.
+dav.example.de {
+	@preflight method OPTIONS
+	header {
+		Access-Control-Allow-Origin "https://tasks.example.de"
+		Access-Control-Allow-Methods "GET, PUT, DELETE, PROPFIND, PROPPATCH, REPORT, MKCALENDAR, OPTIONS"
+		Access-Control-Allow-Headers "Authorization, Content-Type, Depth, If-Match, If-None-Match, Prefer"
+		Access-Control-Expose-Headers "ETag"
+		Access-Control-Max-Age "86400"
+		Vary Origin
+	}
+	# Preflight-Anfragen beantwortet Caddy selbst (ohne Anmeldung)
+	respond @preflight 204
+	reverse_proxy radicale:5232
+}

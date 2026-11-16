@@ -1,0 +1,22 @@
+# App und CalDAV unter einer Adresse → keine CORS-Probleme.
+{$DOMAIN} {
+	encode zstd gzip
+
+	# CalDAV: https://DOMAIN/dav/  (Radicale erfährt den Präfix über X-Script-Name)
+	handle_path /dav/* {
+		reverse_proxy radicale:5232 {
+			header_up X-Script-Name /dav
+		}
+	}
+	# Damit Apps wie DAVx⁵ oder Thunderbird den Server automatisch finden
+	redir /.well-known/caldav /dav/ 301
+
+	# Die App selbst (statische Dateien aus pnpm build); unbekannte Pfade → index.html
+	handle {
+		root * /srv/app
+		header /service-worker.js Cache-Control "no-cache"
+		header /_app/immutable/* Cache-Control "public, max-age=31536000, immutable"
+		try_files {path} /index.html
+		file_server
+	}
+}

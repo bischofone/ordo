@@ -1,0 +1,52 @@
+# Eigener Server für die Tasks-App: Radicale (CalDAV) + Caddy (HTTPS, App, Weiterleitung).
+# App und CalDAV laufen unter DERSELBEN Adresse (https://DOMAIN/ und https://DOMAIN/dav/),
+# deshalb braucht der Browser keine CORS-Freigaben.
+#
+#   1. cp .env.example .env   und DOMAIN eintragen
+#   2. Benutzer anlegen (siehe README.md in diesem Ordner)
+#   3. App bauen:  (im Projektordner) pnpm build
+#   4. docker compose up -d
+services:
+  radicale:
+    image: tomsquest/docker-radicale:3.9.1.1
+    restart: unless-stopped
+    init: true
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETUID
+      - SETGID
+      - CHOWN
+      - KILL
+    volumes:
+      - radicale-data:/data
+      - ./radicale/config:/config/config:ro
+      - ./radicale/users:/config/users:ro
+    healthcheck:
+      test: curl -f http://127.0.0.1:5232 || exit 1
+      interval: 30s
+      retries: 3
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN in .env setzen}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ../build:/srv/app:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - radicale
+
+volumes:
+  radicale-data:
+  caddy-data:
+  caddy-config:

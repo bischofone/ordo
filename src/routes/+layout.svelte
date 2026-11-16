@@ -1,11 +1,13 @@
 <script lang="ts">
 	import '../app.css';
+	import { untrack } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
 	import { DEFAULT_INBOX_AGING_DAYS } from '#lib/domain/views.ts';
 	import { m } from '#lib/i18n/index.ts';
 	import { repo } from '#lib/state/app.ts';
 	import { live } from '#lib/state/live.svelte.ts';
 	import { q } from '#lib/state/queries.ts';
+	import { startAutoSync } from '#lib/state/sync.svelte.ts';
 	import { ui } from '#lib/state/ui.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import DragLayer from '#lib/ui/DragLayer.svelte';
@@ -24,6 +26,9 @@
 		() => q.setting('inboxAgingDays', DEFAULT_INBOX_AGING_DAYS),
 		DEFAULT_INBOX_AGING_DAYS
 	);
+
+	// untrack: der Start darf nicht von reaktivem Zustand abhängen (sonst Neustart-Schleife)
+	$effect(() => untrack(() => startAutoSync()));
 
 	$effect(() => {
 		repo.ensureDefaults();

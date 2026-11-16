@@ -5,7 +5,11 @@ export default defineConfig({
 	testMatch: '**/*.e2e.ts',
 	fullyParallel: true,
 	retries: 0,
-	webServer: { command: 'pnpm build && pnpm serve', port: 4173 },
+	webServer: [
+		{ command: 'pnpm build && pnpm serve', port: 4173 },
+		// Frischer Radicale für die Sync-Tests (leerer Datenordner bei jedem Lauf)
+		{ command: 'bash -c \'scripts/radicale.sh 5390 "$(mktemp -d)"\'', port: 5390 }
+	],
 	use: {
 		baseURL: 'http://localhost:4173',
 		locale: 'de-DE',

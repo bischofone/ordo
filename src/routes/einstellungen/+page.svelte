@@ -7,6 +7,7 @@
 	import { getTheme, setTheme, type Theme } from '#lib/state/theme.ts';
 	import type { Pool } from '#lib/domain/types.ts';
 	import Editor from '#lib/ui/Editor.svelte';
+	import SyncSettings from '#lib/ui/SyncSettings.svelte';
 
 	const pools = live(() => q.pools, []);
 	const projects = live(() => q.projects, []);
@@ -91,6 +92,8 @@
 		{/each}
 	{/if}
 </section>
+
+<SyncSettings />
 
 <p class="about">{m.settings.about}</p>
 

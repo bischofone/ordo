@@ -171,7 +171,7 @@ Nur wenige, intuitive Kürzel – alles andere über Buttons:
 | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | Titel / Notizen                                                                   | `SUMMARY` / `DESCRIPTION`                                               |
 | Unteraufgabe (beliebig tief)                                                      | `RELATED-TO;RELTYPE=PARENT`                                             |
-| Projekt (Vorschlag, in Phase 2 final)                                             | `X-MYTASKS-PROJECT` (ID) + `CATEGORIES` (Name, sichtbar in Tasks.org)   |
+| Projekt                                                                           | `X-MYTASKS-PROJECT` (ID); Projektliste als Eigenschaft der CalDAV-Liste |
 | Priorität 1/2/3                                                                   | `PRIORITY` 1/5/9                                                        |
 | Fälligkeit                                                                        | `DUE`                                                                   |
 | Geplantes Datum                                                                   | `DTSTART`                                                               |
@@ -216,7 +216,7 @@ Nur wenige, intuitive Kürzel – alles andere über Buttons:
 
 1. ✅ **MVP lokal:** Pools, Aufgaben, mehrstufige Unteraufgaben (Enter/Tab),
    Schnelleingabe, Inbox inkl. Aufräum-Modus, Zurückschieben, PWA.
-2. **CalDAV-Sync** pro Pool + Radicale-Setup.
+2. ✅ **CalDAV-Sync** pro Pool + Radicale-Setup.
 3. **Capacitor-Android-App** + lokale Benachrichtigungen + Kontext-Modi.
 4. **Planung:** Priorisierung, „Was als Nächstes?“, Heute-Ansicht, Tagesplanung.
 5. **Wartet-auf, Abhängigkeiten, Wiederholungen, Vorlagen, Zeiterfassung.**
@@ -292,10 +292,48 @@ jederzeit geändert werden – dann wird es hier angepasst.
   Tasten 1–9 / I / Entf / →.
 - **Farbschema** (System/Hell/Dunkel) gilt pro Gerät.
 
+### Sync (Phase 2)
+
+- **Mapping:** ical.js. Beim Schreiben wird das zuletzt geladene VTODO des Servers gezielt
+  verändert (nur geänderte Felder). Unbekannte Eigenschaften, VALARM, VTIMEZONE,
+  CATEGORIES, andere RELATED-TO-Typen bleiben erhalten; unveränderte Datumsangaben behalten
+  ihre Zeitzone. Neu geschriebene Zeiten sind „floating“ (lokale Zeit), ganztägig als DATE.
+- **Eigene Felder:** `X-MYTASKS-SORT` (exakter Sortierschlüssel; zusätzlich
+  `X-APPLE-SORT-ORDER` als Zahl für andere Apps), `-PROJECT`, `-SOMEDAY`, `-POSTPONED`,
+  `-ESTIMATE`, `-ENERGY`, `-WAITING` (JSON).
+- **Projekte, Name, Farbe** eines Pools: als Eigenschaften der CalDAV-Liste
+  (`displayname`, `calendar-color`, eigene Eigenschaft `projects` mit JSON). Andere Apps
+  sehen keine Projekt-Aufgaben. Projekte: wer zuletzt geändert hat, gewinnt;
+  Löschen als Tombstone.
+- **Warteschlange:** Eine Aufgabe gilt als „noch zu senden“, solange sie sich von ihrem
+  letzten synchronisierten Stand unterscheidet (pro Aufgabe gespeichert). Das ersetzt eine
+  separate Liste von Vorgängen und fasst mehrere Offline-Änderungen automatisch zusammen.
+- **Ablauf:** Holen (sync-token, sonst Vergleich aller ETags) → Liste abgleichen → Senden
+  (mit `If-Match`/`If-None-Match`). Bei 412 wird neu geladen, zusammengeführt und
+  nochmal versucht.
+- **Zusammenführen pro Feld** (Dreiwege). Ohne Rückfrage: Reihenfolge (Server gewinnt),
+  Verschiebe-Zähler (Maximum), Erledigt-Zeitpunkt (folgt dem Status). Echte Konflikte:
+  lokaler Wert bleibt sichtbar, Aufgabe wird erst nach der Entscheidung hochgeladen
+  (Seite „Konflikte“).
+- **Löschen vs. Ändern:** Wurde auf einer Seite gelöscht und auf der anderen geändert,
+  bleibt die geänderte Aufgabe erhalten.
+- **Pool-Wechsel:** Aufgabe wird in der alten Liste gelöscht und in der neuen angelegt.
+- **Fremde Aufgaben** ohne Elternteil in der Liste erscheinen als oberste Aufgaben.
+- **Automatisch:** beim Start, alle 5 Minuten (wenn sichtbar), wenn das Netz zurückkommt
+  und 3 Sekunden nach lokalen Änderungen. Nie zwei Läufe gleichzeitig (auch nicht aus
+  mehreren Tabs: Web Locks).
+- **Konten** und Passwörter liegen lokal; im Browser unverschlüsselt in IndexedDB
+  (Android: Secure Storage in Phase 3).
+- **Server:** `docker/` mit Radicale + Caddy; App und CalDAV unter einer Adresse
+  (`/dav/`) → kein CORS nötig. Alternative mit CORS als Beispiel. Lokal ohne Docker:
+  `pnpm radicale`, im Dev-Server unter `/dav/` erreichbar.
+- **Tests:** Integrationstests mit zwei simulierten Geräten gegen echten Radicale
+  (startet automatisch), Browser-Test mit zwei Profilen inkl. Offline-Konflikt.
+
 ### Offen (spätere Phasen)
 
 - Projekte nur eine Ebene tief – reicht das, oder werden verschachtelte Projekte gebraucht?
-- Abbildung von Projekten im CalDAV (siehe Tabelle Abschnitt 7) – in Phase 2 festlegen.
+- Docker-Setup ist geschrieben, aber noch nicht auf einem echten Server ausprobiert.
 - App-Name und Android-App-ID (vor Phase 2/3 festlegen, bestimmt auch das `X-`-Präfix).
 - Hosting der PWA und CORS-Setup (Phase 2).
 - Speicherung von CalDAV-Passwörtern im Browser (Phase 2).

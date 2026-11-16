@@ -12,7 +12,7 @@ test('Handy: Menü, Leiste über der Tastatur, Wischen zum Abhaken', async ({ pa
 		.click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Privat' })).toBeVisible();
 
-	await page.getByRole('button', { name: 'Aufgabe hinzufügen' }).tap();
+	await page.getByRole('button', { name: 'Aufgabe hinzufügen', exact: true }).tap();
 	await page.keyboard.type('Einkauf');
 	await page.keyboard.press('Enter');
 	await page.keyboard.type('Brot');

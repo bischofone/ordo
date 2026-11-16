@@ -147,7 +147,70 @@ export const de = {
 		inbox: 'Inbox',
 		agingDays: 'Einträge markieren nach (Tagen)',
 		pools: 'Pools',
-		about: 'Alle Daten liegen nur lokal auf diesem Gerät.'
+		about:
+			'Alle Daten liegen lokal auf diesem Gerät – und, falls verbunden, auf deinem CalDAV-Server.'
+	},
+	sync: {
+		title: 'Synchronisation (CalDAV)',
+		intro:
+			'Jeder Pool kann mit einer Aufgabenliste auf einem CalDAV-Server (z. B. Radicale, Nextcloud) abgeglichen werden. Zugangsdaten bleiben nur auf diesem Gerät.',
+		accounts: 'Konten',
+		addAccount: 'Konto hinzufügen',
+		accountName: 'Name (optional)',
+		serverUrl: 'Server-Adresse',
+		serverUrlHint: 'z. B. https://dav.example.de/ oder http://localhost:5232/',
+		username: 'Benutzer',
+		password: 'Passwort',
+		connect: 'Verbinden',
+		connecting: 'Verbinde …',
+		remove: 'Entfernen',
+		removeTitle: 'Konto entfernen?',
+		removeText: (name: string) =>
+			`Die Verbindung zu „${name}“ wird gelöst. Aufgaben bleiben auf diesem Gerät und auf dem Server erhalten.`,
+		poolsTitle: 'Pools und Listen',
+		notSynced: 'Nicht synchronisieren',
+		newList: (account: string) => `Neue Liste in „${account}“`,
+		lists: 'Vorhandene Listen',
+		unboundLists: 'Listen auf dem Server ohne Pool',
+		adopt: 'Als Pool übernehmen',
+		syncNow: 'Jetzt synchronisieren',
+		syncing: 'Synchronisiere …',
+		lastSync: (when: string) => `Zuletzt: ${when}`,
+		never: 'noch nie',
+		error: 'Fehler',
+		ok: 'Synchron',
+		offline: 'Offline',
+		conflicts: (n: number) => (n === 1 ? '1 Konflikt' : `${n} Konflikte`),
+		passwordNote:
+			'Hinweis: Im Browser liegt das Passwort unverschlüsselt in der lokalen Datenbank. In der Android-App kommt es später in den sicheren Speicher.'
+	},
+	conflicts: {
+		title: 'Konflikte',
+		intro:
+			'Diese Felder wurden auf zwei Geräten unterschiedlich geändert. Wähle, welcher Stand gelten soll – die Aufgabe wird erst danach wieder hochgeladen.',
+		none: 'Keine Konflikte. Alles synchron.',
+		local: 'Dieses Gerät',
+		remote: 'Server',
+		empty: '(leer)',
+		fields: {
+			title: 'Titel',
+			notes: 'Notizen',
+			priority: 'Priorität',
+			due: 'Fällig',
+			scheduled: 'Geplant',
+			rrule: 'Wiederholung',
+			status: 'Status',
+			completedAt: 'Erledigt am',
+			parentId: 'Elternaufgabe',
+			blockedBy: 'Blockiert durch',
+			sortOrder: 'Reihenfolge',
+			projectId: 'Projekt',
+			someday: 'Irgendwann',
+			postponeCount: 'Verschoben',
+			estimateMin: 'Zeitschätzung',
+			energy: 'Energie',
+			waitingFor: 'Wartet auf'
+		} as Record<string, string>
 	},
 	toolbar: {
 		outdent: 'Ausrücken',

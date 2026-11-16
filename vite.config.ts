@@ -14,6 +14,17 @@ export default defineConfig({
 			adapter: adapter({ fallback: 'index.html' })
 		})
 	],
+	server: {
+		// Wie auf dem Server (docker/Caddyfile): CalDAV unter /dav auf derselben Adresse →
+		// kein CORS nötig. Lokalen Radicale starten mit: pnpm radicale
+		proxy: {
+			'/dav': {
+				target: 'http://127.0.0.1:5232',
+				rewrite: (path) => path.replace(/^\/dav/, ''),
+				headers: { 'X-Script-Name': '/dav' }
+			}
+		}
+	},
 	test: {
 		expect: { requireAssertions: true },
 		environment: 'node',

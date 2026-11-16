@@ -112,7 +112,7 @@ export function beginKeyBuffer() {
 		window.addEventListener('beforeinput', onBufferedInput, true);
 	}
 	clearTimeout(keyTimer);
-	keyTimer = setTimeout(stopKeyBuffer, 1500);
+	keyTimer = setTimeout(stopKeyBuffer, 4000);
 }
 
 const CARET_MOVES: Record<string, (start: number, end: number, len: number) => number> = {
