@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { DEFAULT_INBOX_AGING_DAYS } from '#lib/domain/views.ts';
 	import { m } from '#lib/i18n/index.ts';
+	import { deletePool } from '#lib/state/actions.ts';
 	import { repo } from '#lib/state/app.ts';
 	import { live } from '#lib/state/live.svelte.ts';
 	import { q } from '#lib/state/queries.ts';
@@ -105,6 +106,7 @@
 		onarchive={p.kind === 'pool'
 			? () => repo.updatePool(p.id, { archived: !p.archived })
 			: undefined}
+		ondelete={p.kind === 'pool' ? () => deletePool(p) : undefined}
 	/>
 {/snippet}
 

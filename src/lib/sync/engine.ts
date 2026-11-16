@@ -22,6 +22,7 @@ import {
 } from '#lib/domain/types.ts';
 import type { TasksDB } from '#lib/db/db.ts';
 import {
+	CaldavError,
 	createClient,
 	InvalidSyncToken,
 	PreconditionFailed,
@@ -150,8 +151,11 @@ export function createSyncEngine(
 			await saveState(poolId, { syncToken: token, lastSync: now(), lastError: undefined });
 			return report;
 		} catch (e) {
-			await saveState(poolId, { lastError: errorText(e) });
-			throw e;
+			// Liste fehlt auf dem Server (z. B. auf einem anderen Gerät gelöscht): lokal bleibt
+			// alles erhalten, der Nutzer entscheidet (Pool löschen oder neu verbinden).
+			const err = e instanceof CaldavError && e.status === 404 ? new Error(LIST_GONE) : e;
+			await saveState(poolId, { lastError: errorText(err) });
+			throw err;
 		}
 	}
 
@@ -479,6 +483,20 @@ export function createSyncEngine(
 			});
 		},
 
+		/**
+		 * Liste eines Pools auf dem Server löschen (samt allen Aufgaben darin) und die
+		 * Verbindung lösen. Lokal bleibt alles, bis der Pool selbst gelöscht wird.
+		 */
+		async deleteRemoteList(poolId: string) {
+			const pool = await db.pools.get(poolId);
+			if (!pool?.caldav) return;
+			const account = await db.accounts.get(pool.caldav.accountId);
+			if (!account) throw new Error('Konto fehlt');
+			const url = pool.caldav.collectionUrl;
+			await exclusive(poolId, () => clientFor(account).deleteList(url));
+			await this.unbindPool(poolId);
+		},
+
 		/** Eine vorhandene Liste als neuen Pool übernehmen (z. B. auf dem zweiten Gerät). */
 		async adoptList(accountId: string, list: { url: string; displayName: string; color?: string }) {
 			const pools = (await db.pools.toArray()).sort(bySortOrder);
@@ -570,6 +588,9 @@ function depth(tasks: Task[], t: Task) {
 const ignorePrecondition = (e: unknown) => {
 	if (!(e instanceof PreconditionFailed)) throw e;
 };
+
+export const LIST_GONE =
+	'Die Liste gibt es auf dem Server nicht mehr (auf einem anderen Gerät gelöscht?). Die Aufgaben sind hier noch vorhanden.';
 
 export function errorText(e: unknown) {
 	if (e instanceof TypeError) return 'Server nicht erreichbar (offline oder CORS)';

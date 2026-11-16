@@ -240,6 +240,45 @@ describe.skipIf(!serverUrl)('Sync zwischen zwei Geräten über Radicale', () => 
 		expect(await createClient(creds()).listItems(listUrl)).toHaveLength(5);
 	});
 
+	it('Pool löschen: nur lokal lässt die Liste stehen, „auch auf dem Server“ entfernt sie', async () => {
+		const { a, accA, listUrl, privatA } = await twoDevices();
+		const arbeit = await a.pool('Arbeit');
+		const arbeitUrl = await a.sync.bindPool(arbeit.id, accA.id);
+		await a.repo.createTask({ poolId: privatA.id, title: 'Privates' });
+		await a.repo.createTask({ poolId: arbeit.id, title: 'Dienstliches' });
+		await a.sync.syncAll();
+		const client = createClient(creds());
+
+		// Nur auf diesem Gerät: Verbindung lösen, dann löschen → Server unverändert
+		await a.sync.unbindPool(privatA.id);
+		await a.repo.deletePool(privatA.id);
+		await a.sync.syncAll();
+		expect(await client.listItems(listUrl)).toHaveLength(1);
+
+		// Auch auf dem Server
+		await a.sync.deleteRemoteList(arbeit.id);
+		await a.repo.deletePool(arbeit.id);
+		const { homeUrl } = await client.discover();
+		const urls = (await client.lists(homeUrl)).map((l) => l.url);
+		expect(urls).toContain(listUrl);
+		expect(urls).not.toContain(arbeitUrl);
+		expect(await a.db.syncRecords.count()).toBe(0);
+		expect(await a.db.tasks.count()).toBe(0);
+	});
+
+	it('zweites Gerät: gelöschte Liste wird gemeldet, Aufgaben bleiben', async () => {
+		const { a, b, accB, list, privatA } = await twoDevices();
+		await a.repo.createTask({ poolId: privatA.id, title: 'Wichtig' });
+		await a.sync.syncPool(privatA.id);
+		const poolB = await b.sync.adoptList(accB.id, list);
+		await b.sync.syncPool(poolB);
+
+		await a.sync.deleteRemoteList(privatA.id);
+		await expect(b.sync.syncPool(poolB)).rejects.toThrow('nicht mehr');
+		expect(await b.shape(poolB)).toEqual(['Wichtig']);
+		expect((await b.db.syncState.get(poolB))?.lastError).toContain('nicht mehr');
+	});
+
 	it('Inbox lässt sich ebenfalls verbinden', async () => {
 		const a = await device();
 		const acc = await a.sync.addAccount(creds());

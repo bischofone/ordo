@@ -1,6 +1,9 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { m } from '#lib/i18n/index.ts';
+	import { deletePool } from '#lib/state/actions.ts';
 	import { repo } from '#lib/state/app.ts';
 	import { live } from '#lib/state/live.svelte.ts';
 	import { q } from '#lib/state/queries.ts';
@@ -22,6 +25,10 @@
 		projects.current.filter((p) => p.poolId === page.params.id && !p.archived)
 	);
 	let editing = $state(false);
+
+	async function remove() {
+		if (pool && (await deletePool(pool))) goto(resolve('/'));
+	}
 </script>
 
 {#if pool}
@@ -43,6 +50,7 @@
 			onarchive={pool.kind === 'pool'
 				? () => repo.updatePool(pool.id, { archived: !pool.archived })
 				: undefined}
+			ondelete={pool.kind === 'pool' ? remove : undefined}
 		/>
 		<PoolSync {pool} />
 	{/if}

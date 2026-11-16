@@ -177,3 +177,41 @@ test('ohne Konto verweist der Pool auf die Einstellungen', async ({ page }) => {
 	await page.getByTestId('pool-sync').getByRole('link', { name: 'Konto hinzufügen' }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Einstellungen' })).toBeVisible();
 });
+
+test('synchronisierten Pool löschen: nur hier oder auch auf dem Server', async ({ page }) => {
+	const stamp = Date.now();
+	await addAccount(page);
+	const bind = async (pool: string, name: string) => {
+		await openPool(page, pool);
+		await page.getByRole('button', { name: 'Pool bearbeiten' }).click();
+		const input = page.getByTestId('editor').getByRole('textbox', { name: 'Name' });
+		await input.fill(name);
+		await input.press('Enter');
+		await page
+			.getByRole('combobox', { name: 'Synchronisation' })
+			.selectOption({ label: 'Neue Liste in „127.0.0.1:5390“' });
+		await expect(page.getByTestId('pool-sync')).toContainText('vor');
+	};
+	const remove = async (choice: string) => {
+		await page.getByTestId('editor').getByRole('button', { name: 'Löschen' }).click();
+		const dialog = page.getByRole('dialog');
+		await expect(dialog).toContainText('Soll die Liste auch dort gelöscht werden?');
+		await dialog.getByRole('button', { name: choice }).click();
+		await expect(page.getByRole('heading', { level: 1, name: 'Alle Pools' })).toBeVisible();
+	};
+	const rows = (name: string) =>
+		page.getByTestId('account').locator('.list-row').filter({ hasText: name });
+
+	await bind('Privat', `Lokal-${stamp}`);
+	await remove('Nur auf diesem Gerät löschen');
+	await bind('Arbeit', `Ueberall-${stamp}`);
+	await remove('Auch auf dem Server löschen');
+
+	// Die erste Liste liegt noch auf dem Server und lässt sich wieder übernehmen, die zweite ist weg
+	await page.goto('/einstellungen');
+	await page.reload();
+	await expect(
+		rows(`Lokal-${stamp}`).getByRole('button', { name: 'Als Pool übernehmen' })
+	).toBeVisible();
+	await expect(rows(`Ueberall-${stamp}`)).toHaveCount(0);
+});

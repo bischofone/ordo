@@ -138,7 +138,18 @@ export const de = {
 		moveUp: 'Nach oben',
 		moveDown: 'Nach unten',
 		newName: 'Name des neuen Pools',
-		notFound: 'Pool nicht gefunden.'
+		notFound: 'Pool nicht gefunden.',
+		delete: 'Pool löschen',
+		deleteTitle: (name: string) => `Pool „${name}“ löschen?`,
+		deleteText: (tasks: number, projects: number) =>
+			`${tasks === 1 ? '1 Aufgabe' : `${tasks} Aufgaben`}${
+				projects ? ` und ${projects === 1 ? '1 Projekt' : `${projects} Projekte`}` : ''
+			} ${tasks + projects === 1 ? 'wird' : 'werden'} endgültig gelöscht. Das lässt sich nicht rückgängig machen.`,
+		deleteSyncedText: (account: string) =>
+			` Der Pool wird mit „${account}“ synchronisiert: Soll die Liste auch dort gelöscht werden? Dann verschwindet sie auf allen Geräten.`,
+		deleteLocal: 'Nur auf diesem Gerät löschen',
+		deleteEverywhere: 'Auch auf dem Server löschen',
+		deleted: (name: string) => `Pool „${name}“ gelöscht`
 	},
 	settings: {
 		title: 'Einstellungen',

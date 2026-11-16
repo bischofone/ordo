@@ -32,7 +32,8 @@ kein eigener App-Server.
 ## 2. Pools
 
 - Jede Aufgabe gehört zu genau einem Pool (z. B. Arbeit, Privat, Projekte).
-  Pools lassen sich jederzeit anlegen, umbenennen, einfärben, sortieren und archivieren.
+  Pools lassen sich jederzeit anlegen, umbenennen, einfärben, sortieren, archivieren
+  und endgültig löschen (mit Rückfrage; die Inbox nicht).
 - **Jeder Pool = eine eigene CalDAV-Aufgabenliste.** Server/Konto/Liste pro Pool
   wählbar (Arbeit darf auf einem anderen Server liegen als Privat).
 - Pools sind strikt getrennt. Ansichten zeigen einen, mehrere oder alle Pools.
@@ -327,6 +328,12 @@ jederzeit geändert werden – dann wird es hier angepasst.
   vorhandene Liste eines Kontos. Neben dem Pool-Namen zeigt ein kleines Schild das Konto
   (rot bei Fehler). Die Einstellungen enthalten nur die Konten – je Konto die Listen auf
   dem Server mit dem verknüpften Pool bzw. „Als Pool übernehmen“.
+- **Pool löschen:** Rückfrage nennt die Zahl der Aufgaben und Projekte; alles wird auf dem
+  Gerät endgültig entfernt (kein Rückgängig). Bei synchronisierten Pools wählt man:
+  „Nur auf diesem Gerät“ (Liste bleibt auf dem Server und lässt sich wieder übernehmen)
+  oder „Auch auf dem Server“ (Liste verschwindet für alle Geräte). Andere Geräte melden
+  dann am Pool „Liste gibt es nicht mehr“ und behalten ihre Aufgaben, bis man dort
+  entscheidet.
 - **Mehrere Konten** (verschiedene Server oder Benutzer) sind möglich; jeder Pool wählt
   sein Konto selbst. Eine Liste gehört zu genau einem Pool.
 - **Konten** und Passwörter liegen lokal; im Browser unverschlüsselt in IndexedDB

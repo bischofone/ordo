@@ -336,6 +336,11 @@ ${color ? `<a:calendar-color>${esc(color)}</a:calendar-color>` : ''}
 			return text(r?.props.getetag) ?? '';
 		},
 
+		/** Löscht eine ganze Aufgabenliste samt Inhalt auf dem Server. */
+		async deleteList(listUrl: string) {
+			await request('DELETE', listUrl, { ok: [200, 204, 404] });
+		},
+
 		async deleteItem(url: string, etag?: string) {
 			await request('DELETE', url, {
 				headers: etag ? { 'If-Match': etag } : {},

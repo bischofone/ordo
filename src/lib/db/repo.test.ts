@@ -44,6 +44,20 @@ describe('Pools', () => {
 		expect((await live(p.id)).map((t) => t.title)).toEqual(['bleibt']);
 	});
 
+	it('Pool löschen entfernt Aufgaben und Projekte – andere Pools bleiben', async () => {
+		const p = await privat();
+		const arbeit = (await db.pools.toArray()).find((x) => x.name === 'Arbeit')!;
+		const proj = await repo.createProject(p.id, 'Umzug');
+		const a = await repo.createTask({ poolId: p.id, projectId: proj, title: 'A' });
+		await repo.createTask({ poolId: p.id, parentId: a, title: 'A1' });
+		await repo.createTask({ poolId: arbeit.id, title: 'bleibt' });
+		await repo.deletePool(p.id);
+		expect((await db.pools.toArray()).map((x) => x.name).sort()).toEqual(['Arbeit', 'Inbox']);
+		expect((await db.tasks.toArray()).map((t) => t.title)).toEqual(['bleibt']);
+		expect(await db.projects.count()).toBe(0);
+		await expect(repo.deletePool(INBOX_ID)).rejects.toThrow();
+	});
+
 	it('Reihenfolge ändern', async () => {
 		const id = await repo.createPool('Projekte');
 		await repo.movePool(id, -1);

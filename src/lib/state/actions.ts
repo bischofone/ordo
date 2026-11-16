@@ -3,9 +3,11 @@
  * Die eigentliche Datenänderung passiert im Repository, hier kommt nur die Nutzerführung dazu.
  */
 import { formatDateValue } from '#lib/domain/dates.ts';
-import { isOpen, type Task } from '#lib/domain/types.ts';
+import { isOpen, type Pool, type Task } from '#lib/domain/types.ts';
+import { errorText } from '#lib/sync/engine.ts';
 import { m } from '#lib/i18n/index.ts';
-import { repo } from './app';
+import { db, repo } from './app';
+import { sync } from './sync.svelte';
 import { ask, beginKeyBuffer, requestFocus, toast, ui } from './ui.svelte';
 
 export async function toggleDone(task: Task) {
@@ -83,4 +85,46 @@ export async function postpone(task: Task, date: string, hasChildren: boolean) {
 			toast(m.postpone.movedTo(formatDateValue({ date }, ui.now)));
 			break;
 	}
+}
+
+/**
+ * Pool endgültig löschen (nach Rückfrage). Bei synchronisierten Pools wählt der Nutzer,
+ * ob die Liste auf dem Server bleibt. Liefert true, wenn gelöscht wurde.
+ */
+export async function deletePool(pool: Pool): Promise<boolean> {
+	const tasks = await db.tasks
+		.where('poolId')
+		.equals(pool.id)
+		.filter((t) => !t.deletedAt)
+		.count();
+	const projects = await db.projects
+		.where('poolId')
+		.equals(pool.id)
+		.filter((p) => !p.deletedAt)
+		.count();
+	const account = pool.caldav ? await db.accounts.get(pool.caldav.accountId) : undefined;
+	const choice = await ask({
+		title: m.pool.deleteTitle(pool.name),
+		message:
+			m.pool.deleteText(tasks, projects) + (account ? m.pool.deleteSyncedText(account.name) : ''),
+		actions: account
+			? [
+					{ id: 'local', label: m.pool.deleteLocal, variant: 'danger' },
+					{ id: 'everywhere', label: m.pool.deleteEverywhere, variant: 'danger' }
+				]
+			: [{ id: 'local', label: m.pool.delete, variant: 'danger' }]
+	});
+	if (!choice) return false;
+	try {
+		// Erst die Verbindung lösen bzw. die Liste entfernen – sonst würde der Sync die
+		// Aufgaben einzeln vom Server löschen.
+		if (choice === 'everywhere') await sync.deleteRemoteList(pool.id);
+		else await sync.unbindPool(pool.id);
+	} catch (e) {
+		toast(errorText(e));
+		return false;
+	}
+	await repo.deletePool(pool.id);
+	toast(m.pool.deleted(pool.name));
+	return true;
 }

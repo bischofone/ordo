@@ -165,6 +165,36 @@ export function createRepo(db: TasksDB, clock: () => Date = () => new Date()) {
 			await db.pools.update(id, { ...patch, updatedAt: now() });
 		},
 
+		/**
+		 * Pool endgültig löschen – mit allen Aufgaben, Projekten und Sync-Daten auf diesem Gerät.
+		 * Auf dem Server passiert hier nichts (siehe Sync-Engine `deleteRemoteList`).
+		 */
+		async deletePool(id: string) {
+			if (id === INBOX_ID) throw new Error('Die Inbox kann nicht gelöscht werden');
+			await db.transaction(
+				'rw',
+				[
+					db.pools,
+					db.projects,
+					db.tasks,
+					db.timeEntries,
+					db.syncRecords,
+					db.syncState,
+					db.conflicts
+				],
+				async () => {
+					const taskIds = (await db.tasks.where('poolId').equals(id).primaryKeys()) as string[];
+					await db.timeEntries.where('taskId').anyOf(taskIds).delete();
+					await db.conflicts.where('taskId').anyOf(taskIds).delete();
+					await db.syncRecords.where('poolId').equals(id).delete();
+					await db.syncState.delete(id);
+					await db.tasks.where('poolId').equals(id).delete();
+					await db.projects.where('poolId').equals(id).delete();
+					await db.pools.delete(id);
+				}
+			);
+		},
+
 		async movePool(id: string, dir: -1 | 1) {
 			const pools = (await db.pools.toArray())
 				.filter((p) => p.kind === 'pool' && !p.archived)
