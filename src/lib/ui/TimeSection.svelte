@@ -45,9 +45,12 @@
 	async function add(e: SubmitEvent) {
 		e.preventDefault();
 		if (!minutes) return;
-		await repo.addTime(task.id, { minutes, date: date || today });
+		const entry = { minutes, date: date || today };
+		// Sofort leeren – wer gleich weitertippt, beginnt schon den nächsten Eintrag.
+		// Das Datum springt zurück: der nächste Eintrag gilt wieder für heute.
 		text = '';
-		date = ''; // nächster Eintrag gilt wieder für heute
+		date = '';
+		await repo.addTime(task.id, entry);
 	}
 
 	function changeDuration(entryId: string, input: HTMLInputElement, before: number) {
