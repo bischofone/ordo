@@ -6,6 +6,7 @@
 	import { isAged } from '#lib/domain/views.ts';
 	import { isLater } from '#lib/domain/postpone.ts';
 	import { m } from '#lib/i18n/index.ts';
+	import { appearance } from '#lib/state/appearance.svelte.ts';
 	import { db, repo } from '#lib/state/app.ts';
 	import { live } from '#lib/state/live.svelte.ts';
 	import { syncNow, syncStatus } from '#lib/state/sync.svelte.ts';
@@ -76,6 +77,13 @@
 		<Icon name="layers" />
 		<span class="name">{m.nav.all}</span>
 	</a>
+
+	{#if appearance.current.timeTracking}
+		<a class="item" class:current={path === '/zeiten'} href={resolve('/zeiten')}>
+			<Icon name="chart" />
+			<span class="name">{m.nav.times}</span>
+		</a>
+	{/if}
 
 	<h3>{m.nav.pools}</h3>
 	{#each visible as p (p.id)}

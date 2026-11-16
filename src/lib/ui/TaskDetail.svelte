@@ -8,7 +8,9 @@
 	import { db, repo } from '#lib/state/app.ts';
 	import { live } from '#lib/state/live.svelte.ts';
 	import { ui } from '#lib/state/ui.svelte.ts';
+	import { appearance } from '#lib/state/appearance.svelte.ts';
 	import Icon from './Icon.svelte';
+	import TimeSection from './TimeSection.svelte';
 	import { syncValue } from './sync-value';
 
 	let { pools, projects }: { pools: Pool[]; projects: Project[] } = $props();
@@ -160,6 +162,10 @@
 				</label>
 			{/if}
 		</div>
+
+		{#if appearance.current.timeTracking}
+			<TimeSection task={t} />
+		{/if}
 
 		<div class="notes">
 			<div class="notes-head">

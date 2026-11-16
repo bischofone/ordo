@@ -1,12 +1,14 @@
 <script lang="ts">
 	import { daysFromToday, formatDateValue } from '#lib/domain/dates.ts';
 	import type { Row } from '#lib/domain/tree.ts';
+	import { formatDuration, formatElapsed } from '#lib/domain/time.ts';
 	import { isDone } from '#lib/domain/types.ts';
 	import { isAged } from '#lib/domain/views.ts';
 	import { m } from '#lib/i18n/index.ts';
 	import { toggleDone } from '#lib/state/actions.ts';
 	import { db, repo } from '#lib/state/app.ts';
 	import { appearance } from '#lib/state/appearance.svelte.ts';
+	import { timer, toggleTimer } from '#lib/state/timer.svelte.ts';
 	import { replayKeys, ui } from '#lib/state/ui.svelte.ts';
 	import { drag } from './drag.svelte';
 	import Icon from './Icon.svelte';
@@ -16,6 +18,7 @@
 	let {
 		row,
 		progress,
+		minutes = 0,
 		dim = false,
 		showScheduled = false,
 		agingDays,
@@ -25,6 +28,8 @@
 	}: {
 		row: Row;
 		progress: { done: number; total: number } | null;
+		/** Erfasste Minuten einschließlich Unteraufgaben */
+		minutes?: number;
 		dim?: boolean;
 		showScheduled?: boolean;
 		/** Gesetzt in der Inbox: Einträge älter als so viele Tage werden markiert. */
@@ -43,6 +48,7 @@
 	);
 	let input = $state<HTMLInputElement>();
 	const selected = $derived(ui.detailId === task.id);
+	const running = $derived(timer.current?.taskId === task.id);
 
 	/**
 	 * Unsichtbare Kopie des Titels: Das Eingabefeld ist dadurch nur so breit wie sein Text.
@@ -192,6 +198,11 @@
 		{#if showScheduled && task.scheduled}
 			<span class="sched">→ {formatDateValue(task.scheduled, ui.now)}</span>
 		{/if}
+		{#if minutes > 0 && appearance.current.timeTracking}
+			<span class="time" title={m.time.section} data-testid="row-time">
+				<Icon name="clock" size={12} />{formatDuration(minutes)}
+			</span>
+		{/if}
 		{#if task.postponeCount > 0}
 			<span class="count" title={m.task.postponedTimes(task.postponeCount)}>
 				<Icon name="repeat" size={12} />{task.postponeCount}
@@ -202,7 +213,7 @@
 	<span class="actions">
 		{#if onaddsubtask && !done}
 			<button
-				class="icon-btn"
+				class="icon-btn subtask-btn"
 				aria-label={m.task.addSubtask}
 				title={m.task.addSubtask}
 				onclick={onaddsubtask}
@@ -229,6 +240,21 @@
 			<Icon name="more" size={16} />
 		</button>
 	</span>
+
+	{#if appearance.current.timeTracking && (!done || running)}
+		<button
+			class="timer"
+			class:running
+			aria-label={running ? m.time.stop : m.time.start}
+			aria-pressed={running}
+			title={running ? m.time.stop : m.time.start}
+			data-testid="timer-button"
+			onclick={() => toggleTimer(task.id)}
+		>
+			<Icon name={running ? 'stop' : 'play'} size={14} />
+			{#if running}<span>{formatElapsed(timer.elapsed)}</span>{/if}
+		</button>
+	{/if}
 </div>
 
 <style>
@@ -416,9 +442,46 @@
 			opacity: 1;
 		}
 	}
+	.time {
+		display: inline-flex;
+		align-items: center;
+		gap: 3px;
+		font-variant-numeric: tabular-nums;
+	}
+	/* Play/Stop: immer sichtbar */
+	.timer {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		height: 26px;
+		min-width: 26px;
+		padding: 0 5px;
+		justify-content: center;
+		border-radius: 13px;
+		border: 1px solid var(--border-strong);
+		color: var(--text-muted);
+		font-size: 0.75rem;
+		font-variant-numeric: tabular-nums;
+		flex: none;
+	}
+	.timer:hover {
+		border-color: var(--accent);
+		color: var(--accent);
+	}
+	.timer.running {
+		padding: 0 9px 0 7px;
+		background: var(--accent);
+		border-color: var(--accent);
+		color: var(--accent-contrast);
+		font-weight: 600;
+	}
 	@media (max-width: 520px) {
 		.actions .icon-btn {
 			width: 28px;
+		}
+		/* Platz für den Timer: Unteraufgaben gehen am Handy über die Leiste über der Tastatur */
+		.actions .subtask-btn {
+			display: none;
 		}
 		.meta .sched,
 		.meta .count {

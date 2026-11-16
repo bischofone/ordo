@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { childrenMap, descendantIds, flattenTree, type Row } from '#lib/domain/tree.ts';
+	import { totalsWithChildren } from '#lib/domain/time.ts';
 	import { isDone, type Task } from '#lib/domain/types.ts';
 	import { postpone, toggleDone } from '#lib/state/actions.ts';
 	import { repo } from '#lib/state/app.ts';
@@ -56,6 +57,7 @@
 		requestFocus(id);
 	}
 	const kids = $derived(childrenMap(tasks));
+	const minutes = $derived(totalsWithChildren(tasks));
 	const progressOf = (id: string) => {
 		const k = kids.get(id);
 		return k ? { done: k.filter(isDone).length, total: k.length } : null;
@@ -159,6 +161,7 @@
 			<TaskRow
 				{row}
 				progress={progressOf(row.task.id)}
+				minutes={minutes.get(row.task.id)}
 				{dim}
 				{showScheduled}
 				{agingDays}

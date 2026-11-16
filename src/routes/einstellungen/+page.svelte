@@ -112,6 +112,19 @@
 			onchange={(e) => appearance.set({ openDetailOnClick: e.currentTarget.checked })}
 		/>
 	</label>
+	<label class="line">
+		<span>
+			{m.settings.timeTracking}
+			<small>{m.settings.timeTrackingHint}</small>
+		</span>
+		<input
+			type="checkbox"
+			class="switch"
+			role="switch"
+			checked={a.timeTracking}
+			onchange={(e) => appearance.set({ timeTracking: e.currentTarget.checked })}
+		/>
+	</label>
 	<div class="line end">
 		<button class="btn ghost" onclick={() => appearance.reset()}>
 			{m.settings.resetAppearance}

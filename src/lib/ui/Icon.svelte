@@ -26,6 +26,9 @@
 		repeat: 'M17 2l3 3-3 3M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 0 1-4 4H4',
 		grip: 'M9 6h.01M9 12h.01M9 18h.01M15 6h.01M15 12h.01M15 18h.01',
 		subtask: 'M6 4v9a3 3 0 0 0 3 3h9M15 13l3 3-3 3',
+		play: 'M8 5.5v13l10.5-6.5z',
+		stop: 'M7 7h10v10H7z',
+		chart: 'M4 20V10M10 20V4M16 20v-7M22 20H2',
 		// Auswahl-Icons für Pools und Projekte
 		folder: 'M3 6h6l2 2h10v11H3z',
 		home: 'M3 11l9-7 9 7M5 10v10h14V10M10 20v-6h4v6',

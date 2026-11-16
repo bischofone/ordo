@@ -118,6 +118,13 @@ Nur wenige, intuitive Kürzel – alles andere über Buttons:
 - Einträge nachträglich bearbeitbar/manuell hinzufügbar.
 - Summe pro Aufgabe inkl. Unteraufgaben. Einfache Auswertung pro Pool/Zeitraum.
 - Laufender Timer überlebt App-Neustart (Startzeit speichern, nicht hochzählen).
+- **Zeit von Hand erfassen** in den Aufgaben-Details: Dauer in freiem Format
+  (`0:30`, `0,5h`, `45min`, `1h 30m` …) wird automatisch umgerechnet und vor dem
+  Speichern angezeigt. Datum wählbar, Standard ist immer der aktuelle Tag.
+- **Auswertung „Zeiten“:** Tag, Woche oder Monat, vor- und zurückblättern (auch
+  rückblickend); Gesamtzeit, Balken je Tag, Aufteilung nach Pool/Projekt und nach
+  Aufgabe, alle Einträge (dort änder- und löschbar); Filter nach Pool.
+- Zeiterfassung ist in den Einstellungen ausblendbar.
 
 ## 4. Inbox (ohne Chaos)
 
@@ -228,6 +235,7 @@ Nur wenige, intuitive Kürzel – alles andere über Buttons:
 3. **Capacitor-Android-App** + lokale Benachrichtigungen + Kontext-Modi.
 4. **Planung:** Priorisierung, „Was als Nächstes?“, Heute-Ansicht, Tagesplanung.
 5. **Wartet-auf, Abhängigkeiten, Wiederholungen, Vorlagen, Zeiterfassung.**
+   (✅ Zeiterfassung auf Wunsch vorgezogen und fertig.)
 6. **KI über OpenRouter** mit strikter Pool-Trennung.
 7. **Rest:** Wochenrückblick, Teilen-Ziel, Export/Backup, optional Tauri-Desktop.
 
@@ -365,6 +373,23 @@ jederzeit geändert werden – dann wird es hier angepasst.
   `pnpm radicale`, im Dev-Server unter `/dav/` erreichbar.
 - **Tests:** Integrationstests mit zwei simulierten Geräten gegen echten Radicale
   (startet automatisch), Browser-Test mit zwei Profilen inkl. Offline-Konflikt.
+
+### Zeiterfassung
+
+- **Ein Zeiteintrag = Dauer an einem Tag** (Minuten + Datum), kein Von–Bis. Einträge liegen
+  an der Aufgabe und werden mit ihr synchronisiert (`X-MYTASKS-TIME`).
+- **Eingabe:** `h:mm`, Stunden mit Komma/Punkt und Einheit (`0,5h`, `2 Std`), Minuten
+  (`45min`), Kombination (`1h 30m`). Ohne Einheit: Kommazahl = Stunden, ganze Zahl =
+  Minuten. Höchstens 24 h je Eintrag. Unverständliches wird nicht gespeichert.
+- **Timer:** läuft pro Gerät (nicht synchronisiert), immer nur einer; ein Wechsel stoppt
+  und erfasst den vorherigen. Beim Stoppen wird auf Minuten gerundet (mindestens 1) und
+  dem Tag des Starts zugeordnet. Unter 30 Sekunden wird nichts erfasst.
+- **Summe** an der Zeile schließt Unteraufgaben ein.
+- **Sync:** Einträge zweier Geräte werden je Eintrag zusammengeführt (neu von beiden
+  Seiten bleibt, Löschen gilt, bei Änderung auf beiden Seiten gewinnt der Server) – kein
+  Konflikt-Dialog.
+- **Eigene JSON-Felder im VTODO** (`-TIME`, `-WAITING`) werden URL-kodiert gespeichert:
+  Radicale schneidet unbekannte Eigenschaften sonst am ersten Komma ab.
 
 ### Offen (spätere Phasen)
 

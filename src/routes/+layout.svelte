@@ -8,12 +8,14 @@
 	import { live } from '#lib/state/live.svelte.ts';
 	import { q } from '#lib/state/queries.ts';
 	import { startAutoSync } from '#lib/state/sync.svelte.ts';
+	import { watchTimer } from '#lib/state/timer.svelte.ts';
 	import { ui } from '#lib/state/ui.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import DragLayer from '#lib/ui/DragLayer.svelte';
 	import MobileToolbar from '#lib/ui/MobileToolbar.svelte';
 	import Overlays from '#lib/ui/Overlays.svelte';
 	import Sidebar from '#lib/ui/Sidebar.svelte';
+	import TimerBar from '#lib/ui/TimerBar.svelte';
 	import TaskDetail from '#lib/ui/TaskDetail.svelte';
 	import type { LayoutProps } from './$types';
 
@@ -29,6 +31,7 @@
 
 	// untrack: der Start darf nicht von reaktivem Zustand abhängen (sonst Neustart-Schleife)
 	$effect(() => untrack(() => startAutoSync()));
+	$effect(() => untrack(() => watchTimer()));
 
 	$effect(() => {
 		repo.ensureDefaults();
@@ -69,12 +72,15 @@
 		agingDays={agingDays.current}
 	/>
 	<div class="main-col">
-		<header class="topbar">
-			<button class="icon-btn" aria-label={m.nav.menu} onclick={() => (ui.sidebarOpen = true)}>
-				<Icon name="menu" />
-			</button>
-			<span class="brand">{m.appName}</span>
-		</header>
+		<div class="top">
+			<header class="topbar">
+				<button class="icon-btn" aria-label={m.nav.menu} onclick={() => (ui.sidebarOpen = true)}>
+					<Icon name="menu" />
+				</button>
+				<span class="brand">{m.appName}</span>
+			</header>
+			<TimerBar />
+		</div>
 		<main>
 			{@render children()}
 		</main>
@@ -106,6 +112,11 @@
 		margin: 0 auto;
 		padding: 20px 20px 120px;
 	}
+	.top {
+		position: sticky;
+		top: 0;
+		z-index: 20;
+	}
 	.topbar {
 		display: none;
 	}
@@ -114,9 +125,6 @@
 			display: flex;
 			align-items: center;
 			gap: 8px;
-			position: sticky;
-			top: 0;
-			z-index: 20;
 			padding: 8px 8px calc(8px) 8px;
 			padding-top: calc(8px + env(safe-area-inset-top));
 			background: var(--bg);

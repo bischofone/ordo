@@ -17,6 +17,8 @@ export interface Appearance {
 	tintGroups: boolean;
 	/** Klick auf eine Aufgabe öffnet ihre Details */
 	openDetailOnClick: boolean;
+	/** Zeiterfassung anzeigen (Play-Knopf, Zeit-Bereich, Auswertung) */
+	timeTracking: boolean;
 }
 
 export const DEFAULT_APPEARANCE: Appearance = {
@@ -25,7 +27,8 @@ export const DEFAULT_APPEARANCE: Appearance = {
 	density: 'normal',
 	fontSize: 'normal',
 	tintGroups: true,
-	openDetailOnClick: true
+	openDetailOnClick: true,
+	timeTracking: true
 };
 
 const KEY = 'appearance';
