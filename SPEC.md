@@ -207,8 +207,9 @@ Nur wenige, intuitive Kürzel – alles andere über Buttons:
 - Export/Import als JSON (komplett und pro Pool), automatische lokale Backups.
 - Suche über Titel/Notizen (respektiert aktiven Kontext-Modus).
 - Dark Mode, schnelle schlichte UI, Mobile-first.
-- **Zusammengehöriges ist sichtbar gruppiert:** Aufgaben eines Pools bzw. Projekts stehen
-  jeweils in einer Karte mit Kopfzeile; Einstellungen sind in Karten je Bereich gegliedert.
+- **Zusammengehöriges ist sichtbar gruppiert:** Aufgaben direkt im Pool stehen in einer
+  schlichten Karte ohne Kopfzeile (wie in der Projektansicht), jedes Projekt darunter in
+  einer Karte mit Kopfzeile; Einstellungen sind in Karten je Bereich gegliedert.
   Keine farbigen Seitenränder an Karten.
 - **Darstellung anpassbar (pro Gerät):** Farbschema (System/Hell/Dunkel), Akzentfarbe,
   Dichte (Kompakt/Normal/Luftig), Schriftgröße (Klein/Normal/Groß), farbige Gruppen

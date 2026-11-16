@@ -101,7 +101,9 @@ test('Gruppen stehen in Karten, Projekte in ihrer Farbe', async ({ page }) => {
 	await page.keyboard.press('Enter');
 	const project = page.getByTestId('project-group');
 	await expect(project).toBeVisible();
-	await expect(page.getByTestId('group-card')).toContainText('Ohne Projekt');
+	// Aufgaben direkt im Pool stehen in einer schlichten Karte ohne Kopfzeile
+	await expect(page.getByTestId('group-card')).not.toContainText('Ohne Projekt');
+	await expect(page.getByTestId('group-card').locator('.group-head')).toHaveCount(0);
 	// Kein farbiger Seitenrand; die Farbe steckt nur dezent in der Kopfzeile (abschaltbar)
 	const border = () => project.evaluate((el) => getComputedStyle(el).borderLeftWidth);
 	const headBg = () =>

@@ -129,7 +129,6 @@ export const de = {
 		deleteKeep: 'Aufgaben behalten',
 		deleteWithTasks: 'Mit Aufgaben löschen',
 		deleted: (name: string) => `Projekt „${name}“ gelöscht`,
-		none: 'Ohne Projekt',
 		notFound: 'Projekt nicht gefunden.'
 	},
 	pool: {

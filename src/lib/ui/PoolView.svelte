@@ -51,12 +51,8 @@
 		</h2>
 	{/if}
 
-	<div class="group card" style:--group-color={pool.color} data-testid="group-card">
-		{#if projects.length}
-			<div class="group-head plain">
-				<span class="group-title muted">{m.project.none}</span>
-			</div>
-		{/if}
+	<!-- Aufgaben direkt im Pool: schlichte Karte ohne Kopfzeile, wie in der Projektansicht -->
+	<div class="group card" data-testid="group-card">
 		<div class="group-body">
 			<TaskGroup
 				poolId={pool.id}
@@ -173,9 +169,6 @@
 		border-bottom: 0;
 		border-radius: calc(var(--radius-card) - 1px);
 	}
-	.group-head.plain {
-		padding-left: 14px;
-	}
 	.group-title {
 		display: inline-flex;
 		align-items: center;
@@ -183,10 +176,6 @@
 		font-weight: 600;
 		flex: 1;
 		min-width: 0;
-	}
-	.group-title.muted {
-		color: var(--text-muted);
-		font-size: 0.875rem;
 	}
 	/* Farbige Gruppen (Einstellung): Kopfzeile dezent in der Farbe des Pools/Projekts */
 	:global(:root[data-tint='on']) .group-head {
