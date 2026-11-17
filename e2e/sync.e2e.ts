@@ -4,7 +4,7 @@ import { openPool, outline, quickAdd, rowByTitle } from './helpers';
 const SERVER = 'http://127.0.0.1:5390/';
 
 async function addAccount(page: Page) {
-	await page.goto('/einstellungen');
+	await page.goto('/einstellungen#sync');
 	const form = page.getByTestId('sync-settings');
 	await form.getByLabel('Server-Adresse').fill(SERVER);
 	await form.getByLabel('Benutzer').fill('test');
@@ -50,7 +50,7 @@ test('zwei Geräte synchronisieren über CalDAV, Konflikt wird gelöst', async (
 	await a.getByRole('button', { name: 'Pool bearbeiten' }).click();
 
 	// In den Einstellungen steht die Liste beim Konto, verknüpft mit dem Pool
-	await a.goto('/einstellungen');
+	await a.goto('/einstellungen#sync');
 	await expect(
 		a.getByTestId('account').locator('.list-row').filter({ hasText: listName })
 	).toContainText(`Pool „${listName}“`);
@@ -126,7 +126,7 @@ test('nach dem Verbinden kehrt Ruhe ein (keine Sync-Schleife)', async ({ page })
 });
 
 test('falsches Passwort wird verständlich gemeldet', async ({ page }) => {
-	await page.goto('/einstellungen');
+	await page.goto('/einstellungen#sync');
 	const form = page.getByTestId('sync-settings');
 	await form.getByLabel('Server-Adresse').fill(SERVER);
 	await form.getByLabel('Benutzer').fill('test');
@@ -208,7 +208,7 @@ test('synchronisierten Pool löschen: nur hier oder auch auf dem Server', async 
 	await remove('Auch auf dem Server löschen');
 
 	// Die erste Liste liegt noch auf dem Server und lässt sich wieder übernehmen, die zweite ist weg
-	await page.goto('/einstellungen');
+	await page.goto('/einstellungen#sync');
 	await page.reload();
 	await expect(
 		rows(`Lokal-${stamp}`).getByRole('button', { name: 'Als Pool übernehmen' })

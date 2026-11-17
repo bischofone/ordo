@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }) => {
 
 /** Zeiterfassungs-Modus in den Einstellungen einschalten (Standard: aus). */
 async function enableTimeTracking(page: Page) {
-	await page.goto('/einstellungen');
+	await page.goto('/einstellungen#zeit');
 	await page.getByRole('switch', { name: /Zeiterfassungs-Modus/ }).check();
 	await expect(page.getByRole('navigation').getByRole('link', { name: /Zeiten/ })).toBeVisible();
 }
@@ -241,7 +241,7 @@ test('Modus ist standardmäßig aus und blendet alles aus; eigener Einstellungsb
 	await expect(page.getByTestId('row-time')).toHaveCount(2);
 
 	// Ausschalten: nichts mehr von der Zeiterfassung zu sehen
-	await page.goto('/einstellungen');
+	await page.goto('/einstellungen#zeit');
 	await card.getByRole('switch', { name: /Zeiterfassungs-Modus/ }).uncheck();
 	await expect(card.getByText('Soll-Zeit je Wochentag')).toHaveCount(0);
 	await expect(nav.getByRole('link', { name: /Zeiten/ })).toHaveCount(0);
@@ -267,7 +267,7 @@ test('frische App: Zeiterfassung ist aus', async ({ browser }) => {
 
 test('Soll, gearbeitet und getrackt: sehen, was zugeordnet ist und was fehlt', async ({ page }) => {
 	// Soll-Zeiten einstellen: Mittwoch 6:00, Freitag frei
-	await page.goto('/einstellungen');
+	await page.goto('/einstellungen#zeit');
 	const card = page.getByTestId('time-settings');
 	await expect(card.getByTestId('week-target')).toContainText('40:00');
 	const wed = card.getByRole('textbox', { name: 'Soll-Zeit je Wochentag Mi' });

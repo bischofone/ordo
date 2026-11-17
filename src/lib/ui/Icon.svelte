@@ -28,6 +28,9 @@
 		subtask: 'M6 4v9a3 3 0 0 0 3 3h9M15 13l3 3-3 3',
 		play: 'M8 5.5v13l10.5-6.5z',
 		stop: 'M7 7h10v10H7z',
+		palette:
+			'M12 21a9 9 0 1 1 9-9c0 2-1.5 3-3.5 3H16a2 2 0 0 0-1.5 3.3A1.5 1.5 0 0 1 13.5 21zM7.5 11h.01M10 7.5h.01M14.5 7.5h.01',
+		sync: 'M20 11a8 8 0 0 0-14.3-4.9L4 8M4 4v4h4M4 13a8 8 0 0 0 14.3 4.9L20 16M20 20v-4h-4',
 		chart: 'M4 20V10M10 20V4M16 20v-7M22 20H2',
 		// Auswahl-Icons für Pools und Projekte
 		folder: 'M3 6h6l2 2h10v11H3z',

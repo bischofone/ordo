@@ -10,7 +10,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function setMode(page: Page, mode: 'Aus' | 'Vorschlagen' | 'Erzwingen') {
-	await page.goto('/einstellungen');
+	await page.goto('/einstellungen#inbox');
 	const card = page.getByTestId('triage-settings');
 	await card
 		.getByRole('radiogroup', { name: 'Aufräumen' })

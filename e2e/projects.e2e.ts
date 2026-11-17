@@ -98,7 +98,7 @@ test('Projekt direkt im Pool und in den Einstellungen löschen', async ({ page }
 	await expect.poll(() => outline(page)).toEqual(['0:Bleibt im Pool']);
 
 	// In den Einstellungen: leeres Projekt löschen (keine Frage nach Aufgaben)
-	await page.goto('/einstellungen');
+	await page.goto('/einstellungen#pools');
 	const row = page.getByTestId('editor').filter({ has: page.locator('input[aria-label="Name"]') });
 	const leer = row.nth(2); // Inbox, Privat, Leer, Arbeit
 	await expect(leer.getByRole('textbox', { name: 'Name' })).toHaveValue('Leer');

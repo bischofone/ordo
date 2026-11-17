@@ -30,8 +30,8 @@
 
 <section class="card" data-testid="triage-settings">
 	<header>
-		<h2 class="card-title">{m.triageSettings.title}</h2>
-		<span class="hint">{m.triageSettings.hint}</span>
+		<h2 class="card-heading">{m.triageSettings.title}</h2>
+		<p class="card-sub">{m.triageSettings.hint}</p>
 	</header>
 
 	{#if triage.loaded}
@@ -157,13 +157,8 @@
 		padding: 14px 16px;
 	}
 	header {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: 4px 12px;
-		margin-bottom: 8px;
+		margin-bottom: 10px;
 	}
-	.hint,
 	.note {
 		font-size: 0.8125rem;
 		color: var(--text-faint);

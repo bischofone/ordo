@@ -63,7 +63,7 @@
 </script>
 
 <section class="sync" data-testid="sync-settings">
-	<h2 class="card-title">{m.sync.title}</h2>
+	<h2 class="card-heading">{m.sync.title}</h2>
 	<p class="muted">{m.sync.intro}</p>
 	{#if accounts.current.length}<p class="muted">{m.sync.poolHint}</p>{/if}
 

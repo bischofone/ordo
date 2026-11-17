@@ -35,6 +35,6 @@ test('Pool löschen: Rückfrage mit Anzahl, danach ist er samt Aufgaben weg', as
 	await page.reload();
 	await expect(nav.getByRole('link', { name: /^Arbeit/ })).toBeVisible();
 	await expect(nav.getByRole('link', { name: /^Privat/ })).toHaveCount(0);
-	await page.goto('/einstellungen');
+	await page.goto('/einstellungen#pools');
 	await expect(page.getByTestId('editor').getByRole('button', { name: 'Löschen' })).toHaveCount(1);
 });

@@ -184,6 +184,14 @@ export const de = {
 	},
 	settings: {
 		title: 'Einstellungen',
+		sections: {
+			darstellung: 'Darstellung',
+			zeit: 'Zeiterfassung',
+			inbox: 'Inbox',
+			pools: 'Pools & Projekte',
+			sync: 'Sync'
+		},
+		sectionsLabel: 'Bereiche',
 		appearance: 'Darstellung',
 		theme: 'Farbschema',
 		themes: { system: 'System', light: 'Hell', dark: 'Dunkel' },
@@ -201,7 +209,8 @@ export const de = {
 		resetAppearance: 'Darstellung zurücksetzen',
 		appearanceHint: 'Gilt nur für dieses Gerät.',
 		poolsHint: 'Farbe, Icon, Name und Reihenfolge. Projekte stehen eingerückt unter ihrem Pool.',
-		inbox: 'Inbox',
+		inbox: 'Alte Einträge',
+		inboxHint: 'Einträge, die zu lange in der Inbox liegen, werden hervorgehoben.',
 		agingDays: 'Einträge markieren nach (Tagen)',
 		pools: 'Pools',
 		about:
