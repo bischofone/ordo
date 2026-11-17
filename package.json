@@ -1,6 +1,6 @@
 {
-	"name": "tasks-app",
-	"version": "0.0.1",
+	"name": "ordo",
+	"version": "0.3.0",
 	"private": true,
 	"type": "module",
 	"imports": {
@@ -20,7 +20,8 @@
 		"test": "pnpm test:unit --run && pnpm test:e2e",
 		"test:e2e": "playwright test",
 		"serve": "sirv build --single --port 4173",
-		"radicale": "scripts/radicale.sh"
+		"radicale": "scripts/radicale.sh",
+		"screenshots": "playwright test --config playwright.screenshots.config.ts"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
@@ -53,5 +54,6 @@
 		"fractional-indexing": "^4.0.0",
 		"ical.js": "^2.2.1",
 		"marked": "^18.2.0"
-	}
+	},
+	"description": "Ordo – local-first Aufgaben-App mit Pools, CalDAV-Sync und Zeiterfassung"
 }

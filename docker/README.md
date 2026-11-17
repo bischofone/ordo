@@ -1,4 +1,4 @@
-# Server einrichten (Radicale + Caddy)
+# Ordo-Server einrichten (Radicale + Caddy)
 
 Ein kleiner Server reicht (z. B. ein VPS). Benötigt: Docker mit Compose und eine Domain,
 die auf den Server zeigt.
@@ -12,7 +12,7 @@ Danach läuft:
 
 ```bash
 cp .env.example .env
-nano .env        # DOMAIN=tasks.deine-domain.de
+nano .env        # DOMAIN=ordo.deine-domain.de
 ```
 
 ## 2. Benutzer anlegen

@@ -1,0 +1,56 @@
+# Prüft bei jedem Push und Pull Request: Typen, Formatierung, Lint, Unit- und Browser-Tests.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typen prüfen
+        run: pnpm check
+
+      - name: Formatierung und Lint
+        run: pnpm lint
+
+      - name: Unit-Tests
+        run: pnpm test:unit --run
+
+      - name: Browser installieren
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Browser-Tests
+        run: pnpm test:e2e
+
+      - name: Testberichte bei Fehlern
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-ergebnisse
+          path: test-results/
+          retention-days: 7

@@ -1,4 +1,4 @@
-# Eigener Server für die Tasks-App: Radicale (CalDAV) + Caddy (HTTPS, App, Weiterleitung).
+# Eigener Server für Ordo: Radicale (CalDAV) + Caddy (HTTPS, App, Weiterleitung).
 # App und CalDAV laufen unter DERSELBEN Adresse (https://DOMAIN/ und https://DOMAIN/dav/),
 # deshalb braucht der Browser keine CORS-Freigaben.
 #
