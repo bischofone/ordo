@@ -1,4 +1,7 @@
 <script lang="ts">
+	/**
+	 * Farbwahl als ein einziger Knopf: öffnet feste Farben und einen freien Farbwähler.
+	 */
 	import { POOL_COLORS } from '#lib/domain/types.ts';
 	import { m } from '#lib/i18n/index.ts';
 	import Popover from './Popover.svelte';

@@ -1,4 +1,7 @@
 <script lang="ts">
+	/**
+	 * Icon-Wahl für Pools und Projekte (ein Knopf, öffnet ein Raster).
+	 */
 	import { m } from '#lib/i18n/index.ts';
 	import Icon, { isIconName, PICKER_ICONS } from './Icon.svelte';
 	import Popover from './Popover.svelte';

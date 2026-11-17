@@ -1,4 +1,8 @@
 <script lang="ts">
+	/**
+	 * Einstellungen, gegliedert in Bereiche (Darstellung, Zeiterfassung, Inbox, Pools, Sync).
+	 * Der gewählte Bereich steht im Adress-Anker, z. B. /einstellungen#sync.
+	 */
 	import { DEFAULT_INBOX_AGING_DAYS } from '#lib/domain/views.ts';
 	import { m } from '#lib/i18n/index.ts';
 	import { deletePool, deleteProject } from '#lib/state/actions.ts';
@@ -67,6 +71,8 @@
 	let section = $derived<SectionId>(fromHash(page.url.hash));
 	function show(id: SectionId) {
 		section = id;
+		// Nur der Anker ändert sich (gleiche Seite), daher kein resolve() nötig
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		replaceState(`#${id}`, page.state);
 	}
 

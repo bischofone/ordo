@@ -1,4 +1,8 @@
 <script lang="ts">
+	/**
+	 * Schnelleingabe: erkennt Datum, Uhrzeit, Priorität und #Pool im Text und zeigt sie als Chips.
+	 * Auswahlknöpfe darunter setzen dasselbe mit einem Klick.
+	 */
 	import { addDaysIso, formatDateValue, todayIso } from '#lib/domain/dates.ts';
 	import { parseQuickAdd, type Token, type TokenKind } from '#lib/domain/quick-add.ts';
 	import type { DateValue, Pool, Priority, Project } from '#lib/domain/types.ts';

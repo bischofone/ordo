@@ -1,4 +1,7 @@
 <script lang="ts">
+	/**
+	 * Sync-Konflikte: Felder, die auf zwei Geräten verschieden geändert wurden, zum Auswählen.
+	 */
 	import { formatDateValue } from '#lib/domain/dates.ts';
 	import type { DateValue } from '#lib/domain/types.ts';
 	import { m } from '#lib/i18n/index.ts';

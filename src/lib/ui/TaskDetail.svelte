@@ -1,4 +1,8 @@
 <script lang="ts">
+	/**
+	 * Detailansicht einer Aufgabe (rechts am PC, als Blatt am Handy): Notizen in Markdown,
+	 * Termine, Priorität, Pool/Projekt, Unteraufgaben und Zeiterfassung.
+	 */
 	import DOMPurify from 'dompurify';
 	import { marked } from 'marked';
 	import { childrenOf } from '#lib/domain/tree.ts';

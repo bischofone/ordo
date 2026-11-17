@@ -1,4 +1,8 @@
 <script lang="ts">
+	/**
+	 * Eine Aufgabenzeile im Outliner: Häkchen, editierbarer Titel, Datum/Priorität, Zeit und Aktionen.
+	 * Tastatur (Enter, Tab, Pfeile …) meldet sie über `onkey` an die Liste; Wischen am Handy = erledigt/zurückschieben.
+	 */
 	import { daysFromToday, formatDateValue } from '#lib/domain/dates.ts';
 	import type { Row } from '#lib/domain/tree.ts';
 	import {

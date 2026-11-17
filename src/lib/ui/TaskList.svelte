@@ -1,4 +1,8 @@
 <script lang="ts">
+	/**
+	 * Outliner-Liste: macht aus dem Aufgabenbaum flache Zeilen und steuert Tastatur,
+	 * Ziehen und Einrücken für alle Zeilen darin.
+	 */
 	import { childrenMap, descendantIds, flattenTree, type Row } from '#lib/domain/tree.ts';
 	import { totalsWithChildren } from '#lib/domain/time.ts';
 	import { isDone, type Task } from '#lib/domain/types.ts';

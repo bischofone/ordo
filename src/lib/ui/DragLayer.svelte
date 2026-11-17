@@ -1,4 +1,7 @@
 <script lang="ts">
+	/**
+	 * Zeichnet beim Ziehen die Vorschau der gezogenen Zeile und die Einfüge-Linie.
+	 */
 	import { drag } from './drag.svelte';
 </script>
 

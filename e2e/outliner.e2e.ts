@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openPool, outline, rowByTitle } from './helpers';
+import { openPool, outline, quickAdd, rowByTitle } from './helpers';
 
 test('Aufgabenbaum nur mit der Tastatur anlegen, Fortschritt, Neuladen', async ({ page }) => {
 	await page.goto('/');
@@ -106,4 +106,40 @@ test('Löschen mit Unteraufgaben fragt nach und lässt sich rückgängig machen'
 
 	await page.getByRole('status').getByRole('button', { name: 'Rückgängig' }).click();
 	await expect.poll(() => outline(page)).toEqual(['0:Eltern', '1:Kind']);
+});
+
+test('schnell tippen, Enter, weitertippen und sofort Escape: nichts geht verloren', async ({
+	page
+}) => {
+	await page.goto('/');
+	await openPool(page, 'Privat');
+	await page.getByRole('button', { name: 'Aufgabe hinzufügen', exact: true }).click();
+	await page.keyboard.type('Erste');
+	await page.keyboard.press('Enter');
+	await page.keyboard.type('Zweite');
+	await page.keyboard.press('Escape');
+	await expect.poll(() => outline(page)).toEqual(['0:Erste', '0:Zweite']);
+
+	// Danach funktioniert die Schnelleingabe ganz normal (der Tastenpuffer ist beendet)
+	await quickAdd(page, 'Dritte');
+	await expect.poll(() => outline(page)).toEqual(['0:Erste', '0:Zweite', '0:Dritte']);
+});
+
+test('gleiches in einem frisch angelegten Projekt, mit Zeiterfassung', async ({ page }) => {
+	await page.goto('/einstellungen#zeit');
+	await page.getByRole('switch', { name: /Zeiterfassungs-Modus/ }).check();
+	await page.goto('/');
+	await openPool(page, 'Privat');
+	await page.getByRole('button', { name: 'Neues Projekt' }).click();
+	await page.getByRole('textbox', { name: 'Name des neuen Projekts' }).fill('Umzug');
+	await page.keyboard.press('Enter');
+	const group = page.getByTestId('project-group');
+	await group.getByRole('button', { name: 'Aufgabe hinzufügen', exact: true }).click();
+	await page.keyboard.type('Erste');
+	await page.keyboard.press('Enter');
+	await page.keyboard.type('Bilder auswählen');
+	await page.keyboard.press('Escape');
+	await expect.poll(() => outline(page, group)).toEqual(['0:Erste', '0:Bilder auswählen']);
+	await quickAdd(page, 'Dritte');
+	await expect.poll(() => outline(page)).toContain('0:Dritte');
 });

@@ -1,4 +1,7 @@
 <script lang="ts">
+	/**
+	 * Ein einzelnes Projekt innerhalb eines Pools.
+	 */
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';

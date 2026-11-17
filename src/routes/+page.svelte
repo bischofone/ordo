@@ -1,4 +1,7 @@
 <script lang="ts">
+	/**
+	 * Startseite „Alle Pools“: jeder Pool als eigener Bereich, darüber die Schnelleingabe.
+	 */
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';

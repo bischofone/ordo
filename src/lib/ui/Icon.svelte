@@ -1,4 +1,5 @@
 <script lang="ts" module>
+	/** Eigene Strich-Icons (24×24, 2px) als Pfade – keine Icon-Bibliothek nötig. */
 	const PATHS = {
 		chevron: 'M9 6l6 6-6 6',
 		check: 'M5 12.5l4.5 4.5L19 7.5',

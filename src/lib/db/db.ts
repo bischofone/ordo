@@ -1,3 +1,7 @@
+/**
+ * Lokale Datenbank (IndexedDB über Dexie). Jede Schemaänderung bekommt eine neue
+ * Versionsnummer; alte Versionen bleiben stehen, damit bestehende Daten migriert werden.
+ */
 import Dexie, { type EntityTable } from 'dexie';
 import type { Conflict, SyncRecord, SyncState } from '#lib/sync/model.ts';
 import type {

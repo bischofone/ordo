@@ -1,4 +1,7 @@
 <script lang="ts">
+	/**
+	 * Ein Pool: Aufgaben ohne Projekt und seine Projekte, jeweils als Karte.
+	 */
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';

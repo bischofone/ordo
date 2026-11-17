@@ -1,4 +1,8 @@
 <script lang="ts">
+	/**
+	 * App-Rahmen: Seitenleiste, Kopfzeile (Handy), Timer- und Aufräum-Hinweis, Detailansicht.
+	 * Startet Sync, Zeit-Einstellungen und den Aufräum-Zeitplan; leitet beim „Erzwingen“ ins Aufräumen.
+	 */
 	import '../app.css';
 	import { untrack } from 'svelte';
 	import { afterNavigate, goto } from '$app/navigation';

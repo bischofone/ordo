@@ -1,4 +1,7 @@
 <script lang="ts">
+	/**
+	 * Inbox: alles, was noch keinem Pool zugeordnet ist. Alte Einträge werden hervorgehoben.
+	 */
 	import { resolve } from '$app/paths';
 	import { INBOX_ID } from '#lib/db/repo.ts';
 	import { isOpen } from '#lib/domain/types.ts';

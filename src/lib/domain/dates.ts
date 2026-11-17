@@ -1,3 +1,7 @@
+/**
+ * Datumshilfen. Daten werden als ISO-Text gespeichert: '2026-11-17' (ganztägig)
+ * oder '2026-11-17T09:00' (mit Uhrzeit, lokale Zeit). So bleiben sie im CalDAV-Sync stabil.
+ */
 import {
 	addDays,
 	addMonths,

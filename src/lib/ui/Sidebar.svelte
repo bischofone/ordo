@@ -1,4 +1,8 @@
 <script lang="ts">
+	/**
+	 * Seitenleiste: Inbox, Alle Pools, Pools mit Projekten, Zeiten, Einstellungen.
+	 * Pools und Projekte sind Ablageziele beim Ziehen.
+	 */
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import { INBOX_ID } from '#lib/db/repo.ts';

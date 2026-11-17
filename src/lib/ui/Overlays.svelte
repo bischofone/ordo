@@ -1,4 +1,7 @@
 <script lang="ts">
+	/**
+	 * Globale Einblendungen: Hinweis-Toasts (mit „Rückgängig“) und Rückfragen.
+	 */
 	import { m } from '#lib/i18n/index.ts';
 	import { dismissToast, ui } from '#lib/state/ui.svelte.ts';
 

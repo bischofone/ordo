@@ -1,4 +1,7 @@
 <script lang="ts">
+	/**
+	 * Auswahl „Zurückschieben“: morgen, nächste Woche, eigenes Datum … (zählt mit, wie oft verschoben wurde).
+	 */
 	import { postponeOptions } from '#lib/domain/postpone.ts';
 	import { addDaysIso, formatDateValue } from '#lib/domain/dates.ts';
 	import { m } from '#lib/i18n/index.ts';
