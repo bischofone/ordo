@@ -2,6 +2,9 @@ import { defineConfig } from 'vitest/config';
 import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
 
+// Tests rechnen mit deutscher Ortszeit – auch auf Servern, die in UTC laufen (z. B. GitHub Actions).
+if (process.env.VITEST) process.env.TZ = 'Europe/Berlin';
+
 export default defineConfig({
 	plugins: [
 		sveltekit({
