@@ -110,6 +110,17 @@ Nur wenige, intuitive Kürzel – alles andere über Buttons:
 - **Checklisten-Vorlagen:** Aufgabe inkl. Unteraufgaben-Baum als Vorlage
   speichern und mit einem Klick neu anlegen (z. B. Packliste, Monatsabschluss).
 
+### Inbox aufräumen
+
+- **Auslöser** gelten nur, wenn etwas in der Inbox liegt. Feste Zeiten: ab der Uhrzeit
+  fällig, bis erledigt; maßgeblich ist der späteste heute erreichte Zeitpunkt (verpasste
+  Zeiten vom Vortag zählen nicht nach). Regeln: höchstens einmal pro Tag.
+- **Erledigt** ist ein Auslöser, wenn die Inbox leer geräumt (ohne übersprungene Karten)
+  oder der Hinweis ausgeblendet wurde. „Später“ schiebt um einstellbare Minuten auf
+  (Standard 15); beim Erzwingen nur einmal je Auslöser.
+- Es zählen nur offene Einträge der obersten Ebene.
+- Schneller Doppelklick verschiebt nicht zweimal: Aktionen laufen nacheinander.
+
 ### Zeiterfassung
 
 - Jede Aufgabe hat einen gut sichtbaren **Play/Stop-Button** direkt in der Zeile.
@@ -138,6 +149,17 @@ Nur wenige, intuitive Kürzel – alles andere über Buttons:
 - Eingang für schnelles Erfassen, ohne Pool.
 - **Aufräum-Modus:** Einträge einzeln als Karte; Aktionen per Wisch/Klick:
   Pool zuweisen, „Irgendwann“, Termin setzen, löschen.
+- **Aufräum-Modus als Kartenstapel:** Auf der Karte direkt Titel, Notiz, Fälligkeit
+  (Heute/Morgen/Datum), Priorität und „Irgendwann“ setzen; dann die Karte auf eine
+  Pool- oder Projekt-Kachel ziehen (Maus oder Finger) oder die Kachel antippen. Auf
+  „Löschen“ ziehen oder nach links wischen = löschen (mit Rückgängig), nach rechts =
+  überspringen. Jede Zuordnung lässt sich rückgängig machen.
+- **Aufräumen nach Zeitplan** (Einstellungen → „Inbox aufräumen“, pro Gerät):
+  Modus Aus / Vorschlagen / Erzwingen. Auslöser frei wählbar: feste Uhrzeiten mit
+  Wochentagen und/oder Regeln (ab N Einträgen; Eintrag älter als X Tage).
+  Vorschlagen: Hinweis oben mit „Aufräumen“, „später“ und „ausblenden“. Erzwingen: die App
+  öffnet das Aufräumen, Wegnavigieren und Überspringen gehen nicht, bis die Inbox leer
+  ist; einmal aufschieben ist erlaubt.
 - **„Irgendwann“-Ablage pro Pool** für Ideen, die nicht aktiv sind (eigene,
   standardmäßig eingeklappte Liste).
 - **Altern:** Einträge, die länger als X Tage (einstellbar, Standard 7) in der

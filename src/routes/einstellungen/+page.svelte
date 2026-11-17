@@ -13,6 +13,7 @@
 	import Editor from '#lib/ui/Editor.svelte';
 	import Segmented from '#lib/ui/Segmented.svelte';
 	import SyncSettings from '#lib/ui/SyncSettings.svelte';
+	import TriageSettingsCard from '#lib/ui/TriageSettingsCard.svelte';
 
 	const pools = live(() => q.pools, []);
 	const projects = live(() => q.projects, []);
@@ -212,6 +213,8 @@
 		/>
 	</label>
 </section>
+
+<TriageSettingsCard />
 
 <section class="card">
 	<header>

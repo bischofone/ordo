@@ -1,7 +1,12 @@
 <script lang="ts">
 	import '../app.css';
 	import { untrack } from 'svelte';
-	import { afterNavigate } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
+	import { INBOX_ID } from '#lib/db/repo.ts';
+	import { triageDue } from '#lib/domain/triage.ts';
+	import { isOpen } from '#lib/domain/types.ts';
 	import { DEFAULT_INBOX_AGING_DAYS } from '#lib/domain/views.ts';
 	import { m } from '#lib/i18n/index.ts';
 	import { repo } from '#lib/state/app.ts';
@@ -10,6 +15,7 @@
 	import { startAutoSync } from '#lib/state/sync.svelte.ts';
 	import { watchTimeSettings } from '#lib/state/time-settings.svelte.ts';
 	import { watchTimer } from '#lib/state/timer.svelte.ts';
+	import { triage, watchTriage } from '#lib/state/triage.svelte.ts';
 	import { ui } from '#lib/state/ui.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import DragLayer from '#lib/ui/DragLayer.svelte';
@@ -17,6 +23,7 @@
 	import Overlays from '#lib/ui/Overlays.svelte';
 	import Sidebar from '#lib/ui/Sidebar.svelte';
 	import TimerBar from '#lib/ui/TimerBar.svelte';
+	import TriageBanner from '#lib/ui/TriageBanner.svelte';
 	import TaskDetail from '#lib/ui/TaskDetail.svelte';
 	import type { LayoutProps } from './$types';
 
@@ -34,6 +41,29 @@
 	$effect(() => untrack(() => startAutoSync()));
 	$effect(() => untrack(() => watchTimer()));
 	$effect(() => untrack(() => watchTimeSettings()));
+	$effect(() => untrack(() => watchTriage()));
+
+	// Inbox aufräumen: fällig? (minütlich und bei jeder Änderung neu berechnet)
+	const inboxStats = $derived.by(() => {
+		const open = tasks.current.filter(
+			(t) => t.poolId === INBOX_ID && t.parentId === null && isOpen(t)
+		);
+		return {
+			count: open.length,
+			oldest: open.length ? Math.min(...open.map((t) => t.createdAt)) : undefined
+		};
+	});
+	$effect(() => {
+		triage.due = triage.loaded
+			? triageDue(ui.now, triage.settings, triage.state, inboxStats)
+			: null;
+	});
+	// Erzwingen: solange fällig, bleibt man im Aufräumen
+	$effect(() => {
+		if (triage.forced && !page.url.pathname.startsWith('/inbox/aufraeumen')) {
+			void goto(resolve('/inbox/aufraeumen'));
+		}
+	});
 
 	$effect(() => {
 		repo.ensureDefaults();
@@ -82,6 +112,7 @@
 				<span class="brand">{m.appName}</span>
 			</header>
 			<TimerBar />
+			<TriageBanner count={inboxStats.count} />
 		</div>
 		<main>
 			{@render children()}

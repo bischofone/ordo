@@ -93,3 +93,38 @@ test('Handy: Tipp auf den Titel bearbeitet, Tipp daneben öffnet die Details', a
 	await expect(detail).toBeVisible();
 	await expect(detail.getByRole('textbox', { name: 'Titel' })).toHaveValue('Kurz');
 });
+
+test('Handy: Inbox-Karte mit dem Finger auf einen Pool ziehen', async ({ page }) => {
+	await page.goto('/inbox');
+	const input = page.getByTestId('quick-add');
+	await input.fill('Unterwegs notiert');
+	await input.press('Enter');
+	await expect(input).toHaveValue('');
+	await page.getByRole('link', { name: 'Aufräumen' }).click();
+
+	const card = page.getByTestId('triage-card');
+	const tile = page.locator('[data-triage-target^="pool:"]').filter({ hasText: 'Arbeit' });
+	await tile.scrollIntoViewIfNeeded();
+	const to = (await tile.boundingBox())!;
+	const start = (await card.locator('.meta').boundingBox())!;
+	const cdp = await page.context().newCDPSession(page);
+	const touch = (type: string, x: number, y: number) =>
+		cdp.send('Input.dispatchTouchEvent', {
+			type,
+			touchPoints: type === 'touchEnd' ? [] : [{ x, y }]
+		});
+	const [sx, sy] = [start.x + start.width / 2, start.y + start.height / 2];
+	const [tx, ty] = [to.x + to.width / 2, to.y + to.height / 2];
+	await touch('touchStart', sx, sy);
+	for (let i = 1; i <= 12; i++)
+		await touch('touchMove', sx + ((tx - sx) * i) / 12, sy + ((ty - sy) * i) / 12);
+	await touch('touchEnd', tx, ty);
+
+	await expect(page.getByText('Fertig aufgeräumt!')).toBeVisible();
+	await page.getByRole('button', { name: 'Menü' }).click();
+	await page
+		.getByRole('navigation')
+		.getByRole('link', { name: /^Arbeit/ })
+		.click();
+	await expect(page.getByTestId('task-row')).toHaveCount(1);
+});

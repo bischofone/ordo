@@ -105,7 +105,34 @@ export const de = {
 		progress: (i: number, n: number) => `${i} von ${n}`,
 		done: 'Fertig aufgeräumt!',
 		back: 'Zurück zur Inbox',
-		swipeHint: 'Wischen: ← löschen · → überspringen',
+		swipeHint:
+			'Karte auf einen Pool ziehen · nach links wischen: löschen · nach rechts: überspringen',
+		dragHint: 'Auf einen Pool oder ein Projekt ziehen – oder antippen',
+		cardDate: 'Fällig',
+		noDate: 'Ohne Datum',
+		trash: 'Löschen',
+		laterTile: 'Irgendwann',
+		forcedTitle: 'Inbox aufräumen ist jetzt dran',
+		forcedText: (n: number) =>
+			n === 1
+				? 'Noch 1 Eintrag – danach geht es weiter.'
+				: `Noch ${n} Einträge – danach geht es weiter.`,
+		snooze: (min: number) => `${min} Min. später`,
+		dueTitle: (n: number) =>
+			n === 1
+				? 'Zeit zum Aufräumen: 1 Eintrag in der Inbox'
+				: `Zeit zum Aufräumen: ${n} Einträge in der Inbox`,
+		dueReason: {
+			time: (t: string) => `geplant um ${t}`,
+			count: 'viele Einträge',
+			age: 'alte Einträge'
+		} as {
+			time: (t: string) => string;
+			count: string;
+			age: string;
+		},
+		startTriage: 'Aufräumen',
+		dismiss: 'Für jetzt ausblenden',
 		keyHint: 'Tasten: 1–9 Pool · I Irgendwann · Entf löschen · → überspringen'
 	},
 	all: {
@@ -193,6 +220,26 @@ export const de = {
 		round: 'Timer runden',
 		roundHint: 'Beim Stoppen auf volle 5 oder 15 Minuten runden',
 		roundExact: 'Genau'
+	},
+	triageSettings: {
+		title: 'Inbox aufräumen',
+		hint: 'Gilt nur für dieses Gerät.',
+		mode: 'Aufräumen',
+		modes: { off: 'Aus', suggest: 'Vorschlagen', force: 'Erzwingen' },
+		modeHint:
+			'Vorschlagen: Hinweis oben mit „Aufräumen“. Erzwingen: Die App öffnet das Aufräumen und lässt erst weiter, wenn die Inbox leer ist (einmal aufschieben möglich).',
+		times: 'Zu festen Zeiten',
+		addTime: 'Zeit hinzufügen',
+		removeTime: 'Zeit entfernen',
+		timeLabel: (i: number) => `Uhrzeit ${i + 1}`,
+		rules: 'Nach Regeln',
+		ruleCount: 'wenn mindestens',
+		ruleCountUnit: 'Einträge in der Inbox liegen',
+		ruleAge: 'wenn ein Eintrag älter als',
+		ruleAgeUnit: 'Tage ist',
+		snooze: '„Später“ schiebt auf um',
+		minutes: 'Min.',
+		onlyIfEntries: 'Nur, wenn etwas in der Inbox liegt.'
 	},
 	time: {
 		title: 'Zeiten',
