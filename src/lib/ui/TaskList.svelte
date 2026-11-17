@@ -34,6 +34,8 @@
 	} = $props();
 
 	const rows = $derived(flattenTree(tasks, roots));
+	/** Spalte zum Auf-/Zuklappen nur, wenn es hier Unteraufgaben gibt */
+	const tree = $derived(rows.some((r) => r.hasChildren || r.depth > 0));
 	const draggable = $derived(section === 'active' || section === 'someday');
 	let listEl = $state<HTMLElement>();
 
@@ -155,11 +157,12 @@
 	}
 </script>
 
-<ul class="list" bind:this={listEl} data-drop-list>
+<ul class="list" bind:this={listEl} data-drop-list style:--twisty={tree ? '24px' : '0px'}>
 	{#each rows as row (row.task.id)}
 		<li style:--line-depth={row.depth}>
 			<TaskRow
 				{row}
+				{tree}
 				progress={progressOf(row.task.id)}
 				minutes={minutes.get(row.task.id)}
 				{dim}
@@ -172,7 +175,7 @@
 					: undefined}
 			/>
 			{#if ui.postponeId === row.task.id}
-				<div style:padding-left="calc({row.depth} * var(--indent) + 24px)">
+				<div style:padding-left="calc({row.depth} * var(--indent) + var(--gutter) + var(--twisty))">
 					<PostponeMenu
 						onpick={(d) => postpone(row.task, d, row.hasChildren)}
 						onclose={() => (ui.postponeId = null)}
@@ -198,7 +201,7 @@
 		content: '';
 		position: absolute;
 		top: 0;
-		left: calc(var(--line-depth) * var(--indent) + 40px);
+		left: calc(var(--line-depth) * var(--indent) + var(--gutter) + var(--twisty));
 		right: 8px;
 		height: 1px;
 		background: color-mix(in srgb, var(--border) 65%, transparent);

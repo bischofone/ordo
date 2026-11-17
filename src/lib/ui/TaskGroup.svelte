@@ -38,7 +38,10 @@
 	}
 </script>
 
-<div data-testid="task-group">
+<div
+	data-testid="task-group"
+	style:--twisty={tasks.some((t) => t.parentId && !t.deletedAt) ? '24px' : '0px'}
+>
 	<TaskList {tasks} roots={s.active} {poolId} {projectId} section="active" {agingDays} />
 	{#if !s.active.length && emptyText}
 		<p class="empty">{emptyText}</p>
@@ -82,7 +85,7 @@
 <style>
 	.empty {
 		color: var(--text-faint);
-		margin: 6px 0 4px 44px;
+		margin: 6px 0 4px calc(var(--gutter) + var(--twisty));
 		font-size: 0.875rem;
 	}
 	.add {
@@ -91,7 +94,7 @@
 		gap: 8px;
 		color: var(--text-faint);
 		min-height: var(--row-h);
-		padding: 0 4px 0 40px;
+		padding: 0 4px 0 calc(var(--gutter) + var(--twisty) + 2px);
 		width: 100%;
 		border-radius: 8px;
 	}

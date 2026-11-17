@@ -192,7 +192,12 @@ function update(moving: readonly string[]) {
 			: rowEls.length
 				? rowEls[rowEls.length - 1].getBoundingClientRect().bottom
 				: listBox.top;
-	const left = listBox.left + placement.depth * INDENT_PX + 22;
+	// Linie beginnt beim Häkchen: Rand links (--gutter) plus ggf. Aufklapp-Spalte (--twisty)
+	const css = getComputedStyle(listEl);
+	const inset =
+		(parseFloat(css.getPropertyValue('--gutter')) || 0) +
+		(parseFloat(css.getPropertyValue('--twisty')) || 0);
+	const left = listBox.left + placement.depth * INDENT_PX + inset;
 	drag.indicator = { top, left, width: Math.max(40, listBox.right - left) };
 }
 

@@ -30,9 +30,12 @@
 		agingDays,
 		onkey,
 		ondragstart,
-		onaddsubtask
+		onaddsubtask,
+		tree = true
 	}: {
 		row: Row;
+		/** Gibt es in der Liste überhaupt Unteraufgaben? Sonst entfällt die Spalte fürs Aufklappen. */
+		tree?: boolean;
 		progress: { done: number; total: number } | null;
 		/** Erfasste Minuten einschließlich Unteraufgaben */
 		minutes?: number;
@@ -173,16 +176,18 @@
 		<span class="grip"></span>
 	{/if}
 
-	<button
-		class="twisty"
-		class:open={!task.collapsed}
-		class:hidden={!row.hasChildren}
-		tabindex="-1"
-		aria-label={task.collapsed ? m.task.expand : m.task.collapse}
-		onclick={() => repo.updateTask(task.id, { collapsed: !task.collapsed })}
-	>
-		<Icon name="chevron" size={14} />
-	</button>
+	{#if tree}
+		<button
+			class="twisty"
+			class:open={!task.collapsed}
+			class:hidden={!row.hasChildren}
+			tabindex="-1"
+			aria-label={task.collapsed ? m.task.expand : m.task.collapse}
+			onclick={() => repo.updateTask(task.id, { collapsed: !task.collapsed })}
+		>
+			<Icon name="chevron" size={14} />
+		</button>
+	{/if}
 
 	<button
 		class="check prio-{task.priority ?? 0}"
@@ -316,7 +321,8 @@
 		align-items: center;
 		gap: 4px;
 		min-height: var(--row-h);
-		padding-left: calc(var(--depth) * var(--indent));
+		/* schmaler Rand links: dort erscheint beim Drüberfahren der Ziehgriff */
+		padding-left: calc(var(--depth) * var(--indent) + var(--gutter));
 		padding-right: 4px;
 		border-radius: 8px;
 		touch-action: pan-y;
@@ -330,16 +336,18 @@
 		opacity: 0.35;
 	}
 	.grip {
-		width: 18px;
+		position: absolute;
+		left: calc(var(--depth) * var(--indent) - 1px);
+		top: 50%;
+		translate: 0 -50%;
+		width: 16px;
 		height: 28px;
 		display: grid;
 		place-items: center;
-		flex: none;
 		color: var(--text-faint);
 		cursor: grab;
 		touch-action: none;
 		opacity: 0;
-		margin-right: -4px;
 	}
 	.row:hover .grip,
 	.row:focus-within .grip {
