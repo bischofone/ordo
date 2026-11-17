@@ -22,6 +22,7 @@
 	import { live } from '#lib/state/live.svelte.ts';
 	import { q } from '#lib/state/queries.ts';
 	import { ui } from '#lib/state/ui.svelte.ts';
+	import type { Task } from '#lib/domain/types.ts';
 	import Badge from '#lib/ui/Badge.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Segmented from '#lib/ui/Segmented.svelte';
@@ -285,15 +286,14 @@
 
 	<section class="card" data-testid="time-tasks">
 		<header><h2 class="card-title">{m.time.byTask}</h2></header>
-		{#each report.byTask as t (t.task.id)}
-			<div class="line">
-				<button class="name link" onclick={() => (ui.detailId = t.task.id)}>
-					{t.task.title || m.time.untitled}
-					<small>{where(t.task.poolId, t.task.projectId)}</small>
-				</button>
-				<span class="dur">{formatDuration(t.minutes)}</span>
-			</div>
-		{/each}
+		<div class="rows">
+			{#each report.byTask as t (t.task.id)}
+				<div class="row">
+					{@render taskName(t.task)}
+					<span class="dur">{formatDuration(t.minutes)}</span>
+				</div>
+			{/each}
+		</div>
 	</section>
 
 	<section class="card" data-testid="time-entries">
@@ -301,35 +301,45 @@
 		{#each byDate as g (g.date)}
 			<div class="date-head">
 				<span>{dayTitle(g.date)}</span>
-				<span class="dur">{formatDuration(g.minutes)}</span>
+				<span class="day-total">{formatDuration(g.minutes)}</span>
 			</div>
-			{#each g.entries as e (e.id)}
-				<div class="line entry" data-testid="report-entry">
-					<button class="name link" onclick={() => (ui.detailId = e.task.id)}>
-						{e.task.title || m.time.untitled}
-						<small>{where(e.task.poolId, e.task.projectId)}</small>
-					</button>
-					<input
-						class="field duration"
-						aria-label={m.time.duration}
-						value={formatDuration(e.minutes)}
-						onchange={(ev) => changeDuration(e, ev.currentTarget)}
-					/>
-					<button
-						class="icon-btn"
-						aria-label={m.time.deleteEntry}
-						title={m.time.deleteEntry}
-						onclick={() => repo.deleteTime(e.task.id, e.id)}
-					>
-						<Icon name="trash" size={15} />
-					</button>
-				</div>
-			{/each}
+			<div class="rows">
+				{#each g.entries as e (e.id)}
+					<div class="row entry" data-testid="report-entry">
+						{@render taskName(e.task)}
+						<input
+							class="field duration"
+							aria-label={m.time.duration}
+							value={formatDuration(e.minutes)}
+							onchange={(ev) => changeDuration(e, ev.currentTarget)}
+						/>
+						<button
+							class="icon-btn del"
+							aria-label={m.time.deleteEntry}
+							title={m.time.deleteEntry}
+							onclick={() => repo.deleteTime(e.task.id, e.id)}
+						>
+							<Icon name="trash" size={15} />
+						</button>
+					</div>
+				{/each}
+			</div>
 		{/each}
 	</section>
 {:else if tasks.loaded}
 	<p class="empty">{m.time.empty}</p>
 {/if}
+
+{#snippet taskName(task: Task)}
+	{@const owner = projectOf(task.projectId) ?? poolOf(task.poolId)}
+	<button class="name" onclick={() => (ui.detailId = task.id)}>
+		<span class="title">{task.title || m.time.untitled}</span>
+		<span class="where">
+			<Badge color={owner?.color ?? 'gray'} icon={owner?.icon} size={12} />
+			{where(task.poolId, task.projectId)}
+		</span>
+	</button>
+{/snippet}
 
 <style>
 	h1 {
@@ -530,21 +540,61 @@
 	header + .line {
 		border-top: 0;
 	}
-	.name {
+	.line .name {
 		flex: 1;
 		min-width: 0;
-		text-align: left;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	.name small {
-		display: block;
+	/* Aufgaben-Zeilen: ruhig, ganze Zeile hebt sich beim Drüberfahren ab */
+	.rows {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		margin: 0 -8px;
+	}
+	.row {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		min-height: 48px;
+		padding: 0 8px 0 0;
+		border-radius: var(--radius);
+	}
+	.row:hover,
+	.row:focus-within {
+		background: var(--bg-hover);
+	}
+	.row .name {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 1px;
+		padding: 6px 8px;
+		text-align: left;
+		color: var(--text);
+	}
+	.row .name > span {
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.title {
+		font-size: 0.9375rem;
+	}
+	.where {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
 		font-size: 0.75rem;
 		color: var(--text-muted);
 	}
-	.link:hover {
-		color: var(--accent);
+	.row .dur {
+		padding-right: 2px;
 	}
 	.share {
 		flex: 0 1 140px;
@@ -567,22 +617,57 @@
 	.date-head {
 		display: flex;
 		justify-content: space-between;
-		padding: 12px 0 4px;
+		align-items: baseline;
+		margin-top: 14px;
+		padding: 10px 0 4px;
 		font-size: 0.8125rem;
+		font-weight: 600;
 		color: var(--text-muted);
 		border-top: 1px solid var(--border);
 	}
 	header + .date-head {
+		margin-top: 0;
 		border-top: 0;
-		padding-top: 4px;
+		padding-top: 2px;
 	}
-	.entry {
-		border-top: 0;
-	}
-	.duration {
-		width: 72px;
-		text-align: right;
+	.day-total {
 		font-variant-numeric: tabular-nums;
+		/* bündig mit der Dauer-Spalte darunter (Löschknopf 32px + Abstand 6px + Feld-Innenabstand 8px) */
+		padding-right: 46px;
+	}
+	/* Dauer wirkt wie Text, wird erst beim Drüberfahren/Fokus zum Feld */
+	.duration {
+		width: 64px;
+		min-height: 32px;
+		padding: 2px 8px;
+		text-align: right;
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+		border-color: transparent;
+		background: transparent;
+	}
+	.row:hover .duration {
+		border-color: var(--border);
+	}
+	.duration:focus {
+		border-color: var(--accent);
+		background: var(--bg-raised);
+	}
+	.del {
+		color: var(--text-faint);
+		opacity: 0;
+	}
+	.row:hover .del,
+	.row:focus-within .del {
+		opacity: 1;
+	}
+	.del:hover {
+		color: var(--danger);
+	}
+	@media (hover: none) {
+		.del {
+			opacity: 1;
+		}
 	}
 	.empty {
 		color: var(--text-muted);

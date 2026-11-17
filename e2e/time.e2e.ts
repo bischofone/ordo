@@ -198,7 +198,7 @@ test('Auswertung: Woche, Tag, zurückblättern, nach Pool und Aufgabe', async ({
 	await expect(page.getByTestId('period-label')).toHaveText('KW 47 · 16.11.–22.11.2026');
 	await expect(page.getByTestId('report-total')).toHaveText('4:00');
 	await expect(page.getByTestId('time-groups')).toContainText('Arbeit');
-	const byTask = page.getByTestId('time-tasks').locator('.line');
+	const byTask = page.getByTestId('time-tasks').locator('.row');
 	await expect(byTask.first()).toContainText('Angebot schreiben');
 	await expect(byTask.first()).toContainText('3:30');
 	await expect(byTask.nth(1)).toContainText('Telefonat');
