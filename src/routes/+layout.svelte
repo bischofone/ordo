@@ -18,6 +18,7 @@
 	import { triage, watchTriage } from '#lib/state/triage.svelte.ts';
 	import { ui } from '#lib/state/ui.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
+	import Logo from '#lib/ui/Logo.svelte';
 	import DragLayer from '#lib/ui/DragLayer.svelte';
 	import MobileToolbar from '#lib/ui/MobileToolbar.svelte';
 	import Overlays from '#lib/ui/Overlays.svelte';
@@ -109,7 +110,7 @@
 				<button class="icon-btn" aria-label={m.nav.menu} onclick={() => (ui.sidebarOpen = true)}>
 					<Icon name="menu" />
 				</button>
-				<span class="brand">{m.appName}</span>
+				<span class="brand"><Logo size={22} />{m.appName}</span>
 			</header>
 			<TimerBar />
 			<TriageBanner count={inboxStats.count} />
@@ -164,7 +165,10 @@
 			border-bottom: 1px solid var(--border);
 		}
 		.brand {
-			font-weight: 600;
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			font-weight: 700;
 		}
 		main {
 			padding: 12px 10px 140px;

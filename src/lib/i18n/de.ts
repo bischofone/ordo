@@ -3,7 +3,7 @@
  * und in ./index.ts auswählen.
  */
 export const de = {
-	appName: 'Tasks',
+	appName: 'Ordo',
 	nav: {
 		inbox: 'Inbox',
 		all: 'Alle Pools',

@@ -1,7 +1,7 @@
 {
-	"name": "Tasks",
-	"short_name": "Tasks",
-	"description": "Local-first Aufgaben mit Pools",
+	"name": "Ordo",
+	"short_name": "Ordo",
+	"description": "Ordo – Aufgaben in Ordnung, lokal und mit eigenem Sync",
 	"lang": "de",
 	"start_url": "/inbox",
 	"scope": "/",

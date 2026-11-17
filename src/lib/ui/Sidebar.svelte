@@ -16,6 +16,7 @@
 	import Badge from './Badge.svelte';
 	import { drag } from './drag.svelte';
 	import Icon from './Icon.svelte';
+	import Logo from './Logo.svelte';
 
 	let {
 		pools,
@@ -68,8 +69,8 @@
 
 <nav class="sidebar" class:open={ui.sidebarOpen} aria-label="Navigation">
 	<div class="brand">
-		<span class="logo"><Icon name="check" size={16} /></span>
-		{m.appName}
+		<Logo size={26} />
+		<span class="wordmark">{m.appName}</span>
 	</div>
 	<a
 		class="item"
@@ -235,14 +236,8 @@
 		font-weight: 700;
 		font-size: 1.0625rem;
 	}
-	.logo {
-		display: grid;
-		place-items: center;
-		width: 26px;
-		height: 26px;
-		border-radius: 8px;
-		background: var(--accent);
-		color: var(--accent-contrast);
+	.wordmark {
+		letter-spacing: 0.01em;
 	}
 	.item.sub {
 		min-height: max(28px, calc(var(--row-h) - 8px));

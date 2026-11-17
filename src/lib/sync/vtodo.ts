@@ -28,7 +28,7 @@ export const X = {
 	time: 'X-MYTASKS-TIME'
 } as const;
 
-const PRODID = '-//Tasks App//DE';
+const PRODID = '-//Ordo//DE';
 
 export interface ParsedTodo {
 	uid: string;

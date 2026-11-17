@@ -1,6 +1,6 @@
-# SPEC – Eigene Tasks-App
+# SPEC – Ordo
 
-Local-first Aufgaben-App mit getrennten Pools, Sync über CalDAV, nativen
+**Ordo** (lateinisch „Ordnung“) ist eine eigene local-first Aufgaben-App mit getrennten Pools, Sync über CalDAV, nativen
 Erinnerungen am Handy und optionaler KI pro Pool.
 
 ---
@@ -274,6 +274,15 @@ Jede Phase ist abgeschlossen und getestet, bevor die nächste beginnt.
 
 Festgelegt beim Start, um ohne Rückfragen loslegen zu können. Alles davon kann
 jederzeit geändert werden – dann wird es hier angepasst.
+
+### Marke
+
+- **Name:** Ordo (lateinisch „Ordnung“), kurz und international aussprechbar.
+- **Logo:** offenes O mit einem Punkt in der Lücke: das zuletzt Einsortierte
+  schließt den Kreis. In der App folgt es der gewählten Akzentfarbe
+  (`src/lib/ui/Logo.svelte`); App-Icons in `static/` (Blau `#0b6bcb`).
+- Interne Kennungen (`X-MYTASKS-*` im CalDAV, Datenbankname) bleiben
+  unverändert, damit bestehende Daten und Sync weiter funktionieren.
 
 ### Technik
 
