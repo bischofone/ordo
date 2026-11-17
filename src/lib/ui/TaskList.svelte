@@ -157,7 +157,7 @@
 
 <ul class="list" bind:this={listEl} data-drop-list>
 	{#each rows as row (row.task.id)}
-		<li>
+		<li style:--line-depth={row.depth}>
 			<TaskRow
 				{row}
 				progress={progressOf(row.task.id)}
@@ -188,6 +188,21 @@
 		list-style: none;
 		margin: 0;
 		padding: 0;
+	}
+	/* Dezente Trennlinie zwischen Aufgaben, eingerückt wie die Aufgabe selbst.
+	   Die Zeile beim Drüberfahren deckt ihre Linie mit dem Hintergrund ab. */
+	li {
+		position: relative;
+	}
+	li + li::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: calc(var(--line-depth) * var(--indent) + 40px);
+		right: 8px;
+		height: 1px;
+		background: color-mix(in srgb, var(--border) 65%, transparent);
+		pointer-events: none;
 	}
 	/* Leere Listen beim Ziehen als Ziel erreichbar machen */
 	:global(body.is-dragging) .list {
