@@ -42,7 +42,14 @@
 	}
 </script>
 
-<section class="pool" data-testid="pool-section" data-pool={pool.name}>
+<!-- In „Alle Pools“ (showHeader) steht jeder Pool in einem eigenen abgesetzten Bereich -->
+<section
+	class="pool"
+	class:framed={showHeader}
+	style:--group-color={pool.color}
+	data-testid="pool-section"
+	data-pool={pool.name}
+>
 	{#if showHeader}
 		<h2>
 			<a href={resolve('/pool/[id]', { id: pool.id })}>
@@ -142,6 +149,20 @@
 <style>
 	.pool {
 		margin-bottom: calc(var(--gap) * 2);
+	}
+	/* Abgesetzter Bereich je Pool: etwas dunklere Fläche, darin die Karten */
+	.pool.framed {
+		padding: 12px;
+		border: 1px solid var(--border);
+		border-radius: calc(var(--radius-card) + 4px);
+		background: color-mix(in srgb, var(--text) 3%, var(--bg));
+		margin-bottom: calc(var(--gap) * 1.5);
+	}
+	:global(:root[data-tint='on']) .pool.framed {
+		background: color-mix(in srgb, var(--group-color) 5%, var(--bg));
+	}
+	.framed h2 {
+		padding: 0 4px;
 	}
 	h2 {
 		font-size: 1.125rem;
