@@ -1,5 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// Zeiten in den Tests (z. B. new Date('2026-11-17T08:50:00')) meinen deutsche Ortszeit –
+// auch auf Servern, die in UTC laufen (GitHub Actions). Gilt für alle Test-Prozesse.
+process.env.TZ = 'Europe/Berlin';
+
 export default defineConfig({
 	testDir: 'e2e',
 	testMatch: '**/*.e2e.ts',
