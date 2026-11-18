@@ -165,7 +165,11 @@ else
 	curl -fsSL "${auth[@]}" "$RAW/install/ordo-lxc.sh" -o "$script" ||
 		die "Konnte install/ordo-lxc.sh nicht laden (Internet erreichbar? Bei privatem Fork ORDO_TOKEN setzen)."
 fi
+# Den Ordner gibt es in der Alpine-Vorlage nicht von Haus aus
+pct exec "$ORDO_CTID" -- mkdir -p /usr/local/sbin
 pct push "$ORDO_CTID" "$script" /usr/local/sbin/ordo --perms 755
+pct exec "$ORDO_CTID" -- test -s /usr/local/sbin/ordo ||
+	die "Konnte den Befehl „ordo“ nicht in den Container kopieren. Container $ORDO_CTID bleibt zum Nachsehen bestehen."
 say "Ordo im Container einrichten – Pakete, App bauen, Dienste (dauert 3–5 Minuten) …"
 rm -f "$script"
 
