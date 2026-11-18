@@ -32,7 +32,10 @@ die() {
 [ "$(id -u)" = 0 ] || die "Bitte als root ausführen."
 [ -f /etc/alpine-release ] || die "Dieses Skript ist für Alpine Linux gedacht."
 
-gen_password() { tr -dc 'A-Za-z0-9' </dev/urandom | head -c 16; }
+gen_password() {
+	p="$(head -c 512 /dev/urandom | LC_ALL=C tr -dc 'A-Za-z0-9')"
+	printf '%.16s' "$p"
+}
 
 # ---------- Pakete ----------
 
