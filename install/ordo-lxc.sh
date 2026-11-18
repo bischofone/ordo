@@ -15,6 +15,8 @@
 #   ORDO_TOKEN   GitHub-Token, nur für private Forks nötig
 #   ORDO_DOMAIN  Domain beim ersten Einrichten (sonst nur HTTP auf Port 80)
 set -eu
+# Feste Suchpfade – „pct exec“ bringt je nach Proxmox-Version einen knappen PATH mit
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 REPO="${ORDO_REPO:-https://github.com/bischofone/ordo.git}"
 BRANCH="${ORDO_BRANCH:-main}"
@@ -54,7 +56,11 @@ install_packages() {
 build_app() {
 	say "Ordo herunterladen und bauen (dauert ein paar Minuten) …"
 	apk add -q --virtual .ordo-build nodejs npm git
-	npm install -g --silent pnpm@10 >/dev/null
+	# pnpm am liebsten als Alpine-Paket; sonst über npm (mit sichtbaren Fehlern)
+	if ! apk add -q --virtual .ordo-pnpm pnpm 2>/dev/null; then
+		npm install -g --no-fund --no-audit pnpm@10 || die "pnpm ließ sich nicht installieren."
+	fi
+	command -v pnpm >/dev/null || die "pnpm fehlt nach der Installation (PATH: $PATH)."
 
 	src="$(mktemp -d)"
 	url="$REPO"
@@ -85,6 +91,7 @@ build_app() {
 	store="$(cd "$src" && pnpm store path 2>/dev/null || true)"
 	rm -rf "$src" "${store:-/nonexistent}" /root/.npm /root/.cache /root/.local/share/pnpm
 	npm uninstall -g --silent pnpm >/dev/null 2>&1 || true
+	apk del -q .ordo-pnpm >/dev/null 2>&1 || true
 	apk del -q .ordo-build
 	rm -rf /var/cache/apk/*
 	say "Ordo $commit ist gebaut."
