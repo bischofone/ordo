@@ -73,6 +73,11 @@ build_app() {
 	git clone -q --depth 1 --branch "$BRANCH" "$url" "$src" ||
 		die "Herunterladen fehlgeschlagen. Internet erreichbar? Bei privatem Fork ORDO_TOKEN setzen."
 	commit="$(git -C "$src" rev-parse --short HEAD)"
+	# Den Befehl „ordo“ selbst gleich mit aktualisieren (neue Unterbefehle, Korrekturen)
+	if [ -s "$src/install/ordo-lxc.sh" ] && [ -w /usr/local/sbin ]; then
+		cp "$src/install/ordo-lxc.sh" /usr/local/sbin/ordo.neu && chmod 755 /usr/local/sbin/ordo.neu &&
+			mv /usr/local/sbin/ordo.neu /usr/local/sbin/ordo
+	fi
 
 	(
 		cd "$src"
