@@ -73,6 +73,17 @@ Auf GitHub prüft der Workflow [`ci.yml`](../.github/workflows/ci.yml) bei jedem
 6. `e2e/detail.e2e.ts`: Ort eintragen, neu laden, ist noch da.
 7. SPEC.md und [BEDIENUNG.md](BEDIENUNG.md) ergänzen.
 
+## Installationsskripte
+
+| Datei                 | Läuft auf                | Aufgabe                                                                |
+| --------------------- | ------------------------ | ---------------------------------------------------------------------- |
+| `install/proxmox.sh`  | Proxmox-Host (bash)      | Container anlegen, `ordo-lxc.sh` hineinlegen, starten                  |
+| `install/ordo-lxc.sh` | Alpine im Container (sh) | Pakete, App bauen, Radicale/Caddy einrichten; danach als Befehl `ordo` |
+| `docker/`             | Docker Compose           | dieselbe Kombination als Container-Paar                                |
+
+`ordo-lxc.sh` lässt sich ohne Proxmox in einem Alpine-Rootfs testen; als Quelle dient dann
+das lokale Repository: `ORDO_REPO=file:///pfad/zum/repo ordo install NAME PASSWORT`.
+
 ## Versionen und Änderungen
 
 Änderungen stehen in [CHANGELOG.md](../CHANGELOG.md). Die Version in `package.json` folgt

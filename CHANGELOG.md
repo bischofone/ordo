@@ -15,6 +15,8 @@
 - **Einstellungen in Bereiche gegliedert** (Darstellung, Zeiterfassung, Inbox, Pools, Sync).
 - **Anpassbare Darstellung:** Farbschema, Akzentfarbe, Dichte, Schriftgröße, farbige Gruppen.
 - Klick auf eine Aufgabe öffnet die Details.
+- **Proxmox-Installation mit einem Befehl:** kleiner Alpine-Container mit Caddy und Radicale,
+  Pflege über den Befehl `ordo` (update, user-add, domain, status).
 - **Dokumentation:** Installation, Bedienung, Architektur, Entwicklung; Screenshots;
   automatische Prüfung auf GitHub.
 

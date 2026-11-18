@@ -3,7 +3,8 @@
 Ordo ist eine Web-App, die komplett im Browser läuft. Es gibt drei Wege, sie zu nutzen:
 
 1. **[Lokal ausprobieren](#1-lokal-ausprobieren)** – auf dem eigenen Rechner, in ein paar Minuten.
-2. **[Auf einem eigenen Server](#2-eigener-server)** – erreichbar von allen Geräten, mit Sync.
+2. **[Auf einem eigenen Server](#2-eigener-server)** – erreichbar von allen Geräten, mit Sync:
+   [mit einem Befehl auf Proxmox](#proxmox-ein-befehl) oder [mit Docker](#docker).
 3. **[Auf Handy und PC installieren](#3-auf-geräten-installieren)** – als App mit eigenem Icon (PWA).
 
 Ohne Sync-Server bleiben alle Daten auf dem Gerät, in dem Browser, in dem du Ordo öffnest.
@@ -71,8 +72,70 @@ Ein zweites Browserfenster im privaten Modus spielt ein zweites Gerät.
 
 ## 2. Eigener Server
 
-Für den Alltag läuft Ordo zusammen mit einem CalDAV-Server auf einem kleinen Server
-(ein günstiger VPS reicht). Fertig vorbereitet ist das in [`docker/`](../docker/README.md):
+Für den Alltag läuft Ordo zusammen mit einem CalDAV-Server auf einem eigenen Server.
+Zwei fertige Wege:
+
+### Proxmox: ein Befehl
+
+Auf dem **Proxmox-VE-Host** als root in der Shell (Weboberfläche → Knoten → „Shell“):
+
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/bischofone/tasks-app/main/install/proxmox.sh)"
+```
+
+Das Skript fragt ein paar Dinge ab (alles vorbelegt, Enter genügt) und legt dann einen
+kleinen **Alpine-Linux-Container** an:
+
+| Was        | Vorgabe                                         |
+| ---------- | ----------------------------------------------- |
+| Container  | unprivilegiert, startet mit dem Host            |
+| Ressourcen | 1 Kern, 256 MB RAM, 2 GB Festplatte             |
+| Netzwerk   | `vmbr0`, DHCP (oder feste IP)                   |
+| Darin      | Caddy (App, optional HTTPS) + Radicale (CalDAV) |
+| Belegt     | etwa 180 MB                                     |
+
+Die App wird beim Einrichten im Container gebaut; Node.js und der Quellcode werden danach
+wieder entfernt. Am Ende stehen Adresse, Benutzer und Passwort auf dem Bildschirm.
+
+**Ohne Rückfragen** (z. B. für Skripte) – Werte voranstellen:
+
+```bash
+ORDO_YES=1 ORDO_CTID=120 ORDO_DOMAIN=ordo.example.de ORDO_USER=alex \
+  bash -c "$(curl -fsSL https://raw.githubusercontent.com/bischofone/tasks-app/main/install/proxmox.sh)"
+```
+
+Alle Variablen stehen oben in [`install/proxmox.sh`](../install/proxmox.sh).
+
+**Solange das Repository privat ist**, braucht der Download einen GitHub-Token
+(GitHub → Settings → Developer settings → Fine-grained token, nur Lesezugriff auf dieses Repository):
+
+```bash
+export ORDO_TOKEN=github_pat_…
+bash -c "$(curl -fsSL -H "Authorization: token $ORDO_TOKEN" https://raw.githubusercontent.com/bischofone/tasks-app/main/install/proxmox.sh)"
+```
+
+**Pflege** – vom Proxmox-Host aus (`120` = deine Container-ID) oder im Container direkt `ordo …`:
+
+| Befehl                               | Wirkung                                           |
+| ------------------------------------ | ------------------------------------------------- |
+| `pct exec 120 -- ordo update`        | neueste Version von GitHub holen und bauen        |
+| `pct exec 120 -- ordo user-add NAME` | Benutzer anlegen / Passwort ändern (wird erzeugt) |
+| `pct exec 120 -- ordo user-del NAME` | Benutzer entfernen (Daten bleiben)                |
+| `pct exec 120 -- ordo domain DOMAIN` | Domain setzen → Caddy holt automatisch HTTPS      |
+| `pct exec 120 -- ordo status`        | Version, Dienste, Benutzer, Adressen              |
+
+**HTTPS:** Ohne Domain läuft Ordo per HTTP auf Port 80 – gut fürs Heimnetz oder hinter einem
+vorhandenen Reverse-Proxy (z. B. Nginx Proxy Manager, Traefik): dort einfach auf
+`http://IP-DES-CONTAINERS` weiterleiten. Mit `ordo domain …` holt Caddy selbst ein Zertifikat;
+dafür müssen Port 80 und 443 aus dem Internet beim Container ankommen.
+Für die Installation als App (PWA) ist HTTPS nötig.
+
+**Datensicherung:** Die Aufgaben liegen im Container unter `/var/lib/radicale/collections`.
+Am einfachsten den Container in die normale Proxmox-Sicherung aufnehmen.
+
+### Docker
+
+Für einen VPS oder jeden Rechner mit Docker ist alles in [`docker/`](../docker/README.md) vorbereitet:
 
 - **Caddy** liefert die App aus und holt automatisch ein HTTPS-Zertifikat.
 - **Radicale** speichert die Aufgaben (als einzelne `.ics`-Dateien).
@@ -95,7 +158,7 @@ Danach ist Ordo unter `https://DEINE-DOMAIN/` erreichbar, der CalDAV-Server unte
 Dann muss der Server Anfragen aus dem Browser erlauben (CORS) – ein Beispiel für Caddy
 steht in [`docker/Caddyfile.cors-beispiel`](../docker/Caddyfile.cors-beispiel).
 
-### Aktualisieren
+### Docker aktualisieren
 
 ```bash
 git pull

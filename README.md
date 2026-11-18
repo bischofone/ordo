@@ -42,6 +42,15 @@ DAVx⁵ oder Thunderbird lesbar.
 
 ## Schnellstart
 
+**Auf Proxmox** – ein Befehl in der Shell des Proxmox-Hosts legt einen kleinen Container mit
+App und CalDAV-Server an:
+
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/bischofone/tasks-app/main/install/proxmox.sh)"
+```
+
+**Lokal ausprobieren:**
+
 ```bash
 git clone https://github.com/bischofone/tasks-app.git ordo
 cd ordo
@@ -49,8 +58,8 @@ pnpm install
 pnpm dev
 ```
 
-Dann <http://localhost:5173> öffnen. Mehr dazu, auch für den eigenen Server und die
-Installation am Handy: **[Installationsanleitung](docs/INSTALLATION.md)**.
+Dann <http://localhost:5173> öffnen. Mehr dazu – Docker, eigene Domain, Installation am Handy:
+**[Installationsanleitung](docs/INSTALLATION.md)**.
 
 ## Dokumentation
 
