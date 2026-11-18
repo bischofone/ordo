@@ -51,15 +51,24 @@ ask() {
 	printf -v "$var" '%s' "${val:-$def}"
 }
 
-# Aktive Speicher für einen Inhaltstyp (eine Zeile je Speicher)
-first_storage() { pvesm status -content "$1" 2>/dev/null | awk 'NR>1 && $3=="active" {print $1}' || true; }
-# Bevorzugt `$2`, sonst den ersten Speicher der Liste (ohne Pipes, die vorzeitig schließen)
+# Aktive Speicher für einen Inhaltstyp: „Name freier-Platz“ je Zeile
+storages() { pvesm status -content "$1" 2>/dev/null | awk 'NR>1 && $3=="active" {print $1, $6}' || true; }
+# Vorschlag: bevorzugte Namen zuerst, sonst der mit dem meisten freien Platz –
+# aber keine Speicher, die nach Sicherung klingen (ohne Pipes, die vorzeitig schließen)
 pick_storage() {
-	local list
-	list="$(first_storage "$1")"
-	if grep -qx "$2" <<<"$list"; then echo "$2"; else echo "${list%%$'\n'*}"; fi
+	local list name
+	list="$(storages "$1")"
+	shift
+	for name in "$@"; do
+		if grep -q "^$name " <<<"$list"; then
+			echo "$name"
+			return
+		fi
+	done
+	list="$(grep -viE '^(backup|bak|pbs|dump)' <<<"$list" || true)"
+	sort -k2 -nr <<<"$list" | awk 'NR==1 {print $1}'
 }
-default_rootfs="$(pick_storage rootdir local-lvm)"
+default_rootfs="$(pick_storage rootdir local-lvm local-zfs)"
 default_tmpl="$(pick_storage vztmpl local)"
 [ -n "$default_rootfs" ] || die "Kein Speicher für Container gefunden."
 [ -n "$default_tmpl" ] || die "Kein Speicher für Vorlagen gefunden."
@@ -67,7 +76,8 @@ default_tmpl="$(pick_storage vztmpl local)"
 echo "Einstellungen (Enter = Vorschlag):"
 ask ORDO_CTID "Container-ID" "$(pvesh get /cluster/nextid)"
 ask ORDO_HOSTNAME "Hostname" "ordo"
-ask ORDO_STORAGE "Speicher" "$default_rootfs"
+rootfs_names="$(awk '{print $1}' <<<"$(storages rootdir)" | paste -sd ',' - | sed 's/,/, /g')"
+ask ORDO_STORAGE "Speicher ($rootfs_names)" "$default_rootfs"
 ask ORDO_DISK "Festplatte in GB" "2"
 ask ORDO_MEMORY "Arbeitsspeicher in MB" "256"
 ask ORDO_CORES "CPU-Kerne" "1"
@@ -95,8 +105,14 @@ say "Los geht's: Container $ORDO_CTID ($ORDO_HOSTNAME) auf $ORDO_STORAGE, ${ORDO
 say "Alpine-Vorlage suchen …"
 pveam update >/dev/null 2>&1 || true
 available="$(pveam available --section system 2>/dev/null || true)"
-template="$(awk '$2 ~ /^alpine-3/ {print $2}' <<<"$available" | sort -V | tail -n 1)"
-[ -n "$template" ] || die "Keine Alpine-Vorlage gefunden (pveam available)."
+# Nur Vorlagen für die Architektur dieses Rechners (amd64 bzw. arm64)
+arch="$(dpkg --print-architecture 2>/dev/null || true)"
+case "$arch" in
+amd64 | arm64) ;;
+*) arch="$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')" ;;
+esac
+template="$(awk -v a="_${arch}." '$2 ~ /^alpine-3/ && index($2, a) {print $2}' <<<"$available" | sort -V | tail -n 1)"
+[ -n "$template" ] || die "Keine Alpine-Vorlage für $arch gefunden (pveam available)."
 installed="$(pveam list "$default_tmpl" 2>/dev/null || true)"
 if ! grep -qF "$template" <<<"$installed"; then
 	say "Vorlage $template herunterladen …"
@@ -123,7 +139,11 @@ pct create "$ORDO_CTID" "$default_tmpl:vztmpl/$template" \
 	--description "Ordo – Aufgaben-App mit CalDAV. Pflege im Container: ordo update | ordo status | ordo user-add NAME" \
 	>/dev/null
 
-pct start "$ORDO_CTID"
+if ! pct start "$ORDO_CTID"; then
+	# Der Container ist frisch angelegt und leer – wieder entfernen, damit nichts liegen bleibt
+	pct destroy "$ORDO_CTID" --purge >/dev/null 2>&1 || true
+	die "Container $ORDO_CTID ließ sich nicht starten und wurde wieder entfernt."
+fi
 
 say "Warten auf Netzwerk …"
 for _ in $(seq 1 30); do
