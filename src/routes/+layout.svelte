@@ -20,12 +20,14 @@
 	import { watchTimeSettings } from '#lib/state/time-settings.svelte.ts';
 	import { watchTimer } from '#lib/state/timer.svelte.ts';
 	import { triage, watchTriage } from '#lib/state/triage.svelte.ts';
+	import { watchAi } from '#lib/state/ai.svelte.ts';
 	import { ui } from '#lib/state/ui.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Logo from '#lib/ui/Logo.svelte';
 	import DragLayer from '#lib/ui/DragLayer.svelte';
 	import MobileToolbar from '#lib/ui/MobileToolbar.svelte';
 	import Overlays from '#lib/ui/Overlays.svelte';
+	import AiPanel from '#lib/ui/AiPanel.svelte';
 	import Sidebar from '#lib/ui/Sidebar.svelte';
 	import TimerBar from '#lib/ui/TimerBar.svelte';
 	import TriageBanner from '#lib/ui/TriageBanner.svelte';
@@ -47,6 +49,7 @@
 	$effect(() => untrack(() => watchTimer()));
 	$effect(() => untrack(() => watchTimeSettings()));
 	$effect(() => untrack(() => watchTriage()));
+	$effect(() => untrack(() => watchAi()));
 
 	// Inbox aufräumen: fällig? (minütlich und bei jeder Änderung neu berechnet)
 	const inboxStats = $derived.by(() => {
@@ -131,6 +134,7 @@
 />
 <DragLayer />
 <Overlays />
+<AiPanel />
 <MobileToolbar />
 
 <style>

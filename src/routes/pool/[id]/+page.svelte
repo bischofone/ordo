@@ -14,6 +14,9 @@
 	import Editor from '#lib/ui/Editor.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import PoolSync from '#lib/ui/PoolSync.svelte';
+	import PoolAi from '#lib/ui/PoolAi.svelte';
+	import Popover from '#lib/ui/Popover.svelte';
+	import { aiDayPlan, aiFromText, aiWeekReview } from '#lib/state/ai.svelte.ts';
 	import PoolView from '#lib/ui/PoolView.svelte';
 	import SyncChip from '#lib/ui/SyncChip.svelte';
 	import QuickAdd from '#lib/ui/QuickAdd.svelte';
@@ -45,6 +48,29 @@
 			onclick={() => (editing = !editing)}><Icon name="edit" size={16} /></button
 		>
 		<SyncChip {pool} onclick={() => (editing = !editing)} />
+		{#if pool.settings.ai.enabled}
+			<span class="spacer"></span>
+			<Popover label={m.ai.menu} align="end">
+				{#snippet trigger({ toggle, open })}
+					<button class="btn ghost ai-btn" aria-expanded={open} onclick={toggle}>
+						<Icon name="sparkle" size={16} />{m.ai.name}
+					</button>
+				{/snippet}
+				{#snippet children({ close })}
+					<div class="menu" role="menu">
+						<button role="menuitem" onclick={() => (close(), aiFromText(pool))}>
+							<Icon name="plus" size={16} />{m.ai.fromText}
+						</button>
+						<button role="menuitem" onclick={() => (close(), aiDayPlan(pool))}>
+							<Icon name="calendar" size={16} />{m.ai.dayPlan}
+						</button>
+						<button role="menuitem" onclick={() => (close(), aiWeekReview(pool))}>
+							<Icon name="chart" size={16} />{m.ai.weekReview}
+						</button>
+					</div>
+				{/snippet}
+			</Popover>
+		{/if}
 	</header>
 	{#if editing}
 		<Editor
@@ -56,6 +82,7 @@
 			ondelete={pool.kind === 'pool' ? remove : undefined}
 		/>
 		<PoolSync {pool} />
+		<PoolAi {pool} />
 	{/if}
 
 	<QuickAdd pools={usable} projects={projects.current} defaultPoolId={pool.id} />
@@ -77,6 +104,30 @@
 		display: flex;
 		align-items: center;
 		gap: 10px;
+	}
+	.spacer {
+		flex: 1;
+	}
+	.ai-btn {
+		gap: 6px;
+		color: var(--accent);
+	}
+	.menu {
+		display: flex;
+		flex-direction: column;
+		min-width: 200px;
+		padding: 4px;
+	}
+	.menu button {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 8px 10px;
+		border-radius: 8px;
+		text-align: left;
+	}
+	.menu button:hover {
+		background: var(--bg-hover);
 	}
 	.tag {
 		font-size: 0.75rem;

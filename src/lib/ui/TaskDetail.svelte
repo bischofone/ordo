@@ -15,6 +15,7 @@
 	import { timeSettings } from '#lib/state/time-settings.svelte.ts';
 	import Icon from './Icon.svelte';
 	import TimeSection from './TimeSection.svelte';
+	import { aiBreakdown, aiTips } from '#lib/state/ai.svelte.ts';
 	import { syncValue } from './sync-value';
 
 	let { pools, projects }: { pools: Pool[]; projects: Project[] } = $props();
@@ -56,6 +57,10 @@
 	}
 
 	const close = () => (ui.detailId = null);
+	/** KI-Knöpfe nur, wenn die KI im Pool der Aufgabe an ist (nicht in der Inbox) */
+	const aiOn = $derived(
+		!!t && pools.some((p) => p.id === t.poolId && p.kind === 'pool' && p.settings.ai.enabled)
+	);
 </script>
 
 <svelte:window onkeydown={(e) => e.key === 'Escape' && ui.detailId && close()} />
@@ -166,6 +171,18 @@
 				</label>
 			{/if}
 		</div>
+
+		{#if aiOn}
+			<div class="ai" data-testid="detail-ai">
+				<span class="lbl"><Icon name="sparkle" size={14} />{m.ai.name}</span>
+				<button class="btn ghost" onclick={() => aiBreakdown(t)}>
+					<Icon name="subtask" size={16} />{m.ai.breakdown}
+				</button>
+				<button class="btn ghost" onclick={() => aiTips(t)}>
+					<Icon name="bulb" size={16} />{m.ai.tips}
+				</button>
+			</div>
+		{/if}
 
 		{#if timeSettings.enabled}
 			<TimeSection task={t} />
@@ -298,6 +315,22 @@
 	}
 	.prio-3:not(.on) {
 		color: var(--prio-3);
+	}
+	.ai {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 6px;
+	}
+	.ai .lbl {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		margin-right: 4px;
+		color: var(--accent);
+	}
+	.ai .btn {
+		gap: 6px;
 	}
 	.toggle {
 		display: flex;

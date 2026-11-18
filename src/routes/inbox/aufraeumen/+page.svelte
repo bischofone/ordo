@@ -21,6 +21,9 @@
 	import { toast, ui } from '#lib/state/ui.svelte.ts';
 	import Badge from '#lib/ui/Badge.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
+	import { suggestPool } from '#lib/ai/features.ts';
+	import { AiError } from '#lib/ai/openrouter.ts';
+	import { runInboxAi } from '#lib/state/ai.svelte.ts';
 
 	const pools = live(() => q.pools, []);
 	const projects = live(() => q.projects, []);
@@ -50,6 +53,29 @@
 	const forced = $derived(triage.forced);
 	const today = $derived(todayIso(ui.now));
 	const tomorrow = $derived(addDaysIso(ui.now, 1));
+
+	// KI-Vorschlag für den Pool (gilt nur für die Karte, für die er erstellt wurde)
+	const inboxAi = $derived(
+		pools.current.find((p) => p.id === INBOX_ID)?.settings.ai.enabled ?? false
+	);
+	let aiHint = $state<{ taskId: string; text: string; pool?: string; busy?: boolean } | null>(null);
+	const hint = $derived(aiHint && aiHint.taskId === current?.id ? aiHint : null);
+	async function suggest() {
+		const t = current;
+		if (!t) return;
+		aiHint = { taskId: t.id, text: m.ai.suggesting, busy: true };
+		try {
+			const { value } = await runInboxAi(t, suggestPool);
+			const pool = targets.find((p) => p.name === value.pool);
+			aiHint = {
+				taskId: t.id,
+				pool: pool?.id,
+				text: pool ? m.ai.suggestion(pool.name, value.reason) : m.ai.noSuggestion
+			};
+		} catch (e) {
+			aiHint = { taskId: t.id, text: e instanceof AiError ? e.message : String(e) };
+		}
+	}
 
 	// Fertig (alles zugeordnet/gelöscht) → fälliger Aufräum-Termin ist erledigt
 	$effect(() => {
@@ -336,7 +362,17 @@
 					>
 						<Icon name="archive" size={16} />{m.inbox.someday}
 					</button>
+					{#if inboxAi}
+						<button class="btn ai" disabled={hint?.busy} onclick={suggest}>
+							<Icon name="sparkle" size={16} />{m.ai.suggestPool}
+						</button>
+					{/if}
 				</div>
+				{#if hint}
+					<p class="ai-hint" class:busy={hint.busy} role="status" data-testid="ai-suggestion">
+						<Icon name="sparkle" size={14} />{hint.text}
+					</p>
+				{/if}
 
 				{#if swipeHint}
 					<div class="stamp {swipeHint}">
@@ -357,6 +393,7 @@
 					<button
 						class="tile pool"
 						class:over={over === `pool:${p.id}`}
+						class:suggested={hint?.pool === p.id}
 						data-triage-target="pool:{p.id}"
 						onclick={() => assign(p.id)}
 					>
@@ -675,5 +712,24 @@
 		text-align: center;
 		padding: 48px 0;
 		font-size: 1.125rem;
+	}
+	.btn.ai {
+		gap: 6px;
+		color: var(--accent);
+	}
+	.ai-hint {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		margin: 10px 0 0;
+		font-size: 0.875rem;
+		color: var(--accent);
+	}
+	.ai-hint.busy {
+		color: var(--text-muted);
+	}
+	.tile.suggested {
+		outline: 2px solid var(--accent);
+		outline-offset: 2px;
 	}
 </style>

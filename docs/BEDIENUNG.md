@@ -9,6 +9,7 @@ Alles, was Ordo kann – mit Tastenkürzeln und Eingabeformaten zum Nachschlagen
 - [Zurückschieben, Später, Irgendwann](#zurückschieben-später-irgendwann)
 - [Inbox und Aufräumen](#inbox-und-aufräumen)
 - [Zeiterfassung](#zeiterfassung)
+- [KI-Assistent](#ki-assistent)
 - [Synchronisation](#synchronisation)
 - [Einstellungen](#einstellungen)
 - [Am Handy](#am-handy)
@@ -206,6 +207,51 @@ In den Einstellungen lässt sich außerdem das **Runden** des Timers wählen (ex
 
 ---
 
+## KI-Assistent
+
+Optional. Ordo nutzt dafür [OpenRouter](https://openrouter.ai) – eine Schnittstelle zu vielen
+KI-Modellen, bezahlt wird nur, was man verbraucht (für Ordo meist Bruchteile eines Cents).
+
+### Einrichten
+
+1. Auf openrouter.ai ein Konto anlegen, ein paar Dollar Guthaben aufladen und unter **Keys**
+   einen Schlüssel erzeugen.
+2. In Ordo: **Einstellungen → KI** → Schlüssel einfügen → **Prüfen**.
+3. Im Pool über den **Stift-Knopf** die **KI-Funktionen** einschalten – optional mit eigenem
+   Modell und **Kontext für die KI** (z. B. „Ich arbeite als Schreiner, meine Kunden sind
+   Privatleute.“). Für die Inbox heißt der Schalter „Pool-Vorschläge beim Aufräumen“.
+
+<img src="screenshots/ki-zerlegen.png" width="100%" alt="Aufgabe mit der KI zerlegen">
+
+### Was die KI kann
+
+| Wo                    | Funktion               | Ergebnis                                                           |
+| --------------------- | ---------------------- | ------------------------------------------------------------------ |
+| Details einer Aufgabe | **Zerlegen**           | Unteraufgaben (bis zu zwei Ebenen) zum Abhaken und Umbenennen      |
+| Details einer Aufgabe | **Tipps**              | Lösungsansätze; auf Wunsch an die Notizen anhängen                 |
+| Pool → Knopf **KI**   | **Aus Text erstellen** | Notizen, E-Mails, Gedanken einfügen → Aufgaben mit Datum/Priorität |
+| Pool → Knopf **KI**   | **Tagesplan**          | 3–6 Aufgaben für heute mit Begründung; Klick öffnet die Aufgabe    |
+| Pool → Knopf **KI**   | **Wochenrückblick**    | Geschafft, hängt fest, Vorschlag für nächste Woche                 |
+| Inbox → Aufräumen     | **Pool vorschlagen**   | markiert den passenden Pool und nennt den Grund                    |
+
+**Alles ist ein Vorschlag.** Erst „Übernehmen“ ändert etwas – und auch das lässt sich mit
+„Rückgängig“ zurücknehmen. „Neu erzeugen“ fragt noch einmal.
+
+### Datenschutz und Kosten
+
+- **Strikte Trennung:** Jeder Aufruf enthält nur Daten aus genau einem Pool. Nichts aus
+  _Privat_ landet in einer Anfrage für _Arbeit_ – und umgekehrt. Beim Pool-Vorschlag sieht die
+  KI nur den einen Inbox-Eintrag und die Namen deiner Pools.
+- **Nur Anbieter ohne Datenspeicherung** (Standard): OpenRouter leitet nur an Anbieter weiter,
+  die Eingaben weder speichern noch zum Training verwenden.
+- Der **Schlüssel bleibt auf dem Gerät** und wird nicht synchronisiert.
+- **Tageslimit** (Standard 5 Cent): Danach keine KI-Aufrufe mehr bis morgen. Der Verbrauch des
+  Tages steht unter Einstellungen → KI, die Kosten jedes Aufrufs unten im KI-Fenster.
+- **Standardmodell:** GLM 5.3 Flash – im Test die besten Vorschläge, rund 0,01 Cent je Aufruf.
+  Fällt es aus, springt Mistral Small 3.2 ein. Andere Modelle lassen sich wählen.
+
+---
+
 ## Synchronisation
 
 Ordo synchronisiert **pro Pool** mit einer Liste auf einem CalDAV-Server.
@@ -244,7 +290,7 @@ Gegliedert in Bereiche (am PC links, am Handy als Leiste oben):
 | **Pools & Projekte** | Name, Farbe, Icon, Reihenfolge, archivieren, löschen                                   |
 | **Sync**             | CalDAV-Konten und ihre Listen                                                          |
 
-Darstellung, Zeiterfassung und Aufräum-Zeitplan gelten **pro Gerät**.
+Darstellung, Zeiterfassung, Aufräum-Zeitplan und KI-Einstellungen gelten **pro Gerät**.
 Jeder Bereich hat eine eigene Adresse, z. B. `/einstellungen#sync`.
 
 ---

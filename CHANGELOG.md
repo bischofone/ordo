@@ -1,5 +1,21 @@
 # Änderungen
 
+## 0.4.0 – 18.11.2026
+
+### Neu
+
+- **KI-Assistent über OpenRouter** (Phase 6): Aufgabe zerlegen, Tipps, Aufgaben aus Freitext,
+  Tagesplan, Wochenrückblick, Pool-Vorschlag beim Aufräumen der Inbox.
+- Jede KI-Antwort ist ein Vorschlag: abhaken, umbenennen, übernehmen, neu erzeugen, rückgängig.
+- Strikte Trennung pro Pool, zentral erzwungen und mit Tests abgesichert.
+- Einstellungen → KI: Schlüssel (bleibt auf dem Gerät), Modell, Ersatzmodell, Tageslimit,
+  nur Anbieter ohne Datenspeicherung, Verbrauch heute. Pro Pool: an/aus, Modell, Kontext-Notizen.
+- Standardmodell GLM 5.3 Flash (≈ 0,01 Cent je Aufruf), Ersatz Mistral Small 3.2.
+
+### Sonstiges
+
+- Repository öffentlich unter MIT-Lizenz, neuer Name `ordo`.
+
 ## 0.3.0 – 18.11.2026
 
 ### Neu

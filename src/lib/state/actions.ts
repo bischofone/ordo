@@ -2,6 +2,7 @@
  * Aufgaben-Aktionen mit Rückfragen und „Rückgängig“.
  * Die eigentliche Datenänderung passiert im Repository, hier kommt nur die Nutzerführung dazu.
  */
+import type { SuggestedTask } from '#lib/ai/features.ts';
 import { formatDateValue } from '#lib/domain/dates.ts';
 import { isOpen, type Pool, type Project, type Task } from '#lib/domain/types.ts';
 import { errorText } from '#lib/sync/engine.ts';
@@ -149,4 +150,39 @@ export async function deleteProject(project: Project): Promise<boolean> {
 	await repo.deleteProject(project.id, { withTasks: choice === 'all' });
 	toast(m.project.deleted(project.name));
 	return true;
+}
+
+/**
+ * KI-Vorschläge übernehmen: Aufgaben (mit Unteraufgaben) anlegen – unter `parentId` oder
+ * im Pool/Projekt. Ein Hinweis bietet „Rückgängig“ an.
+ */
+export async function addSuggestedTasks(
+	target: { poolId: string; projectId: string | null; parentId?: string | null },
+	tree: SuggestedTask[]
+) {
+	const roots: string[] = [];
+	let count = 0;
+	const add = async (nodes: SuggestedTask[], parentId: string | null) => {
+		for (const n of nodes) {
+			const id = await repo.createTask({
+				poolId: target.poolId,
+				projectId: target.projectId,
+				parentId,
+				title: n.title,
+				priority: n.priority ?? null,
+				due: n.due ? { date: n.due } : undefined
+			});
+			count++;
+			if (parentId === (target.parentId ?? null)) roots.push(id);
+			await add(n.children, id);
+		}
+	};
+	await add(tree, target.parentId ?? null);
+	toast(m.ai.added(count), {
+		label: m.confirm.undo,
+		run: async () => {
+			for (const id of roots) await repo.deleteTask(id, { withChildren: true });
+		}
+	});
+	return count;
 }

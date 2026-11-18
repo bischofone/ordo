@@ -18,6 +18,7 @@
 	import Segmented from '#lib/ui/Segmented.svelte';
 	import SyncSettings from '#lib/ui/SyncSettings.svelte';
 	import TriageSettingsCard from '#lib/ui/TriageSettingsCard.svelte';
+	import AiSettingsCard from '#lib/ui/AiSettingsCard.svelte';
 	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
 	import { replaceState } from '$app/navigation';
 	import { page } from '$app/state';
@@ -60,7 +61,8 @@
 		{ id: 'zeit', icon: 'clock' },
 		{ id: 'inbox', icon: 'inbox' },
 		{ id: 'pools', icon: 'layers' },
-		{ id: 'sync', icon: 'sync' }
+		{ id: 'sync', icon: 'sync' },
+		{ id: 'ki', icon: 'sparkle' }
 	] as const satisfies { id: string; icon: IconName }[];
 	type SectionId = (typeof SECTIONS)[number]['id'];
 	const isSection = (v: string): v is SectionId => SECTIONS.some((x) => x.id === v);
@@ -312,6 +314,8 @@
 					{/each}
 				{/if}
 			</section>
+		{:else if section === 'ki'}
+			<AiSettingsCard />
 		{:else}
 			<section class="card">
 				<SyncSettings />

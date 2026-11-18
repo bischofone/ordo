@@ -8,6 +8,7 @@ Wie Ordo aufgebaut ist – zum Verstehen, Ändern und Erweitern.
 - [Daten lesen und schreiben](#daten-lesen-und-schreiben)
 - [Oberfläche](#oberfläche)
 - [Synchronisation](#synchronisation)
+- [KI](#ki)
 - [Einstellungen und Gerätezustand](#einstellungen-und-gerätezustand)
 - [PWA und Offline](#pwa-und-offline)
 - [Tests](#tests)
@@ -45,6 +46,7 @@ src/
 │   ├── domain/   reine Logik und Typen – kein Svelte, keine Datenbank
 │   ├── db/       Dexie-Schema (db.ts) und Repository (repo.ts) – alle Schreibzugriffe
 │   ├── sync/     CalDAV-Client, VTODO-Abbildung, Zusammenführen, Sync-Engine
+│   ├── ai/       KI: OpenRouter-Client, Kontext (Pool-Trennung), Funktionen und Prompts
 │   ├── state/    App-Zustand (Svelte-Runes), reaktive Abfragen, Aktionen mit Rückfragen
 │   ├── ui/       Komponenten
 │   └── i18n/     alle Texte der Oberfläche (de.ts)
@@ -207,6 +209,35 @@ weil manche Server Werte an Kommas abschneiden. Der Präfix bleibt aus Verträgl
 **Gleichzeitigkeit:** Pro Pool läuft immer nur ein Sync – auch über mehrere Tabs hinweg
 (Web Locks API, `navigator.locks`). Der automatische Sync wird in `state/sync.svelte.ts`
 angestoßen (Start, Änderungen, Rückkehr ins Fenster, Intervall).
+
+## KI
+
+Code in [`src/lib/ai/`](../src/lib/ai/) (reine Logik) und [`state/ai.svelte.ts`](../src/lib/state/ai.svelte.ts):
+
+| Datei                | Aufgabe                                                                                                                   |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `ai/openrouter.ts`   | schlanker Client: Chat mit JSON-Schema, Ersatzmodell, Datenschutz-Vorgabe, Kosten, Schlüsselprüfung; `fetch` austauschbar |
+| `ai/context.ts`      | **die einzige Stelle, die KI-Kontext baut** – immer genau ein Pool                                                        |
+| `ai/features.ts`     | die Funktionen: Prompt, Schema, Antwort prüfen (zerlegen, Tipps, Freitext, Tagesplan, Rückblick, Pool-Vorschlag)          |
+| `state/ai.svelte.ts` | Einstellungen, Tageslimit/Verbrauch, `runPoolAi`/`runTaskAi`/`runInboxAi`, KI-Fenster                                     |
+| `ui/AiPanel.svelte`  | Vorschau mit Abhaken/Bearbeiten, Übernehmen, Neu erzeugen                                                                 |
+
+**Ablauf eines Aufrufs:**
+
+```
+Knopf → runTaskAi(task, breakdown)
+        ├─ lädt NUR die Tabellenzeilen dieses Pools aus IndexedDB
+        ├─ buildTaskContext()  → filtert nochmals + assertSinglePool()
+        ├─ breakdown(ctx)      → Prompt + JSON-Schema
+        ├─ prüft: Schlüssel, Pool-Freigabe, Tageslimit
+        ├─ OpenRouter (Modell → Ersatzmodell, nur Anbieter ohne Datenspeicherung)
+        ├─ Kosten verbuchen (settings.aiUsage)
+        └─ parse() → Vorschlag → AiPanel → erst „Übernehmen“ ändert Daten
+```
+
+**Pool-Trennung prüfen die Tests** `ai/context.test.ts` (alle Funktionen, mit „GEHEIM“-Markierungen
+in fremden Pools) und `e2e/ai.e2e.ts` (liest im Browser jede abgeschickte Anfrage mit).
+`ai/live.test.ts` fragt echt bei OpenRouter an – nur mit gesetztem `OPENROUTER_API_KEY`.
 
 ## Einstellungen und Gerätezustand
 

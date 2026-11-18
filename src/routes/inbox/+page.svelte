@@ -12,6 +12,7 @@
 	import { ui } from '#lib/state/ui.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import PoolSync from '#lib/ui/PoolSync.svelte';
+	import PoolAi from '#lib/ui/PoolAi.svelte';
 	import SyncChip from '#lib/ui/SyncChip.svelte';
 	import TaskGroup from '#lib/ui/TaskGroup.svelte';
 	import QuickAdd from '#lib/ui/QuickAdd.svelte';
@@ -47,7 +48,7 @@
 	{/if}
 </header>
 
-{#if editing && inbox}<PoolSync pool={inbox} />{/if}
+{#if editing && inbox}<PoolSync pool={inbox} /><PoolAi pool={inbox} />{/if}
 
 {#if aged}
 	<p class="hint">{m.inbox.aged(aged)}</p>

@@ -31,6 +31,9 @@ DAVx⁵ oder Thunderbird lesbar.
 - **Zurückschieben statt verstecken** – mit Zähler; wer etwas zum dritten Mal schiebt, wird gefragt.
 - **Zeiterfassung** (zuschaltbar) – Play-Knopf oder Eingabe wie `0,5h`, Soll-Zeit je Wochentag,
   Auswertung nach Tag, Woche und Monat.
+- **KI-Assistent** (optional, über OpenRouter) – Aufgaben zerlegen, Tipps, aus Freitext
+  Aufgaben machen, Tagesplan, Wochenrückblick, Pool-Vorschläge in der Inbox. Strikt getrennt
+  pro Pool, nur als Vorschlag, mit Tageslimit (Standard 5 Cent; ein Aufruf ≈ 0,01 Cent).
 - **CalDAV-Sync** – mehrere Konten, Zusammenführung pro Feld, echte Konflikte zum Auswählen.
 - **PWA** – installierbar auf Handy und PC, startet offline.
 - **Anpassbar** – helles/dunkles Farbschema, Akzentfarbe, Dichte, Schriftgröße.

@@ -119,5 +119,62 @@ test('Screenshots', async ({ page, browserName }, info) => {
 		await openPool(page, 'Arbeit');
 		await page.getByTestId('quick-add').fill('Kunde zurückrufen morgen 14:00 !1 #arbeit');
 		await shot('schnelleingabe');
+		await page.getByTestId('quick-add').fill('');
+
+		await aiShots(page, shot);
 	}
 });
+
+/** KI: Einstellungen und das Vorschlagsfenster – mit nachgebautem OpenRouter (keine Kosten) */
+async function aiShots(page: Page, shot: (name: string) => Promise<unknown>) {
+	const breakdown = {
+		tasks: [
+			{
+				title: 'Maße vor Ort aufnehmen',
+				children: [
+					{ title: 'Anschlüsse für Wasser und Strom prüfen', children: [] },
+					{ title: 'Raumaufmaß dokumentieren', children: [] }
+				]
+			},
+			{ title: 'Wünsche und Budget mit Kunde Weber klären', children: [] },
+			{ title: 'Material und Beschläge einpreisen', children: [] },
+			{ title: 'Arbeitszeit inkl. Montage kalkulieren', children: [] },
+			{ title: 'Angebot schreiben und senden', children: [] }
+		]
+	};
+	await page.route('https://openrouter.ai/api/v1/**', (route) =>
+		route.request().url().endsWith('/key')
+			? route.fulfill({ json: { data: { usage: 0.0021, limit: 5 } } })
+			: route.fulfill({
+					json: {
+						model: 'z-ai/glm-5.3-flash',
+						choices: [{ message: { content: JSON.stringify(breakdown) } }],
+						usage: { cost: 0.000088 }
+					}
+				})
+	);
+	await page.goto('/einstellungen#ki');
+	const card = page.getByTestId('ai-settings');
+	await card.getByLabel('API-Schlüssel').fill('sk-or-v1-0000000000000000000000000000');
+	await card.getByLabel('API-Schlüssel').press('Tab');
+	await card.getByRole('button', { name: 'Prüfen' }).click();
+	await expect(card.getByRole('status')).toBeVisible();
+	await shot('einstellungen-ki');
+
+	await openPool(page, 'Arbeit');
+	await page.getByRole('button', { name: 'Pool bearbeiten' }).click();
+	await page.getByTestId('pool-ai').getByRole('switch').check();
+	await page.getByRole('button', { name: 'Pool bearbeiten' }).click();
+	await (
+		await rowByTitle(page, 'Angebot für Kunde Weber schreiben')
+	)
+		.getByRole('button', { name: 'Details' })
+		.click();
+	await page.getByTestId('detail-ai').getByRole('button', { name: 'Zerlegen' }).click();
+	await expect(page.getByTestId('ai-tree')).toBeVisible();
+	await page
+		.getByTestId('ai-panel')
+		.getByRole('checkbox', { name: 'Arbeitszeit inkl. Montage kalkulieren' })
+		.uncheck();
+	await shot('ki-zerlegen');
+}

@@ -176,6 +176,16 @@ export function createRepo(db: TasksDB, clock: () => Date = () => new Date()) {
 			await db.pools.update(id, { ...patch, updatedAt: now() });
 		},
 
+		/** KI-Einstellungen eines Pools (an/aus, Modell, Kontext-Notizen) */
+		async updatePoolAi(id: string, patch: Partial<Pool['settings']['ai']>) {
+			await db.transaction('rw', db.pools, async () => {
+				const pool = await db.pools.get(id);
+				if (!pool) return;
+				const settings = { ...pool.settings, ai: { ...pool.settings.ai, ...patch } };
+				await db.pools.update(id, { settings, updatedAt: now() });
+			});
+		},
+
 		/**
 		 * Pool endgültig löschen – mit allen Aufgaben, Projekten und Sync-Daten auf diesem Gerät.
 		 * Auf dem Server passiert hier nichts (siehe Sync-Engine `deleteRemoteList`).

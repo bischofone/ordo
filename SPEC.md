@@ -201,6 +201,8 @@ Nur wenige, intuitive Kürzel – alles andere über Buttons:
   - Tagesplan-Vorschlag, Wochenrückblick-Zusammenfassung (pro Pool)
 - **Jede KI-Änderung ist ein Vorschlag** (Vorschau mit Übernehmen/Bearbeiten/Verwerfen).
   Nichts wird automatisch geändert.
+- Inbox: Pool-Vorschlag beim Aufräumen (auf Knopfdruck, je Karte).
+- Kosten: Tageslimit pro Gerät (Standard 5 Cent), Verbrauch sichtbar in den Einstellungen.
 
 ## 7. CalDAV-Mapping (VTODO, RFC 5545)
 
@@ -265,7 +267,7 @@ Nur wenige, intuitive Kürzel – alles andere über Buttons:
 4. **Planung:** Priorisierung, „Was als Nächstes?“, Heute-Ansicht, Tagesplanung.
 5. **Wartet-auf, Abhängigkeiten, Wiederholungen, Vorlagen, Zeiterfassung.**
    (✅ Zeiterfassung auf Wunsch vorgezogen und fertig.)
-6. **KI über OpenRouter** mit strikter Pool-Trennung.
+6. ✅ **KI über OpenRouter** mit strikter Pool-Trennung (auf Wunsch vor Phase 3–5 umgesetzt).
 7. **Rest:** Wochenrückblick, Teilen-Ziel, Export/Backup, optional Tauri-Desktop.
 
 Jede Phase ist abgeschlossen und getestet, bevor die nächste beginnt.
@@ -446,6 +448,33 @@ jederzeit geändert werden – dann wird es hier angepasst.
 - In der Seitenleiste steht neben „Zeiten“: heute getrackt / Soll.
 - **Eigene JSON-Felder im VTODO** (`-TIME`, `-WAITING`) werden URL-kodiert gespeichert:
   Radicale schneidet unbekannte Eigenschaften sonst am ersten Komma ab.
+
+### KI (Phase 6)
+
+- **Modellwahl (Stand 18.11.2026, per Test mit echten Ordo-Aufgaben):** Standard
+  `z-ai/glm-5.3-flash` – beste Vorschläge der getesteten günstigen Modelle, ~3–4 s,
+  ~0,01 Cent je Aufruf. Ersatz bei Ausfall: `mistralai/mistral-small-3.2-24b-instruct`.
+  Verworfen: Gratis-Modelle (ständig überlastet, Anbieter dürfen Eingaben oft speichern),
+  Denk-Modelle wie DeepSeek V4 Flash/Qwen 3.7 Flash (bis 25 s), gpt-oss-20b (schwache Vorschläge).
+  Kosten im Alltag: 100 Aufrufe ≈ 1 Cent.
+- **Datenschutz:** Standardmäßig nur Anbieter ohne Datenspeicherung (`data_collection: deny`)
+  und mit Unterstützung für strukturierte Antworten (`require_parameters`). Abschaltbar.
+- **Antworten als JSON-Schema** (strict), danach in der App geprüft und gesäubert
+  (Titel, Tiefe ≤ 3, Anzahl, gültige Daten; Tagesplan nur mit Referenzen auf echte Aufgaben).
+- **Referenzen statt IDs:** Die KI sieht Aufgaben als `a1`, `a2` …; die Zuordnung zu echten
+  IDs bleibt in der App.
+- **Pool-Trennung** zentral in `src/lib/ai/context.ts`: Kontext nur über `buildPoolContext`,
+  `buildTaskContext`, `buildInboxItemContext`; zusätzlich `assertSinglePool`. Die App lädt
+  für einen Aufruf ohnehin nur die Daten des einen Pools. Tests mit „GEHEIM“-Markierungen in
+  fremden Pools (Unit und Browser).
+- **Inbox-Vorschlag** sieht nur den einen Eintrag und die Pool-Namen – keine Aufgaben,
+  Projekte oder Kontext-Notizen aus Pools. Das Modell darf nur einen der Namen antworten.
+- **Einstellungen pro Gerät** (Schlüssel, Modell, Ersatzmodell, Tageslimit, Datenschutz) –
+  der Schlüssel wird nie synchronisiert. **Pro Pool:** an/aus, eigenes Modell, Kontext-Notizen.
+- **Tagesplan und Wochenrückblick** sind reine Anzeige (Tagesplan: Klick öffnet die Aufgabe);
+  Zerlegen und Freitext legen nach Bestätigung Aufgaben an (mit „Rückgängig“), Tipps lassen
+  sich an die Notizen anhängen.
+- Live-Test gegen OpenRouter nur mit gesetztem `OPENROUTER_API_KEY` (nie in CI).
 
 ### Offen (spätere Phasen)
 
