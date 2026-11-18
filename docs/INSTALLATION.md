@@ -33,7 +33,7 @@ Ohne Sync-Server bleiben alle Daten auf dem Gerät, in dem Browser, in dem du Or
 ### Holen und starten
 
 ```bash
-git clone https://github.com/bischofone/tasks-app.git ordo
+git clone https://github.com/bischofone/ordo.git ordo
 cd ordo
 pnpm install
 pnpm dev
@@ -80,7 +80,7 @@ Zwei fertige Wege:
 Auf dem **Proxmox-VE-Host** als root in der Shell (Weboberfläche → Knoten → „Shell“):
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/bischofone/tasks-app/main/install/proxmox.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/bischofone/ordo/main/install/proxmox.sh)"
 ```
 
 Das Skript fragt ein paar Dinge ab (alles vorbelegt, Enter genügt) und legt dann einen
@@ -101,18 +101,10 @@ wieder entfernt. Am Ende stehen Adresse, Benutzer und Passwort auf dem Bildschir
 
 ```bash
 ORDO_YES=1 ORDO_CTID=120 ORDO_DOMAIN=ordo.example.de ORDO_USER=alex \
-  bash -c "$(curl -fsSL https://raw.githubusercontent.com/bischofone/tasks-app/main/install/proxmox.sh)"
+  bash -c "$(curl -fsSL https://raw.githubusercontent.com/bischofone/ordo/main/install/proxmox.sh)"
 ```
 
 Alle Variablen stehen oben in [`install/proxmox.sh`](../install/proxmox.sh).
-
-**Solange das Repository privat ist**, braucht der Download einen GitHub-Token
-(GitHub → Settings → Developer settings → Fine-grained token, nur Lesezugriff auf dieses Repository):
-
-```bash
-export ORDO_TOKEN=github_pat_…
-bash -c "$(curl -fsSL -H "Authorization: token $ORDO_TOKEN" https://raw.githubusercontent.com/bischofone/tasks-app/main/install/proxmox.sh)"
-```
 
 **Pflege** – vom Proxmox-Host aus (`120` = deine Container-ID) oder im Container direkt `ordo …`:
 

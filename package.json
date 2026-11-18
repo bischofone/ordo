@@ -55,5 +55,11 @@
 		"ical.js": "^2.2.1",
 		"marked": "^18.2.0"
 	},
-	"description": "Ordo – local-first Aufgaben-App mit Pools, CalDAV-Sync und Zeiterfassung"
+	"description": "Ordo – local-first Aufgaben-App mit Pools, CalDAV-Sync und Zeiterfassung",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/bischofone/ordo.git"
+	},
+	"homepage": "https://github.com/bischofone/ordo"
 }

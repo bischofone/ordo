@@ -46,13 +46,13 @@ DAVx⁵ oder Thunderbird lesbar.
 App und CalDAV-Server an:
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/bischofone/tasks-app/main/install/proxmox.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/bischofone/ordo/main/install/proxmox.sh)"
 ```
 
 **Lokal ausprobieren:**
 
 ```bash
-git clone https://github.com/bischofone/tasks-app.git ordo
+git clone https://github.com/bischofone/ordo.git ordo
 cd ordo
 pnpm install
 pnpm dev

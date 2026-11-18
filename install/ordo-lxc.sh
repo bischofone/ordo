@@ -10,13 +10,13 @@
 #   ordo status                    Version, Dienste, Adressen
 #
 # Einstellungen über Umgebungsvariablen:
-#   ORDO_REPO    Git-Adresse   (Standard: https://github.com/bischofone/tasks-app.git)
+#   ORDO_REPO    Git-Adresse   (Standard: https://github.com/bischofone/ordo.git)
 #   ORDO_BRANCH  Zweig         (Standard: main)
-#   ORDO_TOKEN   GitHub-Token, nur nötig solange das Repository privat ist
+#   ORDO_TOKEN   GitHub-Token, nur für private Forks nötig
 #   ORDO_DOMAIN  Domain beim ersten Einrichten (sonst nur HTTP auf Port 80)
 set -eu
 
-REPO="${ORDO_REPO:-https://github.com/bischofone/tasks-app.git}"
+REPO="${ORDO_REPO:-https://github.com/bischofone/ordo.git}"
 BRANCH="${ORDO_BRANCH:-main}"
 APP_DIR=/var/www/ordo
 CONF_DIR=/etc/ordo
@@ -59,7 +59,7 @@ build_app() {
 		url="$(echo "$REPO" | sed "s#https://#https://x-access-token:${ORDO_TOKEN}@#")"
 	fi
 	git clone -q --depth 1 --branch "$BRANCH" "$url" "$src" ||
-		die "Herunterladen fehlgeschlagen. Ist das Repository privat? Dann ORDO_TOKEN setzen."
+		die "Herunterladen fehlgeschlagen. Internet erreichbar? Bei privatem Fork ORDO_TOKEN setzen."
 	commit="$(git -C "$src" rev-parse --short HEAD)"
 
 	(

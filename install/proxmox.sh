@@ -2,7 +2,7 @@
 # Ordo auf Proxmox VE installieren: legt einen kleinen Alpine-LXC an und richtet darin
 # die App (Caddy) und den CalDAV-Server (Radicale) ein. Auf dem Proxmox-Host als root:
 #
-#   bash -c "$(curl -fsSL https://raw.githubusercontent.com/bischofone/tasks-app/main/install/proxmox.sh)"
+#   bash -c "$(curl -fsSL https://raw.githubusercontent.com/bischofone/ordo/main/install/proxmox.sh)"
 #
 # Alles ist vorbelegt; Enter übernimmt den Vorschlag. Ohne Rückfragen: ORDO_YES=1 voranstellen.
 # Werte lassen sich auch vorgeben, z. B.:
@@ -10,10 +10,10 @@
 #
 # Variablen: ORDO_CTID, ORDO_HOSTNAME, ORDO_STORAGE, ORDO_BRIDGE, ORDO_IP (dhcp oder 10.0.0.5/24),
 #            ORDO_GATEWAY, ORDO_DISK (GB), ORDO_MEMORY (MB), ORDO_CORES, ORDO_DOMAIN,
-#            ORDO_USER, ORDO_PASSWORD, ORDO_TOKEN (nur solange das Repository privat ist)
+#            ORDO_USER, ORDO_PASSWORD, ORDO_TOKEN (nur für private Forks nötig)
 set -euo pipefail
 
-RAW="${ORDO_RAW:-https://raw.githubusercontent.com/bischofone/tasks-app/${ORDO_BRANCH:-main}}"
+RAW="${ORDO_RAW:-https://raw.githubusercontent.com/bischofone/ordo/${ORDO_BRANCH:-main}}"
 
 blue() { printf '\033[1;34m%s\033[0m\n' "$*"; }
 say() { printf '\033[1;34m›\033[0m %s\n' "$*"; }
@@ -124,14 +124,14 @@ else
 	auth=()
 	[ -n "$ORDO_TOKEN" ] && auth=(-H "Authorization: token $ORDO_TOKEN")
 	curl -fsSL "${auth[@]}" "$RAW/install/ordo-lxc.sh" -o "$script" ||
-		die "Konnte install/ordo-lxc.sh nicht laden (privates Repository? Dann ORDO_TOKEN setzen)."
+		die "Konnte install/ordo-lxc.sh nicht laden (Internet erreichbar? Bei privatem Fork ORDO_TOKEN setzen)."
 fi
 pct push "$ORDO_CTID" "$script" /usr/local/sbin/ordo --perms 755
 rm -f "$script"
 
 pct exec "$ORDO_CTID" -- env \
 	ORDO_DOMAIN="$ORDO_DOMAIN" ORDO_TOKEN="$ORDO_TOKEN" \
-	ORDO_REPO="${ORDO_REPO:-https://github.com/bischofone/tasks-app.git}" \
+	ORDO_REPO="${ORDO_REPO:-https://github.com/bischofone/ordo.git}" \
 	ORDO_BRANCH="${ORDO_BRANCH:-main}" \
 	/usr/local/sbin/ordo install "$ORDO_USER" "$ORDO_PASSWORD" >/dev/null ||
 	die "Einrichtung im Container fehlgeschlagen. Nachsehen mit: pct enter $ORDO_CTID"

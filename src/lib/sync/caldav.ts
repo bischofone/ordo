@@ -135,6 +135,7 @@ export interface RemoteItem {
 	etag: string;
 }
 
+// `urn:tasks-app:` stammt aus der Zeit vor „Ordo“ – bleibt, sonst fänden sich gespeicherte Projekte nicht mehr.
 const NS = `xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:a="http://apple.com/ns/ical/" xmlns:t="urn:tasks-app:"`;
 
 const LIST_PROPS = `<d:displayname/><d:resourcetype/><c:supported-calendar-component-set/><cs:getctag/><d:sync-token/><a:calendar-color/><t:projects/>`;

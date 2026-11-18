@@ -292,8 +292,8 @@ jederzeit geändert werden – dann wird es hier angepasst.
 - **PWA:** eigener Service Worker von SvelteKit (App-Hülle im Cache, startet offline).
 - **Tests:** Vitest (Logik + DB mit fake-indexeddb), Playwright (Desktop +
   Pixel-7-Profil) gegen den echten Build.
-- **Code-Ort:** `~/code/tasks-app` (außerhalb von Nextcloud wegen `node_modules`);
-  Repository: https://github.com/bischofone/tasks-app (privat).
+- **Code-Ort:** lokal außerhalb von Nextcloud (wegen `node_modules`);
+  Repository: https://github.com/bischofone/ordo (öffentlich, MIT-Lizenz).
 - **Sortierung:** Fractional Indexing (Text-Schlüssel); beim Sync auf
   `X-APPLE-SORT-ORDER` abgebildet.
 - **Löschen:** als Tombstone (`deletedAt`), damit der Sync Löschungen übertragen kann.

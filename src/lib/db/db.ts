@@ -28,6 +28,7 @@ export class TasksDB extends Dexie {
 	conflicts!: EntityTable<Conflict, 'id'>;
 	workDays!: EntityTable<WorkDay, 'date'>;
 
+	// Name stammt aus der Zeit vor „Ordo“ – bleibt, damit vorhandene Daten erhalten bleiben.
 	constructor(name = 'tasks-app') {
 		super(name);
 		// Nur indizierte Felder stehen hier. Booleans lassen sich in IndexedDB nicht indizieren.
