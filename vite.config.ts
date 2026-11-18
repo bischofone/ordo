@@ -1,12 +1,15 @@
 import { defineConfig } from 'vitest/config';
 import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
+import { davProxy } from './scripts/dav-proxy';
 
 // Tests rechnen mit deutscher Ortszeit – auch auf Servern, die in UTC laufen (z. B. GitHub Actions).
 if (process.env.VITEST) process.env.TZ = 'Europe/Berlin';
 
 export default defineConfig({
 	plugins: [
+		// /ext/<host>/… → https://<host>/… (CalDAV-Server ohne CORS, z. B. Nextcloud)
+		davProxy(),
 		sveltekit({
 			compilerOptions: {
 				// Force runes mode for the project, except for libraries. Can be removed in svelte 6.

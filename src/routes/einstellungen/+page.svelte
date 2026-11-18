@@ -20,6 +20,7 @@
 	import TriageSettingsCard from '#lib/ui/TriageSettingsCard.svelte';
 	import AiSettingsCard from '#lib/ui/AiSettingsCard.svelte';
 	import PlanningSettingsCard from '#lib/ui/PlanningSettingsCard.svelte';
+	import CalendarSettingsCard from '#lib/ui/CalendarSettingsCard.svelte';
 	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
 	import { replaceState } from '$app/navigation';
 	import { page } from '$app/state';
@@ -324,6 +325,7 @@
 			<section class="card">
 				<SyncSettings />
 			</section>
+			<CalendarSettingsCard />
 			<p class="about">{m.settings.about}</p>
 		{/if}
 	</div>

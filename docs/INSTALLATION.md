@@ -146,9 +146,24 @@ docker compose up -d
 Danach ist Ordo unter `https://DEINE-DOMAIN/` erreichbar, der CalDAV-Server unter
 `https://DEINE-DOMAIN/dav/`.
 
-**Schon einen CalDAV-Server?** Nextcloud, Radicale, Baïkal usw. funktionieren auch.
-Dann muss der Server Anfragen aus dem Browser erlauben (CORS) – ein Beispiel für Caddy
-steht in [`docker/Caddyfile.cors-beispiel`](../docker/Caddyfile.cors-beispiel).
+### Nextcloud verbinden
+
+Nextcloud (und manch anderer CalDAV-Server) erlaubt keine Anfragen direkt aus einer Web-App
+(CORS). Ordo leitet sie deshalb über den eigenen Server weiter: `…/ext/cloud.example.com/…`
+→ `https://cloud.example.com/…`. Aus Sicherheitsgründen nur zu Servern, die du erlaubst:
+
+| Wie Ordo läuft     | Nextcloud erlauben                                                                                                         |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| Proxmox-Container  | bei der Installation nach der Nextcloud-Adresse gefragt – oder später: `pct exec <ID> -- ordo nextcloud cloud.example.com` |
+| Docker             | in `docker/.env`: `ORDO_PROXY_HOSTS=cloud.example.com`, dann `docker compose up -d`                                        |
+| Lokal (`pnpm dev`) | nichts zu tun (optional einschränken: `ORDO_PROXY_HOSTS=cloud.example.com pnpm dev`)                                       |
+
+Danach in Ordo: **Einstellungen → Sync → Nextcloud verbinden**. Ordo probiert erst den
+direkten Weg und nimmt die Weiterleitung nur, wenn der Browser blockiert.
+
+**Andere CalDAV-Server** (Radicale, Baïkal …) gehen über „Anderer CalDAV-Server“. Erlaubt
+der Server Anfragen aus dem Browser nicht, gilt dasselbe wie für Nextcloud – oder man gibt
+ihm CORS-Freigaben, Beispiel in [`docker/Caddyfile.cors-beispiel`](../docker/Caddyfile.cors-beispiel).
 
 ### Docker aktualisieren
 

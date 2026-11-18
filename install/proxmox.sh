@@ -10,7 +10,8 @@
 #
 # Variablen: ORDO_CTID, ORDO_HOSTNAME, ORDO_STORAGE, ORDO_BRIDGE, ORDO_IP (dhcp oder 10.0.0.5/24),
 #            ORDO_GATEWAY, ORDO_DISK (GB), ORDO_MEMORY (MB), ORDO_CORES, ORDO_DOMAIN,
-#            ORDO_USER, ORDO_PASSWORD, ORDO_TOKEN (nur für private Forks nötig)
+#            ORDO_USER, ORDO_PASSWORD, ORDO_NEXTCLOUD (z. B. https://cloud.example.com),
+#            ORDO_TOKEN (nur für private Forks nötig)
 set -euo pipefail
 # Bricht etwas ab, soll man sehen, wo – nie wieder stilles Beenden
 trap 'printf "\033[1;31m✗ Abbruch in Zeile %s: %s\033[0m\n" "$LINENO" "$BASH_COMMAND" >&2' ERR
@@ -85,6 +86,7 @@ ask ORDO_BRIDGE "Netzwerk-Bridge" "vmbr0"
 ask ORDO_IP "IP-Adresse (dhcp oder z. B. 192.168.1.50/24)" "dhcp"
 if [ "$ORDO_IP" != dhcp ]; then ask ORDO_GATEWAY "Gateway" ""; fi
 ask ORDO_DOMAIN "Domain für HTTPS (leer = nur HTTP im Heimnetz)" ""
+ask ORDO_NEXTCLOUD "Nextcloud-Adresse für Sync/Kalender (leer = keine)" ""
 ask ORDO_USER "Ordo-Benutzer" "ordo"
 ORDO_PASSWORD="${ORDO_PASSWORD:-}"
 ORDO_TOKEN="${ORDO_TOKEN:-}"
@@ -174,7 +176,7 @@ say "Ordo im Container einrichten – Pakete, App bauen, Dienste (dauert 3–5 M
 rm -f "$script"
 
 pct exec "$ORDO_CTID" -- env \
-	ORDO_DOMAIN="$ORDO_DOMAIN" ORDO_TOKEN="$ORDO_TOKEN" \
+	ORDO_DOMAIN="$ORDO_DOMAIN" ORDO_TOKEN="$ORDO_TOKEN" ORDO_PROXY_HOSTS="${ORDO_NEXTCLOUD:-}" \
 	ORDO_REPO="${ORDO_REPO:-https://github.com/bischofone/ordo.git}" \
 	ORDO_BRANCH="${ORDO_BRANCH:-main}" \
 	/usr/local/sbin/ordo install "$ORDO_USER" "$ORDO_PASSWORD" ||
@@ -206,6 +208,7 @@ cat <<EOF
     pct exec $ORDO_CTID -- ordo update              neueste Version holen
     pct exec $ORDO_CTID -- ordo user-add NAME       weiteren Benutzer anlegen
     pct exec $ORDO_CTID -- ordo domain DOMAIN       Domain setzen (automatisch HTTPS)
+    pct exec $ORDO_CTID -- ordo nextcloud ADRESSE   Nextcloud verbinden lassen (gegen CORS)
     pct exec $ORDO_CTID -- ordo status              Version und Adressen
 EOF
 if [ -z "$ORDO_DOMAIN" ]; then

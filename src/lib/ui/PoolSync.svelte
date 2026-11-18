@@ -61,7 +61,7 @@
 	{#if accounts.loaded && !accounts.current.length}
 		<span class="muted">
 			{m.sync.noAccount}
-			<a href={resolve('/einstellungen')}>{m.sync.addAccount}</a>
+			<a href="{resolve('/einstellungen')}#sync">{m.sync.addAccount}</a>
 		</span>
 	{:else}
 		<select

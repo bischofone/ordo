@@ -482,6 +482,49 @@ export const de = {
 		],
 		reset: 'Zurücksetzen'
 	},
+	nextcloud: {
+		title: 'Nextcloud verbinden',
+		intro: 'Aufgabenlisten und Kalender aus deiner Nextcloud – Ordo findet sie selbst.',
+		url: 'Nextcloud-Adresse',
+		urlPlaceholder: 'https://cloud.example.com',
+		user: 'Benutzername',
+		appPassword: 'App-Passwort',
+		appPasswordHint:
+			'Nicht dein normales Passwort: in Nextcloud unter Persönliche Einstellungen → Sicherheit → „Neues App-Passwort erstellen“.',
+		openSecurity: 'App-Passwort in Nextcloud erstellen',
+		connect: 'Verbinden',
+		connecting: 'Verbinde …',
+		other: 'Anderer CalDAV-Server',
+		badLogin: 'Benutzername oder App-Passwort stimmt nicht.',
+		viaProxy: 'über Ordo-Server',
+		viaProxyHint:
+			'Nextcloud erlaubt keine Anfragen direkt aus dem Browser – Ordo leitet sie über den eigenen Server weiter.',
+		proxyMissing: (host: string) =>
+			`${host} erlaubt keine Anfragen direkt aus dem Browser (CORS). Ordo kann sie über den eigenen Server weiterleiten – das muss dort einmal erlaubt werden:`,
+		proxyLxc: (host: string) => `Proxmox-Container: ordo nextcloud ${host}`,
+		proxyDocker: (host: string) => `Docker: in .env ORDO_PROXY_HOSTS=${host} und neu starten`,
+		proxyDev: 'Lokal mit „pnpm dev“ funktioniert die Weiterleitung von selbst.',
+		connected: (lists: number, calendars: number) =>
+			`Verbunden: ${lists} ${lists === 1 ? 'Aufgabenliste' : 'Aufgabenlisten'}, ${calendars} ${calendars === 1 ? 'Kalender' : 'Kalender'}.`,
+		nextSteps:
+			'Listen unten „Als Pool übernehmen“. Für Termine im Pool über den Stift-Knopf einen Kalender wählen.'
+	},
+	calendar: {
+		poolLabel: 'Termine im Kalender',
+		none: 'nicht eintragen',
+		hint: (min: string) =>
+			`Geplante Aufgaben erscheinen als Termin – Dauer aus der Zeitschätzung, sonst ${min}.`,
+		noAccount: 'Für Termine zuerst ein Konto verbinden (Nextcloud oder CalDAV).',
+		loading: 'Kalender werden geladen …',
+		settingsTitle: 'Termine im Kalender',
+		settingsHint:
+			'Für Pools mit Kalender: Aufgaben mit geplantem Datum werden als Termine eingetragen. Ordo ist dabei die Quelle.',
+		duration: 'Standarddauer',
+		durationHint: 'Für Aufgaben ohne Zeitschätzung (z. B. 0:30 oder 1h).',
+		allDay: 'Aufgaben ohne Uhrzeit ganztägig eintragen',
+		allDayHint: 'Sonst kommen nur Aufgaben mit Uhrzeit in den Kalender.',
+		calendars: 'Kalender'
+	},
 	ai: {
 		name: 'KI',
 		settingsTitle: 'KI-Assistent',

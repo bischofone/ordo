@@ -12,6 +12,7 @@
 	import { errorText } from '#lib/sync/engine.ts';
 	import type { TodoList } from '#lib/sync/caldav.ts';
 	import Badge from './Badge.svelte';
+	import NextcloudConnect from './NextcloudConnect.svelte';
 	import Icon from './Icon.svelte';
 
 	const accounts = live(() => () => db.accounts.toArray(), []);
@@ -24,19 +25,24 @@
 
 	// ---------- Konto hinzufügen ----------
 	let form = $state({ name: '', serverUrl: '', username: '', password: '' });
-	let formOpen = $state(false);
+	/** Was gerade offen ist: Nextcloud-Dialog oder allgemeines CalDAV-Formular */
+	let open = $state<'nextcloud' | 'caldav' | null>(null);
 	let adding = $state(false);
 	let addError = $state('');
-	const showForm = $derived(formOpen || (accounts.loaded && !accounts.current.length));
+	const none = $derived(accounts.loaded && !accounts.current.length);
+	const mode = $derived(open ?? (none ? 'nextcloud' : null));
 
 	async function addAccount(e: SubmitEvent) {
 		e.preventDefault();
 		adding = true;
 		addError = '';
 		try {
-			const acc = await sync.addAccount($state.snapshot(form));
+			const data = $state.snapshot(form);
+			// Direkt oder – falls der Browser wegen CORS blockt – über den Ordo-Server
+			const probe = await sync.probe(data);
+			const acc = await sync.addAccount({ ...data, proxy: probe.proxy, kind: 'caldav' });
 			form = { name: '', serverUrl: '', username: '', password: '' };
-			formOpen = false;
+			open = null;
 			await loadLists(acc.id);
 		} catch (err) {
 			addError = errorText(err);
@@ -72,6 +78,9 @@
 			<div class="acc-head">
 				<strong>{acc.name}</strong>
 				<span class="muted">{acc.username} · {acc.serverUrl}</span>
+				{#if acc.proxy}
+					<span class="tag" title={m.nextcloud.viaProxyHint}>{m.nextcloud.viaProxy}</span>
+				{/if}
 				<button class="btn ghost danger" onclick={() => removeAccount(acc)}>{m.sync.remove}</button>
 			</div>
 			{#if remoteLists.errors[acc.id]}<p class="error">{remoteLists.errors[acc.id]}</p>{/if}
@@ -99,7 +108,15 @@
 		</div>
 	{/each}
 
-	{#if showForm}
+	{#if mode === 'nextcloud'}
+		<NextcloudConnect
+			ondone={() => (open = null)}
+			oncancel={none ? undefined : () => (open = null)}
+		/>
+		{#if none}
+			<button class="btn ghost" onclick={() => (open = 'caldav')}>{m.nextcloud.other}</button>
+		{/if}
+	{:else if mode === 'caldav'}
 		<form class="card add" onsubmit={addAccount}>
 			<strong>{m.sync.addAccount}</strong>
 			<label
@@ -133,18 +150,21 @@
 				<button class="btn primary" type="submit" disabled={adding}>
 					{adding ? m.sync.connecting : m.sync.connect}
 				</button>
-				{#if accounts.current.length}
-					<button class="btn ghost" type="button" onclick={() => (formOpen = false)}>
-						{m.confirm.cancel}
-					</button>
-				{/if}
+				<button class="btn ghost" type="button" onclick={() => (open = null)}>
+					{m.confirm.cancel}
+				</button>
 			</div>
 			<p class="muted small">{m.sync.passwordNote}</p>
 		</form>
 	{:else}
-		<button class="btn" onclick={() => (formOpen = true)}>
-			<Icon name="plus" size={16} />{m.sync.addAccount}
-		</button>
+		<div class="add-buttons">
+			<button class="btn" onclick={() => (open = 'nextcloud')}>
+				<Icon name="plus" size={16} />{m.nextcloud.title}
+			</button>
+			<button class="btn ghost" onclick={() => (open = 'caldav')}>
+				<Icon name="plus" size={16} />{m.nextcloud.other}
+			</button>
+		</div>
 	{/if}
 </section>
 
@@ -231,6 +251,18 @@
 		width: 10px;
 		height: 10px;
 		border-radius: 50%;
+	}
+	.tag {
+		font-size: 0.75rem;
+		padding: 1px 7px;
+		border-radius: 6px;
+		background: var(--bg-sunken);
+		color: var(--text-muted);
+	}
+	.add-buttons {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
 	}
 	.error {
 		color: var(--danger);

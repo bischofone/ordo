@@ -307,8 +307,8 @@ KI-Modellen, bezahlt wird nur, was man verbraucht (für Ordo meist Bruchteile ei
 
 Ordo synchronisiert **pro Pool** mit einer Liste auf einem CalDAV-Server.
 
-1. **Einstellungen → Sync → Konto hinzufügen** (Server-Adresse, Benutzer, Passwort).
-   Mehrere Konten sind möglich, z. B. privat und Arbeit.
+1. **Einstellungen → Sync → Nextcloud verbinden** (Adresse, Benutzername, App-Passwort) –
+   oder **„Anderer CalDAV-Server“** für Radicale, Baïkal usw. Mehrere Konten sind möglich.
 2. Im Pool über den **Stift-Knopf → Synchronisation** ein Ziel wählen:
    **„Neue Liste in …“** oder eine vorhandene Liste.
 3. Auf weiteren Geräten dasselbe Konto hinzufügen und die Liste mit
@@ -326,6 +326,40 @@ Gut zu wissen:
   Ordo-eigene Angaben (Projekte, Zeiten, Zurückschiebe-Zähler …) bleiben dabei erhalten.
 - Beim **Löschen eines synchronisierten Pools** fragt Ordo, ob die Liste auch auf dem Server
   gelöscht werden soll.
+
+### Nextcloud
+
+1. In Nextcloud: **Persönliche Einstellungen → Sicherheit → „Neues App-Passwort erstellen“**.
+   (Der Dialog in Ordo verlinkt direkt dorthin, sobald die Adresse eingetragen ist.)
+2. In Ordo: **Einstellungen → Sync → Nextcloud verbinden** – Adresse (z. B.
+   `cloud.example.com`), Benutzername, App-Passwort. Ordo findet Aufgabenlisten und Kalender
+   selbst.
+3. Aufgabenlisten mit **„Als Pool übernehmen“** holen oder im Pool eine neue anlegen.
+
+Nextcloud erlaubt keine Anfragen direkt aus einer Web-App (CORS). Ordo leitet sie dann
+automatisch über den eigenen Server weiter (Kennzeichen „über Ordo-Server“ beim Konto).
+Lokal mit `pnpm dev` klappt das von selbst; auf dem eigenen Server muss die Nextcloud einmal
+erlaubt werden – siehe [Installation](INSTALLATION.md#nextcloud-verbinden). Fehlt das, sagt
+der Dialog genau, was zu tun ist.
+
+### Termine im Kalender
+
+Pro Pool lässt sich ein **Kalender** wählen (Stift-Knopf → „Termine im Kalender“). Dann werden
+geplante Aufgaben automatisch als Termine eingetragen:
+
+| Aufgabe                                | Im Kalender                                        |
+| -------------------------------------- | -------------------------------------------------- |
+| geplant mit Uhrzeit                    | Termin; Dauer = Zeitschätzung, sonst Standarddauer |
+| geplant ohne Uhrzeit                   | ganztägiger Eintrag (abschaltbar)                  |
+| Datum oder Uhrzeit geändert, umbenannt | Termin wird angepasst                              |
+| Datum entfernt, Aufgabe gelöscht       | Termin wird gelöscht                               |
+| erledigt                               | Termin bleibt stehen                               |
+
+Die **Standarddauer** (30 Minuten) und ob Aufgaben ohne Uhrzeit ganztägig erscheinen,
+stellst du unter **Einstellungen → Sync → Termine im Kalender** ein. Ordo ist dabei die
+Quelle: Wird ein Termin im Kalender verändert, stellt Ordo beim nächsten Abgleich wieder den
+Stand der Aufgabe her. Geplant wird über das Feld **„Geplant“** in den Details (oder durch
+„Für heute einplanen“).
 
 ---
 

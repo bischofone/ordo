@@ -38,6 +38,9 @@ DAVx⁵ oder Thunderbird lesbar.
   Aufgaben machen, Tagesplan, Wochenrückblick, Pool-Vorschläge in der Inbox. Strikt getrennt
   pro Pool, nur als Vorschlag, mit Tageslimit (Standard 5 Cent; ein Aufruf ≈ 0,01 Cent).
 - **CalDAV-Sync** – mehrere Konten, Zusammenführung pro Feld, echte Konflikte zum Auswählen.
+  **Nextcloud** mit eigenem Dialog (App-Passwort genügt, CORS löst Ordo selbst).
+- **Termine im Kalender** – geplante Aufgaben erscheinen pro Pool in einem Kalender deiner Wahl,
+  Dauer aus der Zeitschätzung oder einer Standarddauer.
 - **PWA** – installierbar auf Handy und PC, startet offline.
 - **Anpassbar** – helles/dunkles Farbschema, Akzentfarbe, Dichte, Schriftgröße.
 

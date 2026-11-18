@@ -7,6 +7,8 @@
 #   ordo user-add NAME [PASSWORT]  Benutzer anlegen oder Passwort ändern (ohne Passwort: wird erzeugt)
 #   ordo user-del NAME             Benutzer entfernen (seine Daten bleiben liegen)
 #   ordo domain [DOMAIN]           Domain setzen (mit Domain: automatisch HTTPS), leer = nur HTTP auf Port 80
+#   ordo nextcloud ADRESSE         Weiterleitung zu Nextcloud (o. a. CalDAV-Server ohne CORS) erlauben
+#   ordo nextcloud-entfernen HOST  Weiterleitung wieder entfernen
 #   ordo status                    Version, Dienste, Adressen
 #
 # Einstellungen über Umgebungsvariablen:
@@ -14,6 +16,7 @@
 #   ORDO_BRANCH  Zweig         (Standard: main)
 #   ORDO_TOKEN   GitHub-Token, nur für private Forks nötig
 #   ORDO_DOMAIN  Domain beim ersten Einrichten (sonst nur HTTP auf Port 80)
+#   ORDO_PROXY_HOSTS  Nextcloud-Server für die Weiterleitung, z. B. cloud.example.com
 set -eu
 # Feste Suchpfade – „pct exec“ bringt je nach Proxmox-Version einen knappen PATH mit
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
@@ -126,9 +129,37 @@ EOF
 	chown -R radicale:radicale "$(dirname "$DATA")"
 }
 
+# Erlaubte Server für die Weiterleitung, als Regex-Alternative (Punkte maskiert)
+proxy_regex() {
+	[ -s "$CONF_DIR/proxy-hosts" ] || return 0
+	sed 's/\./\\./g' "$CONF_DIR/proxy-hosts" | paste -sd '|' -
+}
+
 write_caddyfile() {
 	domain="$(cat "$CONF_DIR/domain" 2>/dev/null || true)"
 	site="${domain:-:80}"
+	hosts="$(proxy_regex)"
+	ext=""
+	if [ -n "$hosts" ]; then
+		ext="
+	# Weiterleitung zu CalDAV-Servern ohne CORS (z. B. Nextcloud): /ext/HOST/… → https://HOST/…
+	@ext path_regexp ext ^/ext/($hosts)(/.*)\$
+	handle @ext {
+		rewrite * {re.ext.2}
+		reverse_proxy {re.ext.1}:443 {
+			header_up Host {re.ext.1}
+			header_down -WWW-Authenticate
+			transport http {
+				tls
+				tls_server_name {re.ext.1}
+			}
+		}
+	}
+	handle /ext/* {
+		respond \"Weiterleitung zu diesem Server nicht erlaubt (ordo nextcloud HOST)\" 403
+	}
+"
+	fi
 	cat >/etc/caddy/Caddyfile <<EOF
 # Von „ordo“ erzeugt. Domain ändern mit: ordo domain DEINE-DOMAIN
 {
@@ -145,7 +176,7 @@ $site {
 		}
 	}
 	redir /.well-known/caldav /dav/ 301
-
+$ext
 	# Die App: statische Dateien, unbekannte Pfade → index.html
 	handle {
 		root * $APP_DIR
@@ -206,6 +237,10 @@ addresses() {
 cmd_install() {
 	mkdir -p "$CONF_DIR"
 	[ -n "${ORDO_DOMAIN:-}" ] && echo "$ORDO_DOMAIN" >"$CONF_DIR/domain"
+	for h in $(printf '%s' "${ORDO_PROXY_HOSTS:-}" | tr ',' ' '); do
+		h="$(host_of "$h")"
+		[ -n "$h" ] && { grep -qx "$h" "$CONF_DIR/proxy-hosts" 2>/dev/null || echo "$h" >>"$CONF_DIR/proxy-hosts"; }
+	done
 	install_packages
 	build_app
 	write_radicale_config
@@ -229,12 +264,41 @@ cmd_domain() {
 	say "Erreichbar unter: $(addresses | head -1)"
 }
 
+# Adresse oder Host → nur der Host (cloud.example.com)
+host_of() { printf '%s' "$1" | sed -E 's#^[a-zA-Z]+://##; s#[/:].*$##' | tr 'A-Z' 'a-z'; }
+
+cmd_nextcloud() {
+	[ -n "${1:-}" ] || die "Adresse fehlt: ordo nextcloud cloud.example.com"
+	h="$(host_of "$1")"
+	printf '%s' "$h" | grep -Eq '^[a-z0-9.-]+$' || die "Ungültige Adresse: $1"
+	mkdir -p "$CONF_DIR"
+	touch "$CONF_DIR/proxy-hosts"
+	grep -qx "$h" "$CONF_DIR/proxy-hosts" || echo "$h" >>"$CONF_DIR/proxy-hosts"
+	write_caddyfile
+	rc-service caddy restart >/dev/null
+	say "Weiterleitung zu $h eingerichtet."
+	echo "  In Ordo: Einstellungen → Sync → Nextcloud verbinden, Adresse https://$h"
+}
+
+cmd_nextcloud_remove() {
+	h="$(host_of "${1:-}")"
+	[ -n "$h" ] || die "Host fehlt: ordo nextcloud-entfernen cloud.example.com"
+	if [ -f "$CONF_DIR/proxy-hosts" ]; then
+		grep -vx "$h" "$CONF_DIR/proxy-hosts" >"$CONF_DIR/proxy-hosts.neu" || true
+		mv "$CONF_DIR/proxy-hosts.neu" "$CONF_DIR/proxy-hosts"
+	fi
+	write_caddyfile
+	rc-service caddy restart >/dev/null
+	say "Weiterleitung zu $h entfernt."
+}
+
 cmd_status() {
 	echo
 	printf 'Ordo-Version: %s\n' "$(cat "$APP_DIR/.version" 2>/dev/null || echo '–')"
 	printf 'Radicale:     %s\n' "$(rc-service radicale status 2>/dev/null | sed 's/.*: //' || echo '–')"
 	printf 'Caddy:        %s\n' "$(rc-service caddy status 2>/dev/null | sed 's/.*: //' || echo '–')"
 	printf 'Benutzer:     %s\n' "$(cut -d: -f1 "$USERS" 2>/dev/null | tr '\n' ' ')"
+	printf 'Nextcloud:    %s\n' "$(tr '\n' ' ' <"$CONF_DIR/proxy-hosts" 2>/dev/null || echo '–')"
 	echo
 	for a in $(addresses); do
 		printf 'App:     %s/\n' "$a"
@@ -249,6 +313,8 @@ update) cmd_update ;;
 user-add) shift && user_add "$@" ;;
 user-del) shift && user_del "$@" ;;
 domain) shift && cmd_domain "$@" ;;
+nextcloud) shift && cmd_nextcloud "$@" ;;
+nextcloud-entfernen) shift && cmd_nextcloud_remove "$@" ;;
 status) cmd_status ;;
-*) sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//' ;;
+*) sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//' ;;
 esac

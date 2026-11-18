@@ -450,6 +450,25 @@ jederzeit geändert werden – dann wird es hier angepasst.
 - **Eigene JSON-Felder im VTODO** (`-TIME`, `-WAITING`) werden URL-kodiert gespeichert:
   Radicale schneidet unbekannte Eigenschaften sonst am ersten Komma ab.
 
+### Nextcloud und Termine im Kalender
+
+- **CORS:** Nextcloud erlaubt keine Anfragen aus Web-Apps. Lösung ohne Änderung an Nextcloud:
+  Weiterleitung über den eigenen Ordo-Server unter `/ext/<host>/…` → `https://<host>/…`
+  (Vite-Plugin `scripts/dav-proxy.ts` im Entwicklungsmodus, Caddy im Betrieb). Nur https, nur
+  erlaubte Server (Allowlist: `ordo nextcloud HOST` bzw. `ORDO_PROXY_HOSTS`) – sonst wäre der
+  Server ein offener Proxy. `WWW-Authenticate` wird entfernt (kein Browser-Anmeldefenster).
+- Die App probiert erst direkt; nur bei einem Netzwerk-/CORS-Fehler die Weiterleitung und
+  merkt sich das am Konto (`proxy: true`). Gespeichert werden immer die echten Adressen; nur
+  die Anfrage wird umgeschrieben (`proxyTransport`). Die Android-App braucht das später nicht.
+- **Nextcloud-Dialog:** Adresse (auch ohne https:// oder mit /remote.php/… eingefügt),
+  Benutzername, App-Passwort; Link direkt zur Seite „Sicherheit“ der eigenen Nextcloud.
+- **Termine:** pro Pool ein Kalender (VEVENT, pro Gerät). Geplante offene Aufgaben → Termin
+  mit UID `ordo-<taskId>`; mit Uhrzeit: Dauer = Zeitschätzung, sonst Standarddauer (30 min,
+  einstellbar); ohne Uhrzeit: ganztägig (abschaltbar). Zeiten in UTC. Nur in eine Richtung
+  (Ordo ist Quelle; bei 412 wird der aktuelle ETag geholt und überschrieben). Datum weg /
+  gelöscht → Termin löschen; erledigt → Termin bleibt. Kalender gewechselt → Termine ziehen um.
+  Neue Tabelle `eventRecords` (DB v6) mit URL, ETag, Fingerabdruck.
+
 ### Planung (Phase 4)
 
 - **„Für heute geplant“ = geplantes Datum (DTSTART) ist heute.** Kein neues Feld – das

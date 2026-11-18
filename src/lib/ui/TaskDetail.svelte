@@ -139,6 +139,7 @@
 				type="number"
 				min="0"
 				step="5"
+				aria-label={m.task.estimate}
 				value={t.estimateMin ?? ''}
 				onchange={(e) =>
 					update({

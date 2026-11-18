@@ -38,6 +38,7 @@ services:
       - '443:443'
     environment:
       DOMAIN: ${DOMAIN:?DOMAIN in .env setzen}
+      ORDO_PROXY_HOSTS: ${ORDO_PROXY_HOSTS:-keiner.invalid}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ../build:/srv/app:ro

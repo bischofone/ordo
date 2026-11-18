@@ -1,5 +1,25 @@
 # Änderungen
 
+## 0.6.0 – 19.11.2026
+
+### Neu
+
+- **Nextcloud verbinden:** eigener Dialog (Adresse, Benutzername, App-Passwort, Link zur
+  Seite „Sicherheit“); Ordo findet Aufgabenlisten und Kalender selbst.
+- **CORS gelöst:** Blockiert der Browser die Anfragen, leitet Ordo sie über den eigenen Server
+  weiter (`/ext/<host>/`) – lokal automatisch, im Proxmox-Container per `ordo nextcloud HOST`
+  (oder bei der Installation gefragt), mit Docker per `ORDO_PROXY_HOSTS`.
+- **Termine im Kalender:** pro Pool ein Kalender; geplante Aufgaben werden als Termine
+  eingetragen, angepasst und gelöscht. Dauer aus der Zeitschätzung, sonst Standarddauer
+  (Einstellungen → Sync). Aufgaben ohne Uhrzeit ganztägig (abschaltbar).
+
+### Behoben
+
+- Proxmox-Skript: brach nach den Fragen ab; nahm die ARM-Vorlage auf x86; `/usr/local/sbin`
+  fehlte im Container; `pnpm` wurde nicht gefunden.
+- Fehlermeldungen beim Verbinden: falsche Adresse, falsches Passwort und fehlende
+  Weiterleitung werden unterschieden.
+
 ## 0.5.0 – 18.11.2026
 
 ### Neu

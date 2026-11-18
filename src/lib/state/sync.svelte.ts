@@ -32,13 +32,17 @@ export async function syncNow() {
 	// Sperre sofort setzen – vor dem ersten await, sonst können zwei Läufe gleichzeitig starten.
 	syncStatus.running = true;
 	try {
-		const bound = (await db.pools.toArray()).some((p) => p.caldav);
-		syncStatus.enabled = bound;
-		if (!bound || !navigator.onLine) return;
-		const results = await sync.syncAll();
-		const errors = Object.values(results)
-			.filter((r): r is { error: string } => 'error' in r)
-			.map((r) => r.error);
+		const pools = await db.pools.toArray();
+		const bound = pools.some((p) => p.caldav);
+		const calendars = pools.some((p) => p.settings.calendar) || (await db.eventRecords.count()) > 0;
+		syncStatus.enabled = bound || calendars;
+		if (!syncStatus.enabled || !navigator.onLine) return;
+		// Erst Aufgaben abgleichen, dann die Termine im Kalender nachziehen
+		const results = [
+			...Object.values(bound ? await sync.syncAll() : {}),
+			...Object.values(calendars ? await sync.syncCalendars() : {})
+		];
+		const errors = results.filter((r): r is { error: string } => 'error' in r).map((r) => r.error);
 		syncStatus.error = errors[0] ?? null;
 	} catch (e) {
 		syncStatus.error = errorText(e);

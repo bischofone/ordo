@@ -25,6 +25,8 @@ export interface PoolSettings {
 	/** Geräte-IDs, die benachrichtigt werden. Leer = alle. (Phase 3) */
 	notifyDevices: string[];
 	ai: { enabled: boolean; model?: string; contextNotes?: string };
+	/** Geplante Aufgaben als Termine in diesen Kalender eintragen (pro Gerät) */
+	calendar?: CalendarTarget;
 }
 
 export interface CaldavBinding {
@@ -40,7 +42,18 @@ export interface Account {
 	username: string;
 	password: string;
 	homeUrl?: string;
+	/** Anfragen über den eigenen Ordo-Server weiterleiten (gegen CORS, z. B. Nextcloud) */
+	proxy?: boolean;
+	/** Art des Servers – für passende Hinweise in der Oberfläche */
+	kind?: 'nextcloud' | 'caldav';
 	createdAt: number;
+}
+
+/** Kalender, in den geplante Aufgaben eines Pools als Termine eingetragen werden */
+export interface CalendarTarget {
+	accountId: string;
+	url: string;
+	name: string;
 }
 
 export interface Pool {

@@ -34,3 +34,17 @@ export interface Conflict {
 	remote: unknown;
 	createdAt: number;
 }
+
+/** Ein Termin im Kalender, der zu einer geplanten Aufgabe gehört */
+export interface EventRecord {
+	taskId: string;
+	poolId: string;
+	/** Adresse des Termins auf dem Server */
+	url: string;
+	etag: string;
+	/** Kalender (und Konto), in dem er liegt */
+	calendarUrl: string;
+	accountId: string;
+	/** Fingerabdruck des zuletzt geschriebenen Inhalts – nur bei Änderung neu schreiben */
+	hash: string;
+}

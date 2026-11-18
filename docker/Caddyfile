@@ -11,6 +11,24 @@
 	# Damit Apps wie DAVx⁵ oder Thunderbird den Server automatisch finden
 	redir /.well-known/caldav /dav/ 301
 
+	# Weiterleitung zu CalDAV-Servern ohne CORS (z. B. Nextcloud): /ext/HOST/… → https://HOST/…
+	# Erlaubte Server in .env: ORDO_PROXY_HOSTS=cloud.example.com (mehrere mit |)
+	@ext path_regexp ext ^/ext/({$ORDO_PROXY_HOSTS:keiner.invalid})(/.*)$
+	handle @ext {
+		rewrite * {re.ext.2}
+		reverse_proxy {re.ext.1}:443 {
+			header_up Host {re.ext.1}
+			header_down -WWW-Authenticate
+			transport http {
+				tls
+				tls_server_name {re.ext.1}
+			}
+		}
+	}
+	handle /ext/* {
+		respond "Weiterleitung zu diesem Server nicht erlaubt (ORDO_PROXY_HOSTS)" 403
+	}
+
 	# Die App selbst (statische Dateien aus pnpm build); unbekannte Pfade → index.html
 	handle {
 		root * /srv/app

@@ -37,6 +37,24 @@ export const fetchTransport: Transport = async (req) => {
 	return { status: res.status, headers, body: await res.text() };
 };
 
+/**
+ * Weiterleitung über den eigenen Ordo-Server (gegen CORS, z. B. bei Nextcloud):
+ * `https://cloud.example.com/remote.php/dav/…` → `<Ordo-Adresse>/ext/cloud.example.com/remote.php/dav/…`.
+ * Der Server (Vite im Entwicklungsmodus, Caddy im Betrieb) reicht die Anfrage weiter.
+ * Gespeichert bleiben immer die echten Adressen – nur die Anfrage geht einen Umweg.
+ */
+export const PROXY_PREFIX = '/ext/';
+
+export function toProxyUrl(url: string, origin: string) {
+	const u = new URL(url);
+	if (u.protocol !== 'https:') return url;
+	return `${origin.replace(/\/$/, '')}${PROXY_PREFIX}${u.host}${u.pathname}${u.search}`;
+}
+
+export function proxyTransport(inner: Transport, origin: string): Transport {
+	return (req) => inner({ ...req, url: toProxyUrl(req.url, origin) });
+}
+
 // ---------- Fehler ----------
 
 export class CaldavError extends Error {
@@ -120,6 +138,13 @@ export interface Account {
 	password: string;
 }
 
+/** Kalender für Termine (VEVENT) */
+export interface Calendar {
+	url: string;
+	displayName: string;
+	color?: string;
+}
+
 export interface TodoList {
 	url: string;
 	displayName: string;
@@ -178,15 +203,17 @@ export function createClient(account: Account, transport: Transport = fetchTrans
 			).body
 		);
 
-	function toList(r: DavResponse): TodoList | undefined {
+	/** Kann diese Sammlung die Komponente (VTODO/VEVENT)? Ohne Angabe: alle. */
+	function supports(r: DavResponse, comp: 'VTODO' | 'VEVENT') {
 		const rt = r.props.resourcetype as Xml | undefined;
-		if (!rt || !('calendar' in rt)) return undefined;
-		const comps = ((r.props['supported-calendar-component-set'] as Xml | undefined)?.comp ??
-			[]) as Xml[];
-		// Ohne Angabe unterstützt die Liste alle Komponenten.
-		if (comps.length && !comps.some((c) => String(c['@name']).toUpperCase() === 'VTODO')) {
-			return undefined;
-		}
+		if (!rt || !('calendar' in rt)) return false;
+		const raw = (r.props['supported-calendar-component-set'] as Xml | undefined)?.comp;
+		const comps = (Array.isArray(raw) ? raw : raw ? [raw] : []) as Xml[];
+		return !comps.length || comps.some((c) => String(c['@name']).toUpperCase() === comp);
+	}
+
+	function toList(r: DavResponse): TodoList | undefined {
+		if (!supports(r, 'VTODO')) return undefined;
 		const color = text(r.props['calendar-color']);
 		return {
 			url: abs(r.href),
@@ -225,6 +252,32 @@ export function createClient(account: Account, transport: Transport = fetchTrans
 		async lists(homeUrl: string): Promise<TodoList[]> {
 			const res = await propfind(homeUrl, LIST_PROPS, '1');
 			return res.map(toList).filter((l): l is TodoList => !!l);
+		},
+
+		/** Kalender, in die Termine eingetragen werden können */
+		async calendars(homeUrl: string): Promise<Calendar[]> {
+			const res = await propfind(homeUrl, LIST_PROPS, '1');
+			return res
+				.filter((r) => supports(r, 'VEVENT'))
+				.map((r) => {
+					const color = text(r.props['calendar-color']);
+					return {
+						url: abs(r.href),
+						displayName: text(r.props.displayname) ?? r.href.split('/').filter(Boolean).pop() ?? '',
+						color: color ? color.slice(0, 7) : undefined
+					};
+				});
+		},
+
+		/** ETag eines einzelnen Eintrags (z. B. nach einem 412) – leer, wenn es ihn nicht gibt */
+		async etagOf(url: string): Promise<string | null> {
+			try {
+				const [r] = await propfind(url, '<d:getetag/>', '0');
+				return text(r?.props.getetag) ?? '';
+			} catch (e) {
+				if (e instanceof CaldavError && e.status === 404) return null;
+				throw e;
+			}
 		},
 
 		async listInfo(listUrl: string): Promise<TodoList> {
@@ -267,10 +320,10 @@ ${color ? `<a:calendar-color>${esc(color)}</a:calendar-color>` : ''}
 		},
 
 		/** Alle Aufgaben der Liste mit ETag (für den vollständigen Abgleich). */
-		async listItems(listUrl: string): Promise<RemoteItem[]> {
+		async listItems(listUrl: string, comp: 'VTODO' | 'VEVENT' = 'VTODO'): Promise<RemoteItem[]> {
 			const res = await request('REPORT', listUrl, {
 				headers: { Depth: '1' },
-				body: `<?xml version="1.0" encoding="utf-8"?><c:calendar-query ${NS}><d:prop><d:getetag/></d:prop><c:filter><c:comp-filter name="VCALENDAR"><c:comp-filter name="VTODO"/></c:comp-filter></c:filter></c:calendar-query>`
+				body: `<?xml version="1.0" encoding="utf-8"?><c:calendar-query ${NS}><d:prop><d:getetag/></d:prop><c:filter><c:comp-filter name="VCALENDAR"><c:comp-filter name="${comp}"/></c:comp-filter></c:filter></c:calendar-query>`
 			});
 			return parseMultistatus(res.body)
 				.filter((r) => text(r.props.getetag))

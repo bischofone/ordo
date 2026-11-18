@@ -24,6 +24,8 @@ import type { TasksDB } from '#lib/db/db.ts';
 import {
 	CaldavError,
 	createClient,
+	fetchTransport,
+	proxyTransport,
 	InvalidSyncToken,
 	PreconditionFailed,
 	type CaldavClient,
@@ -33,6 +35,7 @@ import { changedFields, pickSyncFields, sameValue } from './fields';
 import { merge3 } from './merge';
 import type { SyncRecord, SyncState } from './model';
 import { parseTodo, writeTodo } from './vtodo';
+import { pushCalendar, type CalendarReport } from './calendar';
 
 export interface SyncReport {
 	pulled: number;
@@ -49,10 +52,18 @@ type RemoteProject = Pick<
 
 export function createSyncEngine(
 	db: TasksDB,
-	opts: { transport?: Transport; clock?: () => Date } = {}
+	opts: { transport?: Transport; clock?: () => Date; proxyOrigin?: string } = {}
 ) {
 	const now = () => (opts.clock ?? (() => new Date()))().getTime();
-	const clientFor = (account: Account): CaldavClient => createClient(account, opts.transport);
+	/** Client für ein Konto – bei Bedarf über die Weiterleitung des eigenen Servers (gegen CORS) */
+	const clientFor = (account: Account): CaldavClient => {
+		const base = opts.transport ?? fetchTransport;
+		const origin = opts.proxyOrigin ?? globalThis.location?.origin;
+		return createClient(
+			account,
+			account.proxy && origin ? proxyTransport(base, origin) : opts.transport
+		);
+	};
 
 	const isDirty = (task: Task, rec: SyncRecord) =>
 		changedFields(pickSyncFields(task), rec.base).length > 0;
@@ -420,6 +431,8 @@ export function createSyncEngine(
 			serverUrl: string;
 			username: string;
 			password: string;
+			proxy?: boolean;
+			kind?: Account['kind'];
 		}) {
 			const serverUrl = data.serverUrl.endsWith('/') ? data.serverUrl : `${data.serverUrl}/`;
 			const account: Account = {
@@ -428,6 +441,8 @@ export function createSyncEngine(
 				serverUrl,
 				username: data.username,
 				password: data.password,
+				...(data.proxy ? { proxy: true } : {}),
+				...(data.kind ? { kind: data.kind } : {}),
 				createdAt: now()
 			};
 			const { homeUrl } = await clientFor(account).discover();
@@ -441,6 +456,82 @@ export function createSyncEngine(
 				if (p.caldav?.accountId === accountId) await this.unbindPool(p.id);
 			}
 			await db.accounts.delete(accountId);
+		},
+
+		/**
+		 * Zugang prüfen, ohne etwas zu speichern – erst direkt, dann (falls der Browser wegen
+		 * CORS blockt) über die Weiterleitung des eigenen Servers. Liefert, was geklappt hat.
+		 */
+		async probe(data: { serverUrl: string; username: string; password: string }) {
+			const base = {
+				id: 'probe',
+				name: '',
+				createdAt: 0,
+				...data,
+				serverUrl: data.serverUrl.endsWith('/') ? data.serverUrl : `${data.serverUrl}/`
+			};
+			try {
+				return { proxy: false, ...(await clientFor(base).discover()) };
+			} catch (e) {
+				// TypeError = Netzwerk/CORS; nur dann lohnt der Umweg
+				if (!(e instanceof TypeError)) throw e;
+			}
+			try {
+				return { proxy: true, ...(await clientFor({ ...base, proxy: true }).discover()) };
+			} catch (e) {
+				if (e instanceof CaldavError && e.status === 401) throw e;
+				const host = new URL(base.serverUrl).host;
+				// Weiterleitung da, aber Ziel nicht erreichbar → eher die Adresse falsch
+				if (e instanceof CaldavError && (e.status === 502 || e.status === 504))
+					throw new Error(`${host} ist nicht erreichbar – stimmt die Adresse?`, { cause: e });
+				if (e instanceof CaldavError && e.status === 404)
+					throw new Error(
+						`Unter dieser Adresse wurde kein CalDAV gefunden – ist es wirklich die Nextcloud-Adresse?`,
+						{ cause: e }
+					);
+				throw new ProxyUnavailable(host);
+			}
+		},
+
+		/** Kalender eines Kontos, in die Termine eingetragen werden können */
+		async remoteCalendars(accountId: string) {
+			const account = await db.accounts.get(accountId);
+			if (!account) throw new Error('Konto fehlt');
+			const client = clientFor(account);
+			const homeUrl = account.homeUrl ?? (await client.discover()).homeUrl;
+			return client.calendars(homeUrl);
+		},
+
+		/** Kalender für die Termine eines Pools wählen (oder abwählen) */
+		async setPoolCalendar(poolId: string, target: Pool['settings']['calendar']) {
+			const pool = await db.pools.get(poolId);
+			if (!pool) return;
+			const settings = { ...pool.settings };
+			if (target) settings.calendar = target;
+			else delete settings.calendar;
+			await db.pools.update(poolId, { settings, updatedAt: now() });
+		},
+
+		/**
+		 * Geplante Aufgaben als Termine eintragen – für alle Pools mit Kalender (und solche,
+		 * die noch Termine haben, die weg müssen).
+		 */
+		async syncCalendars() {
+			const withEvents = new Set((await db.eventRecords.toArray()).map((r) => r.poolId));
+			const pools = (await db.pools.toArray()).filter(
+				(p) => p.settings.calendar || withEvents.has(p.id)
+			);
+			const results: Record<string, CalendarReport | { error: string }> = {};
+			for (const p of pools) {
+				try {
+					results[p.id] = await exclusive(`kalender-${p.id}`, () =>
+						pushCalendar(db, p, clientFor, new Date(now()))
+					);
+				} catch (e) {
+					results[p.id] = { error: errorText(e) };
+				}
+			}
+			return results;
 		},
 
 		/** Listen eines Kontos (nur solche, die Aufgaben können). */
@@ -592,7 +683,17 @@ const ignorePrecondition = (e: unknown) => {
 export const LIST_GONE =
 	'Die Liste gibt es auf dem Server nicht mehr (auf einem anderen Gerät gelöscht?). Die Aufgaben sind hier noch vorhanden.';
 
+/** Die Weiterleitung über den eigenen Ordo-Server ist für diesen Server nicht eingerichtet */
+export class ProxyUnavailable extends Error {
+	constructor(readonly host: string) {
+		super(
+			`Der Server ${host} erlaubt keine Anfragen direkt aus dem Browser (CORS), und die Weiterleitung über den Ordo-Server ist dafür nicht eingerichtet.`
+		);
+	}
+}
+
 export function errorText(e: unknown) {
-	if (e instanceof TypeError) return 'Server nicht erreichbar (offline oder CORS)';
+	if (e instanceof TypeError)
+		return 'Server nicht erreichbar – offline, oder der Server erlaubt keine Anfragen aus dem Browser (CORS).';
 	return e instanceof Error ? e.message : String(e);
 }

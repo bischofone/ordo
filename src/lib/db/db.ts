@@ -3,7 +3,7 @@
  * Versionsnummer; alte Versionen bleiben stehen, damit bestehende Daten migriert werden.
  */
 import Dexie, { type EntityTable } from 'dexie';
-import type { Conflict, SyncRecord, SyncState } from '#lib/sync/model.ts';
+import type { Conflict, EventRecord, SyncRecord, SyncState } from '#lib/sync/model.ts';
 import type {
 	Account,
 	ContextMode,
@@ -27,6 +27,7 @@ export class TasksDB extends Dexie {
 	syncRecords!: EntityTable<SyncRecord, 'taskId'>;
 	conflicts!: EntityTable<Conflict, 'id'>;
 	workDays!: EntityTable<WorkDay, 'date'>;
+	eventRecords!: EntityTable<EventRecord, 'taskId'>;
 
 	// Name stammt aus der Zeit vor „Ordo“ – bleibt, damit vorhandene Daten erhalten bleiben.
 	constructor(name = 'tasks-app') {
@@ -63,5 +64,7 @@ export class TasksDB extends Dexie {
 		this.version(4).stores({ timeEntries: null });
 		// v5: tatsächliche Arbeitszeit je Tag
 		this.version(5).stores({ workDays: 'date' });
+		// v6: Termine im Kalender zu geplanten Aufgaben
+		this.version(6).stores({ eventRecords: 'taskId, poolId' });
 	}
 }

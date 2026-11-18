@@ -6,6 +6,7 @@ const SERVER = 'http://127.0.0.1:5390/';
 async function addAccount(page: Page) {
 	await page.goto('/einstellungen#sync');
 	const form = page.getByTestId('sync-settings');
+	await form.getByRole('button', { name: 'Anderer CalDAV-Server' }).click();
 	await form.getByLabel('Server-Adresse').fill(SERVER);
 	await form.getByLabel('Benutzer').fill('test');
 	await form.getByLabel('Passwort').fill('test');
@@ -128,6 +129,7 @@ test('nach dem Verbinden kehrt Ruhe ein (keine Sync-Schleife)', async ({ page })
 test('falsches Passwort wird verständlich gemeldet', async ({ page }) => {
 	await page.goto('/einstellungen#sync');
 	const form = page.getByTestId('sync-settings');
+	await form.getByRole('button', { name: 'Anderer CalDAV-Server' }).click();
 	await form.getByLabel('Server-Adresse').fill(SERVER);
 	await form.getByLabel('Benutzer').fill('test');
 	await form.getByLabel('Passwort').fill('falsch');
@@ -139,7 +141,7 @@ test('mehrere Konten; Inbox und Pool hängen an verschiedenen Zielen', async ({ 
 	// Zweites „Konto“: derselbe Testserver unter anderer Adresse und eigenem Namen
 	await addAccount(page);
 	const settings = page.getByTestId('sync-settings');
-	await settings.getByRole('button', { name: 'Konto hinzufügen' }).click();
+	await settings.getByRole('button', { name: 'Anderer CalDAV-Server' }).click();
 	await settings.getByLabel('Server-Adresse').fill('http://localhost:5390/');
 	await settings.getByLabel('Benutzer').fill('test');
 	await settings.getByLabel('Passwort').fill('test');

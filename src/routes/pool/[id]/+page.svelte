@@ -15,6 +15,7 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import PoolSync from '#lib/ui/PoolSync.svelte';
 	import PoolAi from '#lib/ui/PoolAi.svelte';
+	import PoolCalendar from '#lib/ui/PoolCalendar.svelte';
 	import Popover from '#lib/ui/Popover.svelte';
 	import { aiDayPlan, aiFromText, aiWeekReview } from '#lib/state/ai.svelte.ts';
 	import PoolView from '#lib/ui/PoolView.svelte';
@@ -82,6 +83,7 @@
 			ondelete={pool.kind === 'pool' ? remove : undefined}
 		/>
 		<PoolSync {pool} />
+		<PoolCalendar {pool} />
 		<PoolAi {pool} />
 	{/if}
 
