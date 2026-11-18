@@ -264,7 +264,8 @@ Nur wenige, intuitive Kürzel – alles andere über Buttons:
    Schnelleingabe, Inbox inkl. Aufräum-Modus, Zurückschieben, PWA.
 2. ✅ **CalDAV-Sync** pro Pool + Radicale-Setup.
 3. **Capacitor-Android-App** + lokale Benachrichtigungen + Kontext-Modi.
-4. **Planung:** Priorisierung, „Was als Nächstes?“, Heute-Ansicht, Tagesplanung.
+4. ✅ **Planung:** Priorisierung, „Was als Nächstes?“, Heute-Ansicht, Tagesplanung
+   (vor Phase 3 umgesetzt, weil dafür kein Android-Werkzeug nötig ist).
 5. **Wartet-auf, Abhängigkeiten, Wiederholungen, Vorlagen, Zeiterfassung.**
    (✅ Zeiterfassung auf Wunsch vorgezogen und fertig.)
 6. ✅ **KI über OpenRouter** mit strikter Pool-Trennung (auf Wunsch vor Phase 3–5 umgesetzt).
@@ -448,6 +449,31 @@ jederzeit geändert werden – dann wird es hier angepasst.
 - In der Seitenleiste steht neben „Zeiten“: heute getrackt / Soll.
 - **Eigene JSON-Felder im VTODO** (`-TIME`, `-WAITING`) werden URL-kodiert gespeichert:
   Radicale schneidet unbekannte Eigenschaften sonst am ersten Komma ab.
+
+### Planung (Phase 4)
+
+- **„Für heute geplant“ = geplantes Datum (DTSTART) ist heute.** Kein neues Feld – das
+  synchronisiert schon und passt zum Zurückschieben (auf morgen geschoben → morgen in „Heute“).
+- **Liegen gebliebenes** (geplant an einem früheren Tag, nicht erledigt) erscheint automatisch
+  in „Heute“ mit Hinweis „seit gestern“ / „seit N Tagen“.
+- **Überfällig** = Fälligkeit vorbei; eigener Bereich oben. Wird Überfälliges für heute
+  eingeplant, zählt es in Zeitsumme und Anzahl mit.
+- **Verfügbare Zeit:** für den Tag gesetzt > Soll-Zeit des Wochentags (bei Zeiterfassung) >
+  Vorgabe in den Einstellungen (6:00).
+- **„Was als Nächstes?“** (`domain/next.ts`): Punkte je Grund × Gewichtung (aus/wenig/normal/
+  stark = 0/0,5/1/2). Gründe: Priorität (30/20/10), Fälligkeit (überfällig 40 + 2/Tag bis +20,
+  heute 35, morgen 25, ≤ 3 Tage 15, ≤ 7 Tage 8), für heute geplant 20 (liegen geblieben 22),
+  Alter (ab 7 Tagen, bis 15), verschoben (5 je Mal, bis 20), passt in die Zeit (+10, schnell +15,
+  zu lang −20; mehr als 1,5× zu lang → ausgeblendet), Energie (passt +10, weniger nötig +5,
+  mehr nötig −15 je Stufe). Ausgeschlossen: erledigt, Irgendwann, später, blockiert, wartet,
+  mit offenen Unteraufgaben (dann die Unteraufgaben). Inbox-Einträge zählen nicht mit.
+  Kontext-Modi kommen mit Phase 3 dazu.
+- **Morgen-Ablauf** (`/heute/planen`): Überfällig → Inbox (Aufräumen führt per
+  `?zurueck=` wieder zurück) → Auswählen (15 Vorschläge, Liste bleibt beim Abhaken stehen) →
+  Fertig. Danach verschwindet der Hinweis „Tag planen“ für heute.
+- **Wochenrückblick** (`/rueckblick`): letzte 7 Tage je Pool – erledigt, neu, erfasste Zeit,
+  oft verschoben; bei eingeschalteter KI zusätzlich der KI-Rückblick.
+- Planungs-Einstellungen gelten pro Gerät.
 
 ### KI (Phase 6)
 

@@ -29,6 +29,9 @@ DAVx⁵ oder Thunderbird lesbar.
   Aufgabe als Karte da und wird auf einen Pool gezogen. Auf Wunsch zu festen Zeiten
   **vorgeschlagen oder erzwungen**.
 - **Zurückschieben statt verstecken** – mit Zähler; wer etwas zum dritten Mal schiebt, wird gefragt.
+- **Heute und Planung** – alles Überfällige und für heute Geplante über alle Pools, geschätzte
+  gegen verfügbare Zeit, kurzer Morgen-Ablauf, Wochenrückblick. **„Was als Nächstes?“** schlägt
+  die passendste Aufgabe vor – mit Begründung, ohne KI, Gewichtungen einstellbar.
 - **Zeiterfassung** (zuschaltbar) – Play-Knopf oder Eingabe wie `0,5h`, Soll-Zeit je Wochentag,
   Auswertung nach Tag, Woche und Monat.
 - **KI-Assistent** (optional, über OpenRouter) – Aufgaben zerlegen, Tipps, aus Freitext
@@ -84,7 +87,7 @@ Dann <http://localhost:5173> öffnen. Mehr dazu – Docker, eigene Domain, Insta
 | 2     | CalDAV-Sync pro Pool, Radicale-Server mit Docker          | ✅ fertig |
 | –     | Zeiterfassung (aus Phase 5 vorgezogen)                    | ✅ fertig |
 | 3     | Android-App (Capacitor), Benachrichtigungen, Kontext-Modi | geplant   |
-| 4     | Planung: „Was als Nächstes?“, Heute-Ansicht, Tagesplanung | geplant   |
+| 4     | Planung: „Was als Nächstes?“, Heute-Ansicht, Tagesplanung | ✅ fertig |
 | 5     | Wartet-auf, Abhängigkeiten, Wiederholungen, Vorlagen      | geplant   |
 | 6     | KI über OpenRouter, strikt getrennt pro Pool              | geplant   |
 | 7     | Wochenrückblick, Export/Backup, Desktop-App               | geplant   |

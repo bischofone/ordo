@@ -1,5 +1,16 @@
 # Änderungen
 
+## 0.5.0 – 18.11.2026
+
+### Neu
+
+- **Heute** (Phase 4): Überfälliges und für heute Geplantes über alle Pools, Liegengebliebenes
+  rutscht nach, geschätzte gegen verfügbare Zeit, „Nicht heute“, Zähler in der Seitenleiste.
+- **Was als Nächstes?** – erklärbare Vorschläge ohne KI aus Priorität, Fälligkeit, Alter,
+  Verschiebungen, verfügbarer Zeit und Energie; Gewichtungen unter Einstellungen → Planung.
+- **Tag planen** – Morgen-Ablauf in vier Schritten (Überfällig, Inbox, Auswählen, Fertig).
+- **Wochenrückblick** je Pool: erledigt, neu, erfasste Zeit, oft verschoben (+ KI-Rückblick).
+
 ## 0.4.0 – 18.11.2026
 
 ### Neu

@@ -107,6 +107,13 @@ test('Screenshots', async ({ page, browserName }, info) => {
 	await expect(page.getByTestId('triage-card').first()).toBeVisible();
 	await shot('aufraeumen');
 
+	// Heute: zwei Vorschläge einplanen
+	await page.goto('/heute');
+	const next = page.getByTestId('next-card');
+	for (let i = 0; i < 2; i++) await next.getByRole('button', { name: 'Für heute' }).first().click();
+	await expect(page.getByTestId('today-list').getByTestId('plan-row')).toHaveCount(2);
+	await shot('heute');
+
 	if (!mobile) {
 		await page.goto('/zeiten');
 		await expect(page.getByTestId('time-tasks')).toBeVisible();

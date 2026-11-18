@@ -21,6 +21,7 @@
 	import { drag } from './drag.svelte';
 	import Icon from './Icon.svelte';
 	import Logo from './Logo.svelte';
+	import { buildToday } from '#lib/domain/today.ts';
 
 	let {
 		pools,
@@ -55,6 +56,12 @@
 
 	const path = $derived(page.url.pathname);
 
+	// Heute: offene geplante + überfällige Aufgaben (rot, wenn etwas überfällig ist)
+	const todayCount = $derived.by(() => {
+		const v = buildToday(tasks, ui.now);
+		return { open: v.today.length, overdue: v.overdue.length };
+	});
+
 	// Heute getrackt / Soll – steht neben „Zeiten“
 	const today = $derived(todayIso(ui.now));
 	const trackedToday = $derived(
@@ -76,6 +83,17 @@
 		<Logo size={26} />
 		<span class="wordmark">{m.appName}</span>
 	</div>
+	<a class="item" class:current={path.startsWith('/heute')} href={resolve('/heute')}>
+		<Icon name="calendar" />
+		<span class="name">{m.nav.today}</span>
+		{#if todayCount.overdue}
+			<span class="badge late" title={m.today.overdue} data-testid="today-badge"
+				>{todayCount.overdue + todayCount.open}</span
+			>
+		{:else if todayCount.open}
+			<span class="count" data-testid="today-badge">{todayCount.open}</span>
+		{/if}
+	</a>
 	<a
 		class="item"
 		class:current={path.startsWith('/inbox')}
@@ -285,6 +303,9 @@
 	}
 	.badge.aged {
 		background: var(--warn);
+	}
+	.badge.late {
+		background: var(--danger);
 	}
 	.new {
 		padding: 4px 6px;

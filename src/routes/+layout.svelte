@@ -21,6 +21,7 @@
 	import { watchTimer } from '#lib/state/timer.svelte.ts';
 	import { triage, watchTriage } from '#lib/state/triage.svelte.ts';
 	import { watchAi } from '#lib/state/ai.svelte.ts';
+	import { watchPlanning } from '#lib/state/planning.svelte.ts';
 	import { ui } from '#lib/state/ui.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Logo from '#lib/ui/Logo.svelte';
@@ -50,6 +51,7 @@
 	$effect(() => untrack(() => watchTimeSettings()));
 	$effect(() => untrack(() => watchTriage()));
 	$effect(() => untrack(() => watchAi()));
+	$effect(() => untrack(() => watchPlanning()));
 
 	// Inbox aufräumen: fällig? (minütlich und bei jeder Änderung neu berechnet)
 	const inboxStats = $derived.by(() => {

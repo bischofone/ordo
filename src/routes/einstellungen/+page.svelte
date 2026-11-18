@@ -19,6 +19,7 @@
 	import SyncSettings from '#lib/ui/SyncSettings.svelte';
 	import TriageSettingsCard from '#lib/ui/TriageSettingsCard.svelte';
 	import AiSettingsCard from '#lib/ui/AiSettingsCard.svelte';
+	import PlanningSettingsCard from '#lib/ui/PlanningSettingsCard.svelte';
 	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
 	import { replaceState } from '$app/navigation';
 	import { page } from '$app/state';
@@ -61,6 +62,7 @@
 		{ id: 'zeit', icon: 'clock' },
 		{ id: 'inbox', icon: 'inbox' },
 		{ id: 'pools', icon: 'layers' },
+		{ id: 'planung', icon: 'calendar' },
 		{ id: 'sync', icon: 'sync' },
 		{ id: 'ki', icon: 'sparkle' }
 	] as const satisfies { id: string; icon: IconName }[];
@@ -314,6 +316,8 @@
 					{/each}
 				{/if}
 			</section>
+		{:else if section === 'planung'}
+			<PlanningSettingsCard />
 		{:else if section === 'ki'}
 			<AiSettingsCard />
 		{:else}

@@ -7,6 +7,7 @@ Alles, was Ordo kann – mit Tastenkürzeln und Eingabeformaten zum Nachschlagen
 - [Arbeiten in der Liste (Outliner)](#arbeiten-in-der-liste-outliner)
 - [Details einer Aufgabe](#details-einer-aufgabe)
 - [Zurückschieben, Später, Irgendwann](#zurückschieben-später-irgendwann)
+- [Heute und Planung](#heute-und-planung)
 - [Inbox und Aufräumen](#inbox-und-aufräumen)
 - [Zeiterfassung](#zeiterfassung)
 - [KI-Assistent](#ki-assistent)
@@ -114,6 +115,56 @@ Wer lieber direkt in den Titel klickt, um ihn zu bearbeiten, schaltet das in
 - **Irgendwann** ist die Ablage für „vielleicht mal“. Diese Aufgaben stehen eingeklappt
   unten im Pool und stören nicht.
 - **Erledigt** steht ebenfalls eingeklappt unten.
+
+---
+
+## Heute und Planung
+
+<img src="screenshots/heute.png" width="100%" alt="Die Heute-Ansicht">
+
+**Heute** (ganz oben in der Seitenleiste) zeigt über alle Pools:
+
+- **Überfällig** – das Fälligkeitsdatum ist vorbei (rot).
+- **Für heute** – heute fällig oder für heute eingeplant, nach Uhrzeit sortiert. Was an einem
+  früheren Tag geplant und liegen geblieben ist, rutscht automatisch hierher („seit gestern“).
+- **Zeit:** Summe der Schätzungen gegenüber der verfügbaren Zeit, mit Balken. Die verfügbare
+  Zeit lässt sich für den Tag direkt ändern (z. B. `4,5h`). Ohne Angabe gilt die Soll-Zeit aus
+  der Zeiterfassung oder die Vorgabe aus den Einstellungen.
+- Ein Klick auf eine Aufgabe öffnet ihre Details; **✕** nimmt sie wieder aus „Heute“ heraus.
+- Die Zahl neben „Heute“ in der Seitenleiste zeigt, was heute ansteht – rot, wenn etwas
+  überfällig ist.
+
+„Für heute einplanen“ setzt das **geplante Datum** auf heute. Wer etwas auf morgen schiebt,
+findet es morgen automatisch wieder in „Heute“.
+
+### Was als Nächstes?
+
+Unter „Heute“ schlägt Ordo die passendsten offenen Aufgaben vor – **mit Begründung**,
+z. B. „Priorität 1 · morgen fällig“ oder „3× verschoben“. Optional:
+
+- **Ich habe …** 15 Minuten bis 2 Stunden – Aufgaben mit passender Schätzung kommen nach oben,
+  viel zu lange fallen raus.
+- **Energie** niedrig/mittel/hoch – passt zur Energie-Angabe der Aufgabe (in den Details).
+
+Nicht vorgeschlagen werden Erledigtes, „Irgendwann“, Späteres, Blockiertes, Wartendes und
+Aufgaben mit offenen Unteraufgaben (dann die Unteraufgaben). Wie stark welcher Grund zählt,
+lässt sich unter **Einstellungen → Planung** einstellen (aus / wenig / normal / stark).
+
+### Tag planen
+
+Morgens erscheint in „Heute“ der Hinweis **„Tag planen“** – vier kurze Schritte, jeder
+überspringbar:
+
+1. **Überfällig** – für heute einplanen, auf morgen schieben oder nach „Irgendwann“.
+2. **Inbox** – aufräumen (danach geht es automatisch hierher zurück).
+3. **Auswählen** – Vorschläge abhaken, die verfügbare Zeit im Blick.
+4. **Fertig** – Zusammenfassung, weiter zu „Heute“.
+
+### Wochenrückblick
+
+Über **Heute → Wochenrückblick**: für jeden Pool, was in den letzten 7 Tagen erledigt und neu
+angelegt wurde, wie viel Zeit erfasst ist und was immer wieder verschoben wird. Ist die KI im
+Pool eingeschaltet, schreibt sie auf Wunsch zusätzlich einen kurzen Rückblick.
 
 ---
 
@@ -290,7 +341,7 @@ Gegliedert in Bereiche (am PC links, am Handy als Leiste oben):
 | **Pools & Projekte** | Name, Farbe, Icon, Reihenfolge, archivieren, löschen                                   |
 | **Sync**             | CalDAV-Konten und ihre Listen                                                          |
 
-Darstellung, Zeiterfassung, Aufräum-Zeitplan und KI-Einstellungen gelten **pro Gerät**.
+Darstellung, Zeiterfassung, Aufräum-Zeitplan, Planung und KI-Einstellungen gelten **pro Gerät**.
 Jeder Bereich hat eine eigene Adresse, z. B. `/einstellungen#sync`.
 
 ---

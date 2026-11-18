@@ -67,22 +67,24 @@ Importe nutzen den Alias `#lib/…` mit Dateiendung (`#lib/domain/tree.ts`).
 
 ### Die wichtigsten Module
 
-| Modul                 | Aufgabe                                                                         |
-| --------------------- | ------------------------------------------------------------------------------- |
-| `domain/types.ts`     | Datenmodell (Pool, Projekt, Aufgabe, Zeiteintrag …)                             |
-| `domain/tree.ts`      | Aufgabenbaum: flache Zeilen, Kinder, Sortierschlüssel                           |
-| `domain/quick-add.ts` | Parser der Schnelleingabe (Datum, Uhrzeit, `!1`, `#pool`)                       |
-| `domain/dnd.ts`       | Ziehen: wohin und auf welche Ebene darf eine Zeile                              |
-| `domain/postpone.ts`  | Zurückschieben und „Später“                                                     |
-| `domain/views.ts`     | Bereiche eines Pools (offen, später, irgendwann, erledigt), alte Inbox-Einträge |
-| `domain/time.ts`      | Zeitformate, Dauer setzen, Auswertungen, Soll/Ist                               |
-| `domain/triage.ts`    | Wann ist Aufräumen fällig (feste Zeiten, Regeln, Aufschieben)                   |
-| `db/repo.ts`          | Anlegen, ändern, verschieben, löschen (mit Tombstones für den Sync)             |
-| `sync/engine.ts`      | Abgleich pro Pool                                                               |
-| `state/queries.ts`    | wiederverwendbare Datenbank-Abfragen                                            |
-| `state/actions.ts`    | Aktionen mit Rückfrage und „Rückgängig“ (z. B. Pool löschen)                    |
-| `ui/TaskList.svelte`  | Outliner: Tastatur, Einrücken, Ziehen                                           |
-| `ui/drag.svelte.ts`   | Ziehen mit Pointer-Events (ohne Bibliothek), Ablageziele                        |
+| Modul                 | Aufgabe                                                                           |
+| --------------------- | --------------------------------------------------------------------------------- |
+| `domain/types.ts`     | Datenmodell (Pool, Projekt, Aufgabe, Zeiteintrag …)                               |
+| `domain/tree.ts`      | Aufgabenbaum: flache Zeilen, Kinder, Sortierschlüssel                             |
+| `domain/quick-add.ts` | Parser der Schnelleingabe (Datum, Uhrzeit, `!1`, `#pool`)                         |
+| `domain/dnd.ts`       | Ziehen: wohin und auf welche Ebene darf eine Zeile                                |
+| `domain/postpone.ts`  | Zurückschieben und „Später“                                                       |
+| `domain/views.ts`     | Bereiche eines Pools (offen, später, irgendwann, erledigt), alte Inbox-Einträge   |
+| `domain/time.ts`      | Zeitformate, Dauer setzen, Auswertungen, Soll/Ist                                 |
+| `domain/triage.ts`    | Wann ist Aufräumen fällig (feste Zeiten, Regeln, Aufschieben)                     |
+| `domain/next.ts`      | „Was als Nächstes?“: Punkte je Grund × Gewichtung, Ausschlüsse, Begründung        |
+| `domain/today.ts`     | Heute-Ansicht (überfällig, geplant, liegen geblieben, Zeitsumme), Wochenrückblick |
+| `db/repo.ts`          | Anlegen, ändern, verschieben, löschen (mit Tombstones für den Sync)               |
+| `sync/engine.ts`      | Abgleich pro Pool                                                                 |
+| `state/queries.ts`    | wiederverwendbare Datenbank-Abfragen                                              |
+| `state/actions.ts`    | Aktionen mit Rückfrage und „Rückgängig“ (z. B. Pool löschen)                      |
+| `ui/TaskList.svelte`  | Outliner: Tastatur, Einrücken, Ziehen                                             |
+| `ui/drag.svelte.ts`   | Ziehen mit Pointer-Events (ohne Bibliothek), Ablageziele                          |
 
 ## Datenmodell
 

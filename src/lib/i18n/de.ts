@@ -5,6 +5,7 @@
 export const de = {
 	appName: 'Ordo',
 	nav: {
+		today: 'Heute',
 		inbox: 'Inbox',
 		all: 'Alle Pools',
 		pools: 'Pools',
@@ -189,6 +190,7 @@ export const de = {
 			zeit: 'Zeiterfassung',
 			inbox: 'Inbox',
 			pools: 'Pools & Projekte',
+			planung: 'Planung',
 			sync: 'Sync',
 			ki: 'KI'
 		},
@@ -368,6 +370,117 @@ export const de = {
 			waitingFor: 'Wartet auf',
 			timeEntries: 'Erfasste Zeit'
 		} as Record<string, string>
+	},
+	today: {
+		title: 'Heute',
+		overdue: 'Überfällig',
+		planned: 'Für heute',
+		doneToday: (n: number) => (n === 1 ? '1 heute erledigt' : `${n} heute erledigt`),
+		empty: 'Für heute ist nichts geplant.',
+		emptyHint: 'Wähle unten bei „Was als Nächstes?“ etwas aus oder plane deinen Tag.',
+		planDay: 'Tag planen',
+		planDayHint:
+			'Überfälliges ansehen, Inbox aufräumen, Aufgaben für heute wählen – dauert zwei Minuten.',
+		replan: 'Neu planen',
+		dismiss: 'Ausblenden',
+		estimate: (est: string, cap: string) => `${est} geschätzt von ${cap} verfügbar`,
+		over: (m: string) => `${m} zu viel`,
+		unestimated: (n: number) => (n === 1 ? '1 ohne Schätzung' : `${n} ohne Schätzung`),
+		available: 'Verfügbar heute',
+		availableHint: 'Zeit, die du heute für Aufgaben hast (z. B. 6:00 oder 4,5h)',
+		carried: (n: number) => (n === 1 ? 'seit gestern' : `seit ${n} Tagen`),
+		dueAt: 'fällig',
+		overdueSince: (n: number) =>
+			n === 1 ? 'seit gestern überfällig' : `seit ${n} Tagen überfällig`,
+		addToday: 'Für heute einplanen',
+		removeToday: 'Nicht heute',
+		tomorrow: 'Auf morgen',
+		review: 'Wochenrückblick',
+		estimateLabel: 'Schätzung'
+	},
+	next: {
+		title: 'Was als Nächstes?',
+		hint: 'Vorschläge aus Priorität, Fälligkeit, Alter, Verschiebungen, Zeit und Energie.',
+		minutes: 'Ich habe',
+		minutesAny: 'beliebig Zeit',
+		energy: 'Energie',
+		energyAny: 'egal',
+		none: 'Nichts Passendes offen – gut gemacht!',
+		start: 'Für heute',
+		planned: 'eingeplant',
+		open: 'Öffnen',
+		minutesOptions: [
+			{ value: '', label: 'beliebig' },
+			{ value: '15', label: '15 min' },
+			{ value: '30', label: '30 min' },
+			{ value: '60', label: '1 Std.' },
+			{ value: '120', label: '2 Std.' }
+		]
+	},
+	planFlow: {
+		title: 'Tag planen',
+		steps: ['Überfällig', 'Inbox', 'Auswählen', 'Fertig'],
+		overdueTitle: 'Was ist überfällig?',
+		overdueNone: 'Nichts überfällig. Weiter!',
+		overdueHint: 'Für heute einplanen, verschieben, erledigen – oder bewusst liegen lassen.',
+		inboxTitle: 'Inbox aufräumen',
+		inboxCount: (n: number) =>
+			n === 0
+				? 'Die Inbox ist leer.'
+				: n === 1
+					? '1 Eintrag wartet in der Inbox.'
+					: `${n} Einträge warten in der Inbox.`,
+		inboxGo: 'Jetzt aufräumen',
+		pickTitle: 'Was machst du heute?',
+		pickHint: 'Vorschläge nach „Was als Nächstes?“ – abhaken, was heute drankommt.',
+		pickNone: 'Keine offenen Aufgaben – du hast frei!',
+		doneTitle: 'Dein Tag steht.',
+		doneSummary: (n: number, est: string) =>
+			n === 0
+				? 'Heute ist nichts geplant.'
+				: `${n} ${n === 1 ? 'Aufgabe' : 'Aufgaben'}, ${est} geschätzt.`,
+		next: 'Weiter',
+		back: 'Zurück',
+		skip: 'Überspringen',
+		finish: 'Zu „Heute“',
+		someday: 'Irgendwann'
+	},
+	review: {
+		title: 'Wochenrückblick',
+		range: (from: string, to: string) => `${from} – ${to}`,
+		done: 'Erledigt',
+		postponed: 'Oft verschoben',
+		time: 'Erfasst',
+		created: 'Neu',
+		nothing: 'In den letzten 7 Tagen ist hier nichts passiert.',
+		more: (n: number) => `und ${n} weitere`,
+		ai: 'KI-Rückblick',
+		times: (n: number) => `${n}×`
+	},
+	planningSettings: {
+		title: 'Planung',
+		hint: 'Gilt nur für dieses Gerät.',
+		capacity: 'Verfügbare Zeit pro Tag',
+		capacityHint:
+			'Gilt, wenn keine Soll-Zeit eingestellt ist. Lässt sich in „Heute“ für den Tag ändern.',
+		weights: 'Was zählt bei „Was als Nächstes?“',
+		weightsHint: 'Wie stark ein Grund in die Vorschläge eingeht.',
+		weightNames: {
+			priority: 'Priorität',
+			due: 'Fälligkeit',
+			planned: 'Für heute geplant',
+			age: 'Alter',
+			postponed: 'Oft verschoben',
+			fit: 'Passt in meine Zeit',
+			energy: 'Passt zu meiner Energie'
+		},
+		levels: [
+			{ value: '0', label: 'aus' },
+			{ value: '0.5', label: 'wenig' },
+			{ value: '1', label: 'normal' },
+			{ value: '2', label: 'stark' }
+		],
+		reset: 'Zurücksetzen'
 	},
 	ai: {
 		name: 'KI',

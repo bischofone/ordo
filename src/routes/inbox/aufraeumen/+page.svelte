@@ -6,6 +6,7 @@
 	 * Wischen: nach links = löschen, nach rechts = überspringen. Tasten: 1–9, I, Entf, →.
 	 */
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import { formatDistanceToNow } from 'date-fns';
 	import { de } from 'date-fns/locale';
 	import { INBOX_ID } from '#lib/db/repo.ts';
@@ -32,6 +33,13 @@
 		() => q.setting('inboxAgingDays', DEFAULT_INBOX_AGING_DAYS),
 		DEFAULT_INBOX_AGING_DAYS
 	);
+
+	/** Zurück zu … (z. B. aus dem Morgen-Ablauf: ?zurueck=/heute/planen?schritt=2) – nur App-intern */
+	const backTo = $derived.by(() => {
+		const z = page.url.searchParams.get('zurueck');
+		return z && z.startsWith('/') && !z.startsWith('//') ? z : null;
+	});
+	const backHref = $derived(backTo ? resolve(backTo as '/') : resolve('/inbox'));
 
 	const targets = $derived(pools.current.filter((p) => p.kind === 'pool' && !p.archived));
 	const projectsOf = (poolId: string) =>
@@ -256,9 +264,7 @@
 
 <header>
 	{#if !forced}
-		<a class="icon-btn back" href={resolve('/inbox')} aria-label={m.inbox.back}
-			><Icon name="chevron" /></a
-		>
+		<a class="icon-btn back" href={backHref} aria-label={m.inbox.back}><Icon name="chevron" /></a>
 	{/if}
 	<h1>{m.inbox.triage}</h1>
 	{#if current}<span class="progress">{m.inbox.progress(handled + 1, total)}</span>{/if}
@@ -432,7 +438,7 @@
 {:else if tasks.loaded}
 	<div class="done">
 		<p>{m.inbox.done}</p>
-		<a class="btn" href={resolve('/inbox')}>{m.inbox.back}</a>
+		<a class="btn" href={backHref}>{backTo ? m.planFlow.next : m.inbox.back}</a>
 	</div>
 {/if}
 
