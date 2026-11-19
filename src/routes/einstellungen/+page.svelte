@@ -21,6 +21,7 @@
 	import AiSettingsCard from '#lib/ui/AiSettingsCard.svelte';
 	import PlanningSettingsCard from '#lib/ui/PlanningSettingsCard.svelte';
 	import CalendarSettingsCard from '#lib/ui/CalendarSettingsCard.svelte';
+	import BackupSettings from '#lib/ui/BackupSettings.svelte';
 	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
 	import { replaceState } from '$app/navigation';
 	import { page, updated } from '$app/state';
@@ -66,7 +67,8 @@
 		{ id: 'pools', icon: 'layers' },
 		{ id: 'planung', icon: 'calendar' },
 		{ id: 'sync', icon: 'sync' },
-		{ id: 'ki', icon: 'sparkle' }
+		{ id: 'ki', icon: 'sparkle' },
+		{ id: 'sicherung', icon: 'shield' }
 	] as const satisfies { id: string; icon: IconName }[];
 	type SectionId = (typeof SECTIONS)[number]['id'];
 	const isSection = (v: string): v is SectionId => SECTIONS.some((x) => x.id === v);
@@ -75,6 +77,12 @@
 		return isSection(id) ? id : 'darstellung';
 	};
 	let section = $derived<SectionId>(fromHash(page.url.hash));
+	// Anker direkt geändert (Link oder Adresszeile auf derselben Seite) → Bereich wechseln
+	$effect(() => {
+		const onHash = () => (section = fromHash(location.hash));
+		addEventListener('hashchange', onHash);
+		return () => removeEventListener('hashchange', onHash);
+	});
 	function show(id: SectionId) {
 		section = id;
 		// Nur der Anker ändert sich (gleiche Seite), daher kein resolve() nötig
@@ -333,6 +341,8 @@
 			<PlanningSettingsCard />
 		{:else if section === 'ki'}
 			<AiSettingsCard />
+		{:else if section === 'sicherung'}
+			<BackupSettings />
 		{:else}
 			<section class="card">
 				<SyncSettings />

@@ -1,0 +1,306 @@
+{
+	"_hinweis": "Echte Datenbank, erzeugt vom Code der Ordo-Version ef310b0 (Schema v2). Nie ändern – nur neue Dateien hinzufügen.",
+	"commit": "ef310b0",
+	"verno": 2,
+	"tables": {
+		"pools": {
+			"schema": "id, kind, sortOrder",
+			"rows": [
+				{
+					"id": "02c4ca1a-0613-4a1f-992d-f70c727fb40c",
+					"kind": "pool",
+					"name": "Arbeit",
+					"color": "#0090ff",
+					"sortOrder": "a2",
+					"archived": false,
+					"settings": {
+						"notifications": true,
+						"notifyDevices": [],
+						"ai": {
+							"enabled": false
+						}
+					},
+					"createdAt": 1790838060000,
+					"updatedAt": 1790838060000
+				},
+				{
+					"id": "a4a93a7b-07ab-4be3-920d-4f3c2faab8f6",
+					"kind": "pool",
+					"name": "Kunden",
+					"color": "#6e56cf",
+					"sortOrder": "a3",
+					"archived": false,
+					"settings": {
+						"notifications": true,
+						"notifyDevices": [],
+						"ai": {
+							"enabled": false
+						}
+					},
+					"createdAt": 1790838120000,
+					"updatedAt": 1790838120000
+				},
+				{
+					"id": "c012d2e4-449b-407d-aa73-4d1619ea894a",
+					"kind": "pool",
+					"name": "Privat",
+					"color": "#46a758",
+					"sortOrder": "a1",
+					"archived": false,
+					"settings": {
+						"notifications": true,
+						"notifyDevices": [],
+						"ai": {
+							"enabled": false
+						}
+					},
+					"createdAt": 1790838060000,
+					"updatedAt": 1790838060000
+				},
+				{
+					"id": "inbox",
+					"kind": "inbox",
+					"name": "Inbox",
+					"color": "#8d8d8d",
+					"sortOrder": "a0",
+					"archived": false,
+					"settings": {
+						"notifications": true,
+						"notifyDevices": [],
+						"ai": {
+							"enabled": false
+						}
+					},
+					"createdAt": 1790838060000,
+					"updatedAt": 1790838060000
+				}
+			]
+		},
+		"tasks": {
+			"schema": "id, poolId, parentId, updatedAt",
+			"rows": [
+				{
+					"id": "2c97644c-9153-47c1-b88e-21d3abe448b1",
+					"poolId": "02c4ca1a-0613-4a1f-992d-f70c727fb40c",
+					"projectId": "b308e62b-beff-4e1b-8881-c0c7d8099264",
+					"parentId": "32afac04-eb56-4bb4-a122-ad944316c104",
+					"sortOrder": "a1",
+					"title": "Text formulieren",
+					"notes": "",
+					"priority": null,
+					"status": "needs-action",
+					"someday": false,
+					"postponeCount": 0,
+					"blockedBy": [],
+					"collapsed": false,
+					"createdAt": 1790838360000,
+					"updatedAt": 1790838360000
+				},
+				{
+					"id": "32afac04-eb56-4bb4-a122-ad944316c104",
+					"poolId": "02c4ca1a-0613-4a1f-992d-f70c727fb40c",
+					"projectId": "b308e62b-beff-4e1b-8881-c0c7d8099264",
+					"parentId": null,
+					"sortOrder": "a0",
+					"title": "Angebot schreiben",
+					"notes": "Für **Firma Weber**\nmit Umlauten: äöü ß €",
+					"priority": 1,
+					"due": {
+						"date": "2026-10-20"
+					},
+					"scheduled": {
+						"date": "2026-10-15",
+						"time": "14:00"
+					},
+					"status": "needs-action",
+					"someday": false,
+					"postponeCount": 0,
+					"blockedBy": [],
+					"collapsed": false,
+					"createdAt": 1790838240000,
+					"updatedAt": 1790838480000,
+					"estimateMin": 90,
+					"energy": "high"
+				},
+				{
+					"id": "52b35d61-6d60-45d7-9095-9d5a37088b1c",
+					"poolId": "c012d2e4-449b-407d-aa73-4d1619ea894a",
+					"projectId": null,
+					"parentId": null,
+					"sortOrder": "a1",
+					"title": "Fahrrad reparieren",
+					"notes": "",
+					"priority": null,
+					"status": "completed",
+					"someday": false,
+					"postponeCount": 0,
+					"blockedBy": [],
+					"collapsed": false,
+					"createdAt": 1790838660000,
+					"updatedAt": 1790838720000,
+					"completedAt": 1790838720000
+				},
+				{
+					"id": "644f8732-bb7e-49dc-90eb-54e5bc00604f",
+					"poolId": "a4a93a7b-07ab-4be3-920d-4f3c2faab8f6",
+					"projectId": null,
+					"parentId": null,
+					"sortOrder": "a0",
+					"title": "Rückruf Müller",
+					"notes": "",
+					"priority": 3,
+					"status": "needs-action",
+					"someday": false,
+					"postponeCount": 0,
+					"blockedBy": [],
+					"collapsed": false,
+					"createdAt": 1790839020000,
+					"updatedAt": 1790839020000
+				},
+				{
+					"id": "75041485-90fd-4d6b-b3a5-cc0cc937ea7d",
+					"poolId": "inbox",
+					"projectId": null,
+					"parentId": null,
+					"sortOrder": "a0",
+					"title": "Idee: Podcast hören",
+					"notes": "",
+					"priority": null,
+					"status": "needs-action",
+					"someday": false,
+					"postponeCount": 0,
+					"blockedBy": [],
+					"collapsed": false,
+					"createdAt": 1790838780000,
+					"updatedAt": 1790838780000
+				},
+				{
+					"id": "7b15e5e8-286b-4924-86dc-267ccc31ab04",
+					"poolId": "c012d2e4-449b-407d-aa73-4d1619ea894a",
+					"projectId": null,
+					"parentId": null,
+					"sortOrder": "a0",
+					"title": "Steuererklärung",
+					"notes": "",
+					"priority": 2,
+					"scheduled": {
+						"date": "2026-10-10"
+					},
+					"status": "needs-action",
+					"someday": false,
+					"postponeCount": 1,
+					"blockedBy": [],
+					"collapsed": false,
+					"createdAt": 1790838540000,
+					"updatedAt": 1790838600000
+				},
+				{
+					"id": "91606b5d-6a45-4626-834a-92354762eaba",
+					"poolId": "02c4ca1a-0613-4a1f-992d-f70c727fb40c",
+					"projectId": "b308e62b-beff-4e1b-8881-c0c7d8099264",
+					"parentId": "32afac04-eb56-4bb4-a122-ad944316c104",
+					"sortOrder": "a0",
+					"title": "Preise prüfen",
+					"notes": "",
+					"priority": null,
+					"status": "needs-action",
+					"someday": false,
+					"postponeCount": 0,
+					"blockedBy": [],
+					"collapsed": false,
+					"createdAt": 1790838300000,
+					"updatedAt": 1790838300000
+				},
+				{
+					"id": "a03527f5-0028-4820-bc32-c24ed5937412",
+					"poolId": "02c4ca1a-0613-4a1f-992d-f70c727fb40c",
+					"projectId": "b308e62b-beff-4e1b-8881-c0c7d8099264",
+					"parentId": "91606b5d-6a45-4626-834a-92354762eaba",
+					"sortOrder": "a0",
+					"title": "Feinschliff",
+					"notes": "",
+					"priority": null,
+					"status": "needs-action",
+					"someday": false,
+					"postponeCount": 0,
+					"blockedBy": [],
+					"collapsed": false,
+					"createdAt": 1790838420000,
+					"updatedAt": 1790838420000
+				},
+				{
+					"id": "b5239a42-6546-46a6-8230-79b09f2d72f4",
+					"poolId": "c012d2e4-449b-407d-aa73-4d1619ea894a",
+					"projectId": null,
+					"parentId": null,
+					"sortOrder": "a2",
+					"title": "Irgendwann: Japan",
+					"notes": "",
+					"priority": null,
+					"status": "needs-action",
+					"someday": true,
+					"postponeCount": 0,
+					"blockedBy": [],
+					"collapsed": false,
+					"createdAt": 1790838840000,
+					"updatedAt": 1790838840000
+				},
+				{
+					"id": "b7d38787-cde6-4cc9-9004-69609773b95c",
+					"poolId": "a4a93a7b-07ab-4be3-920d-4f3c2faab8f6",
+					"projectId": null,
+					"parentId": null,
+					"sortOrder": "a0",
+					"title": "Gelöschte Aufgabe",
+					"notes": "",
+					"priority": null,
+					"status": "needs-action",
+					"someday": false,
+					"postponeCount": 0,
+					"blockedBy": [],
+					"collapsed": false,
+					"createdAt": 1790838900000,
+					"updatedAt": 1790838960000,
+					"deletedAt": 1790838960000
+				}
+			]
+		},
+		"timeEntries": {
+			"schema": "id, taskId, start",
+			"rows": []
+		},
+		"templates": {
+			"schema": "id",
+			"rows": []
+		},
+		"contextModes": {
+			"schema": "id",
+			"rows": []
+		},
+		"settings": {
+			"schema": "key",
+			"rows": [
+				{
+					"key": "inboxAgingDays",
+					"value": 5
+				}
+			]
+		},
+		"projects": {
+			"schema": "id, poolId, sortOrder",
+			"rows": [
+				{
+					"id": "b308e62b-beff-4e1b-8881-c0c7d8099264",
+					"poolId": "02c4ca1a-0613-4a1f-992d-f70c727fb40c",
+					"name": "Website",
+					"color": "#f76b15",
+					"icon": "folder",
+					"sortOrder": "a0",
+					"archived": false,
+					"createdAt": 1790838180000,
+					"updatedAt": 1790838180000
+				}
+			]
+		}
+	}
+}

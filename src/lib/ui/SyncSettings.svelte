@@ -13,6 +13,7 @@
 	import type { TodoList } from '#lib/sync/caldav.ts';
 	import Badge from './Badge.svelte';
 	import NextcloudConnect from './NextcloudConnect.svelte';
+	import AccountPassword from './AccountPassword.svelte';
 	import Icon from './Icon.svelte';
 
 	const accounts = live(() => () => db.accounts.toArray(), []);
@@ -83,7 +84,10 @@
 				{/if}
 				<button class="btn ghost danger" onclick={() => removeAccount(acc)}>{m.sync.remove}</button>
 			</div>
-			{#if remoteLists.errors[acc.id]}<p class="error">{remoteLists.errors[acc.id]}</p>{/if}
+			<AccountPassword account={acc} />
+			{#if remoteLists.errors[acc.id] && acc.password}<p class="error">
+					{remoteLists.errors[acc.id]}
+				</p>{/if}
 			{#if remoteLists.byAccount[acc.id]}
 				<p class="label">{m.sync.accountLists}</p>
 				{#each remoteLists.byAccount[acc.id] as l (l.url)}

@@ -192,7 +192,8 @@ export const de = {
 			pools: 'Pools & Projekte',
 			planung: 'Planung',
 			sync: 'Sync',
-			ki: 'KI'
+			ki: 'KI',
+			sicherung: 'Sicherung'
 		},
 		sectionsLabel: 'Bereiche',
 		appearance: 'Darstellung',
@@ -223,6 +224,47 @@ export const de = {
 		checking: 'Suche …',
 		upToDate: 'Ordo ist aktuell.',
 		updateCheckFailed: 'Server nicht erreichbar – später noch einmal versuchen.'
+	},
+	backup: {
+		title: 'Sicherung erstellen',
+		intro: 'Alle Aufgaben, Pools, Projekte, Zeiten und Einstellungen dieses Geräts als eine Datei.',
+		password: 'Passwort für die Datei',
+		passwordRepeat: 'Passwort wiederholen',
+		passwordHint:
+			'Empfohlen. Die Datei wird damit verschlüsselt (AES-256). Ohne das Passwort kann sie niemand öffnen – auch du nicht, also gut aufheben, z. B. im Passwort-Manager.',
+		mismatch: 'Die Passwörter stimmen nicht überein.',
+		tooShort: 'Mindestens 8 Zeichen.',
+		secrets: 'Zugangsdaten mitsichern (Server-Passwörter, KI-Schlüssel)',
+		secretsHint: 'Nur mit Passwort möglich – ohne Passwort enthält die Datei keine Zugangsdaten.',
+		download: 'Sicherung herunterladen',
+		working: 'Erstelle …',
+		last: (when: string) => `Letzte Sicherung: ${when}`,
+		never: 'Noch keine Sicherung von diesem Gerät.',
+		restoreTitle: 'Wiederherstellen',
+		restoreIntro:
+			'Ersetzt alle Daten auf diesem Gerät durch eine Sicherung. Sicherungen älterer Ordo-Versionen werden dabei automatisch umgewandelt.',
+		chooseFile: 'Sicherungsdatei wählen',
+		locked: 'Diese Sicherung ist verschlüsselt.',
+		unlock: 'Öffnen',
+		checking: 'Prüfe …',
+		summary: (n: { tasks: number; pools: number; projects: number; accounts: number }) =>
+			`${n.tasks} Aufgaben · ${n.pools} Pools · ${n.projects} Projekte · ${n.accounts} Konten`,
+		from: (when: string, version: string) => `Sicherung vom ${when} (Ordo ${version})`,
+		withSecrets: 'mit Zugangsdaten',
+		withoutSecrets:
+			'ohne Zugangsdaten – auf diesem Gerät gespeicherte bleiben erhalten, fehlende musst du neu eingeben',
+		problems: 'Die Sicherung ist beschädigt und wird nicht eingespielt:',
+		replace: 'Alle Daten ersetzen',
+		replaceTitle: 'Alle Daten ersetzen?',
+		replaceText:
+			'Alle Aufgaben und Einstellungen auf diesem Gerät werden durch die Sicherung ersetzt. Der jetzige Stand wird vorher aufgehoben und lässt sich hier wieder zurückholen. Mit dem Server verbundene Pools gleichen sich danach wieder mit dem Server ab.',
+		undoTitle: 'Rückgängig',
+		undoText: (when: string) => `Stand von vor der Wiederherstellung am ${when} ist aufgehoben.`,
+		undo: 'Zurückholen',
+		undoConfirm:
+			'Die Daten werden auf den Stand von vor der letzten Wiederherstellung zurückgesetzt.',
+		serverHint:
+			'Auf dem eigenen Ordo-Server (Proxmox) sichert „update“ die Daten außerdem automatisch; von Hand mit „ordo sicherung“.'
 	},
 	update: {
 		title: 'Neue Version von Ordo ist da',
@@ -327,6 +369,12 @@ export const de = {
 		connect: 'Verbinden',
 		connecting: 'Verbinde …',
 		remove: 'Entfernen',
+		passwordMissing:
+			'Passwort fehlt – bitte neu eingeben (die Sicherung enthielt keine Zugangsdaten).',
+		newPassword: 'Passwort',
+		savePassword: 'Prüfen und speichern',
+		changePassword: 'Passwort ändern',
+		checking: 'Prüfe …',
 		removeTitle: 'Konto entfernen?',
 		removeText: (name: string) =>
 			`Die Verbindung zu „${name}“ wird gelöst. Aufgaben bleiben auf diesem Gerät und auf dem Server erhalten.`,

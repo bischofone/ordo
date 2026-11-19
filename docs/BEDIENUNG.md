@@ -374,9 +374,33 @@ Gegliedert in Bereiche (am PC links, am Handy als Leiste oben):
 | **Inbox**            | ab wann Einträge als alt gelten; Aufräumen nach Zeitplan                               |
 | **Pools & Projekte** | Name, Farbe, Icon, Reihenfolge, archivieren, löschen                                   |
 | **Sync**             | CalDAV-Konten und ihre Listen                                                          |
+| **Sicherung**        | Alle Daten als Datei sichern und wiederherstellen                                      |
 
 Darstellung, Zeiterfassung, Aufräum-Zeitplan, Planung und KI-Einstellungen gelten **pro Gerät**.
 Jeder Bereich hat eine eigene Adresse, z. B. `/einstellungen#sync`.
+
+### Sicherung
+
+Unter **Einstellungen → Sicherung** entsteht eine Datei mit allem, was auf diesem Gerät liegt:
+Aufgaben, Pools, Projekte, Zeiten, Einstellungen, Konten und Darstellung.
+
+- **Mit Passwort (empfohlen):** Die Datei wird verschlüsselt (AES-256, Schlüssel aus dem
+  Passwort mit PBKDF2 und 600 000 Runden). Nur dann können auch **Zugangsdaten** mit hinein:
+  Server-Passwörter und der KI-Schlüssel. Ohne das Passwort lässt sich die Datei nicht öffnen
+  – auch von dir nicht. Am besten im Passwort-Manager ablegen.
+- **Ohne Passwort:** lesbare JSON-Datei, aber **nie** mit Zugangsdaten.
+
+**Wiederherstellen:** Datei wählen (bei Verschlüsselung Passwort eingeben). Ordo prüft die
+Datei, zeigt, was drin ist, und ersetzt erst nach Rückfrage alle Daten auf diesem Gerät.
+Sicherungen älterer Ordo-Versionen werden dabei automatisch umgewandelt; Sicherungen einer
+neueren Version lehnt Ordo ab (erst aktualisieren). Der vorherige Stand wird aufgehoben und
+lässt sich mit **Zurückholen** wieder herstellen.
+
+Fehlen in der Sicherung Zugangsdaten, bleiben die auf dem Gerät gespeicherten erhalten. Fehlt
+ein Konto-Passwort ganz, steht beim Konto unter **Sync** „Passwort fehlt“ mit einem Feld zum
+Nachtragen (Passwörter lassen sich dort auch jederzeit ändern).
+
+Auf dem eigenen Ordo-Server (Proxmox) sichert `update` die Serverdaten zusätzlich automatisch.
 
 ---
 

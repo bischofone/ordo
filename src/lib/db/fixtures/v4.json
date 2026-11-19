@@ -1,0 +1,363 @@
+{
+	"_hinweis": "Echte Datenbank, erzeugt vom Code der Ordo-Version 2e29bef (Schema v4). Nie ändern – nur neue Dateien hinzufügen.",
+	"commit": "2e29bef",
+	"verno": 4,
+	"tables": {
+		"pools": {
+			"schema": "id, kind, sortOrder",
+			"rows": [
+				{
+					"id": "5793e908-b7e0-4e56-be15-0895c576bee6",
+					"kind": "pool",
+					"name": "Privat",
+					"color": "#46a758",
+					"sortOrder": "a1",
+					"archived": false,
+					"settings": {
+						"notifications": true,
+						"notifyDevices": [],
+						"ai": {
+							"enabled": false
+						}
+					},
+					"createdAt": 1790838060000,
+					"updatedAt": 1790838060000
+				},
+				{
+					"id": "c08f4543-6c7f-4dfd-81f7-68a9059f958a",
+					"kind": "pool",
+					"name": "Kunden",
+					"color": "#6e56cf",
+					"sortOrder": "a3",
+					"archived": false,
+					"settings": {
+						"notifications": true,
+						"notifyDevices": [],
+						"ai": {
+							"enabled": false
+						}
+					},
+					"createdAt": 1790838120000,
+					"updatedAt": 1790838120000
+				},
+				{
+					"id": "d95b6726-1e51-4b26-bff0-96dd6146234e",
+					"kind": "pool",
+					"name": "Arbeit",
+					"color": "#0090ff",
+					"sortOrder": "a2",
+					"archived": false,
+					"settings": {
+						"notifications": true,
+						"notifyDevices": [],
+						"ai": {
+							"enabled": false
+						}
+					},
+					"createdAt": 1790838060000,
+					"updatedAt": 1790838060000,
+					"caldav": {
+						"accountId": "acc1",
+						"collectionUrl": "https://dav.example.com/dav/alex/arbeit/"
+					}
+				},
+				{
+					"id": "inbox",
+					"kind": "inbox",
+					"name": "Inbox",
+					"color": "#8d8d8d",
+					"sortOrder": "a0",
+					"archived": false,
+					"settings": {
+						"notifications": true,
+						"notifyDevices": [],
+						"ai": {
+							"enabled": false
+						}
+					},
+					"createdAt": 1790838060000,
+					"updatedAt": 1790838060000
+				}
+			]
+		},
+		"tasks": {
+			"schema": "id, poolId, parentId, updatedAt",
+			"rows": [
+				{
+					"id": "131597d5-4980-4885-9ebf-7b2e76a90525",
+					"poolId": "d95b6726-1e51-4b26-bff0-96dd6146234e",
+					"projectId": "78bb5f2d-f7d0-4cc9-9146-687d28b3126c",
+					"parentId": "776b3563-af2a-44e0-b3ae-cb7a2f04769d",
+					"sortOrder": "a0",
+					"title": "Preise prüfen",
+					"notes": "",
+					"priority": null,
+					"status": "needs-action",
+					"someday": false,
+					"postponeCount": 0,
+					"blockedBy": [],
+					"collapsed": false,
+					"createdAt": 1790838300000,
+					"updatedAt": 1790839140000,
+					"timeEntries": [
+						{
+							"id": "7d470e28-66c9-464e-9663-bd6aee61245a",
+							"date": "2026-10-02",
+							"minutes": 30
+						}
+					]
+				},
+				{
+					"id": "1e636019-4c55-4c21-be4b-dd8a508f5b52",
+					"poolId": "5793e908-b7e0-4e56-be15-0895c576bee6",
+					"projectId": null,
+					"parentId": null,
+					"sortOrder": "a2",
+					"title": "Irgendwann: Japan",
+					"notes": "",
+					"priority": null,
+					"status": "needs-action",
+					"someday": true,
+					"postponeCount": 0,
+					"blockedBy": [],
+					"collapsed": false,
+					"createdAt": 1790838840000,
+					"updatedAt": 1790838840000
+				},
+				{
+					"id": "2a84ad68-74fd-4199-8755-1893469b4e52",
+					"poolId": "c08f4543-6c7f-4dfd-81f7-68a9059f958a",
+					"projectId": null,
+					"parentId": null,
+					"sortOrder": "a0",
+					"title": "Gelöschte Aufgabe",
+					"notes": "",
+					"priority": null,
+					"status": "needs-action",
+					"someday": false,
+					"postponeCount": 0,
+					"blockedBy": [],
+					"collapsed": false,
+					"createdAt": 1790838900000,
+					"updatedAt": 1790838960000,
+					"deletedAt": 1790838960000
+				},
+				{
+					"id": "2cdf523c-a981-404f-8117-2954e0c2152d",
+					"poolId": "inbox",
+					"projectId": null,
+					"parentId": null,
+					"sortOrder": "a0",
+					"title": "Idee: Podcast hören",
+					"notes": "",
+					"priority": null,
+					"status": "needs-action",
+					"someday": false,
+					"postponeCount": 0,
+					"blockedBy": [],
+					"collapsed": false,
+					"createdAt": 1790838780000,
+					"updatedAt": 1790838780000
+				},
+				{
+					"id": "3031bb7d-c2eb-4006-946c-9e34eb3342da",
+					"poolId": "d95b6726-1e51-4b26-bff0-96dd6146234e",
+					"projectId": "78bb5f2d-f7d0-4cc9-9146-687d28b3126c",
+					"parentId": "776b3563-af2a-44e0-b3ae-cb7a2f04769d",
+					"sortOrder": "a1",
+					"title": "Text formulieren",
+					"notes": "",
+					"priority": null,
+					"status": "needs-action",
+					"someday": false,
+					"postponeCount": 0,
+					"blockedBy": [],
+					"collapsed": false,
+					"createdAt": 1790838360000,
+					"updatedAt": 1790838360000
+				},
+				{
+					"id": "72965c4a-f238-4f90-8ccf-68880922aa15",
+					"poolId": "d95b6726-1e51-4b26-bff0-96dd6146234e",
+					"projectId": "78bb5f2d-f7d0-4cc9-9146-687d28b3126c",
+					"parentId": "131597d5-4980-4885-9ebf-7b2e76a90525",
+					"sortOrder": "a0",
+					"title": "Feinschliff",
+					"notes": "",
+					"priority": null,
+					"status": "needs-action",
+					"someday": false,
+					"postponeCount": 0,
+					"blockedBy": [],
+					"collapsed": false,
+					"createdAt": 1790838420000,
+					"updatedAt": 1790838420000
+				},
+				{
+					"id": "77573a0b-08bb-44e7-bef9-840d9f6e9cab",
+					"poolId": "5793e908-b7e0-4e56-be15-0895c576bee6",
+					"projectId": null,
+					"parentId": null,
+					"sortOrder": "a1",
+					"title": "Fahrrad reparieren",
+					"notes": "",
+					"priority": null,
+					"status": "completed",
+					"someday": false,
+					"postponeCount": 0,
+					"blockedBy": [],
+					"collapsed": false,
+					"createdAt": 1790838660000,
+					"updatedAt": 1790838720000,
+					"completedAt": 1790838720000
+				},
+				{
+					"id": "776b3563-af2a-44e0-b3ae-cb7a2f04769d",
+					"poolId": "d95b6726-1e51-4b26-bff0-96dd6146234e",
+					"projectId": "78bb5f2d-f7d0-4cc9-9146-687d28b3126c",
+					"parentId": null,
+					"sortOrder": "a0",
+					"title": "Angebot schreiben",
+					"notes": "Für **Firma Weber**\nmit Umlauten: äöü ß €",
+					"priority": 1,
+					"due": {
+						"date": "2026-10-20"
+					},
+					"scheduled": {
+						"date": "2026-10-15",
+						"time": "14:00"
+					},
+					"status": "needs-action",
+					"someday": false,
+					"postponeCount": 0,
+					"blockedBy": [],
+					"collapsed": false,
+					"createdAt": 1790838240000,
+					"updatedAt": 1790839080000,
+					"estimateMin": 90,
+					"energy": "high",
+					"timeEntries": [
+						{
+							"id": "af39aa92-a8fa-4c87-baed-ccd3679a4f9b",
+							"date": "2026-10-01",
+							"minutes": 45
+						}
+					]
+				},
+				{
+					"id": "77848854-4090-4806-b9cb-8bb4b3c62c4e",
+					"poolId": "5793e908-b7e0-4e56-be15-0895c576bee6",
+					"projectId": null,
+					"parentId": null,
+					"sortOrder": "a0",
+					"title": "Steuererklärung",
+					"notes": "",
+					"priority": 2,
+					"scheduled": {
+						"date": "2026-10-10"
+					},
+					"status": "needs-action",
+					"someday": false,
+					"postponeCount": 1,
+					"blockedBy": [],
+					"collapsed": false,
+					"createdAt": 1790838540000,
+					"updatedAt": 1790838600000
+				},
+				{
+					"id": "ba45dfc5-628a-4bae-8fd5-331b92530a58",
+					"poolId": "c08f4543-6c7f-4dfd-81f7-68a9059f958a",
+					"projectId": null,
+					"parentId": null,
+					"sortOrder": "a0",
+					"title": "Rückruf Müller",
+					"notes": "",
+					"priority": 3,
+					"status": "needs-action",
+					"someday": false,
+					"postponeCount": 0,
+					"blockedBy": [],
+					"collapsed": false,
+					"createdAt": 1790839020000,
+					"updatedAt": 1790839020000
+				}
+			]
+		},
+		"templates": {
+			"schema": "id",
+			"rows": []
+		},
+		"contextModes": {
+			"schema": "id",
+			"rows": []
+		},
+		"settings": {
+			"schema": "key",
+			"rows": [
+				{
+					"key": "inboxAgingDays",
+					"value": 5
+				}
+			]
+		},
+		"projects": {
+			"schema": "id, poolId, sortOrder",
+			"rows": [
+				{
+					"id": "78bb5f2d-f7d0-4cc9-9146-687d28b3126c",
+					"poolId": "d95b6726-1e51-4b26-bff0-96dd6146234e",
+					"name": "Website",
+					"color": "#f76b15",
+					"icon": "folder",
+					"sortOrder": "a0",
+					"archived": false,
+					"createdAt": 1790838180000,
+					"updatedAt": 1790838180000
+				}
+			]
+		},
+		"accounts": {
+			"schema": "id",
+			"rows": [
+				{
+					"id": "acc1",
+					"name": "Mein Server",
+					"serverUrl": "https://dav.example.com/dav/",
+					"username": "alex",
+					"password": "geheim",
+					"homeUrl": "https://dav.example.com/dav/alex/",
+					"createdAt": 1790839140000
+				}
+			]
+		},
+		"syncState": {
+			"schema": "poolId",
+			"rows": [
+				{
+					"poolId": "d95b6726-1e51-4b26-bff0-96dd6146234e",
+					"ctag": "\"c1\"",
+					"syncToken": "tok1",
+					"lastSync": 1790839140000
+				}
+			]
+		},
+		"syncRecords": {
+			"schema": "taskId, poolId, url",
+			"rows": [
+				{
+					"taskId": "776b3563-af2a-44e0-b3ae-cb7a2f04769d",
+					"poolId": "d95b6726-1e51-4b26-bff0-96dd6146234e",
+					"url": "https://dav.example.com/dav/alex/arbeit/a.ics",
+					"etag": "\"e1\"",
+					"base": {
+						"title": "Angebot schreiben"
+					}
+				}
+			]
+		},
+		"conflicts": {
+			"schema": "id, taskId",
+			"rows": []
+		}
+	}
+}

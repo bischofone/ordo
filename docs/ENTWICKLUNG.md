@@ -61,6 +61,37 @@ Auf GitHub prüft der Workflow [`ci.yml`](../.github/workflows/ci.yml) bei jedem
 - Bei einem Fehlschlag liegt unter `test-results/` ein Trace:
   `pnpm exec playwright show-trace test-results/…/trace.zip`.
 
+## Bestehende Daten: Regeln für jede Änderung
+
+Updates dürfen vorhandene Daten nie kaputt machen oder falsch anzeigen. Das prüfen Tests mit
+**echten Daten aller früheren Versionen** – sie laufen bei jedem Push auf GitHub mit, und nur
+wenn sie grün sind, entsteht ein Update.
+
+| Was geprüft wird                                                                  | Wo                                                                   |
+| --------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Jede frühere Datenbank öffnet, verliert nichts, ist gültig, lässt sich bearbeiten | `src/lib/db/migrations.test.ts` mit `src/lib/db/fixtures/v1…vN.json` |
+| … und erscheint im Browser richtig (Pools, Baum, Inbox, Heute, Einstellungen)     | `e2e/upgrade.e2e.ts`                                                 |
+| Aufgaben, die frühere Versionen auf den Server schrieben, werden richtig gelesen  | `src/lib/sync/formats.test.ts` mit `src/lib/sync/fixtures/*.ics`     |
+| Sicherungen älterer Versionen lassen sich einspielen                              | `src/lib/backup/backup.test.ts`                                      |
+
+Die Testdaten erzeugt `scripts/db-fixture.sh` mit dem Code der jeweiligen Version (auch für
+frühere Stände: `scripts/db-fixture.sh COMMIT`). Vorhandene Testdaten werden **nie geändert**.
+
+**Regeln:**
+
+1. **Felder nie umbenennen oder umdeuten.** Neue Felder sind optional (`feld?:`) oder bekommen
+   in einer Migration einen Wert. Beim Lesen von Einstellungen immer mit Standardwerten
+   ergänzen (`{ ...DEFAULT, ...gespeichert }`).
+2. **Schema ändern = neue Version** in `src/lib/db/db.ts` (alte Versionen bleiben stehen),
+   Daten bei Bedarf in `.upgrade()` anpassen. Danach `scripts/db-fixture.sh` – sonst schlägt
+   „neueste Version hat Testdaten“ fehl. Gleiches Schema ohne neue Nummer fällt ebenfalls auf.
+3. **Sync-Format ändern** (was in `vtodo.ts` geschrieben wird): ältere Dateien müssen weiter
+   gelesen werden; `scripts/db-fixture.sh` legt die neue Form als Testdatei ab, sonst schlägt
+   „das aktuelle Format hat Testdaten“ fehl. Unbekannte Felder anderer Apps bleiben erhalten.
+4. **Neue Pflichtfelder** in `src/lib/db/integrity.ts` mitprüfen.
+5. **Sicherungsdatei** (`src/lib/backup/`): neue Tabellen landen automatisch darin. Ändert sich
+   das Dateiformat selbst, `BACKUP_VERSION` erhöhen und ältere weiter lesen.
+
 ## Neue Funktion: ein Beispiel
 
 „Aufgaben sollen ein Feld _Ort_ bekommen“:

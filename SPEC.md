@@ -242,7 +242,19 @@ Nur wenige, intuitive Kürzel – alles andere über Buttons:
 
 ## 9. Sonstiges
 
-- Export/Import als JSON (komplett und pro Pool), automatische lokale Backups.
+- **Sicherung** (Einstellungen → Sicherung): alle Tabellen + Darstellung als eine JSON-Datei
+  mit Datenbank-Version und Schema. Mit Passwort verschlüsselt (PBKDF2-SHA256 600 000 Runden,
+  AES-256-GCM, gzip; Format `ordo-backup` v1) und nur dann mit Zugangsdaten (Konto-Passwörter,
+  KI-Schlüssel); ohne Passwort lesbar und ohne Zugangsdaten. Wiederherstellen: Datei wird in
+  einer Zwischen-Datenbank mit ihrem Schema angelegt, mit den normalen Migrationen auf den
+  aktuellen Stand gebracht und geprüft (`db/integrity.ts`), erst dann ersetzt sie alle Daten
+  in einer Transaktion. Neuere Sicherungen werden abgelehnt. Vorheriger Stand wird lokal
+  aufgehoben (eigene DB `ordo-sicherheitskopie`, „Zurückholen“). Fehlende Zugangsdaten werden
+  aus dem Gerät übernommen, sonst beim Konto nachgetragen. (Export pro Pool: offen.)
+- **Datenintegrität bei Updates:** echte Datenbanken und Sync-Dateien jeder früheren Version
+  liegen als Testdaten im Projekt (`db/fixtures`, `sync/fixtures`, erzeugt von
+  `scripts/db-fixture.sh`); Unit- und Browser-Tests prüfen bei jedem Push, dass sie ohne
+  Verlust übernommen und richtig angezeigt werden. Regeln in `docs/ENTWICKLUNG.md`.
 - Suche über Titel/Notizen (respektiert aktiven Kontext-Modus).
 - Dark Mode, schnelle schlichte UI, Mobile-first.
 - **Zusammengehöriges ist sichtbar gruppiert:** Aufgaben direkt im Pool stehen in einer

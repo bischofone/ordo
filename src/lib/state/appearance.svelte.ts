@@ -28,7 +28,8 @@ export const DEFAULT_APPEARANCE: Appearance = {
 	openDetailOnClick: true
 };
 
-const KEY = 'appearance';
+export const APPEARANCE_KEY = 'appearance';
+const KEY = APPEARANCE_KEY;
 
 function load(): Appearance {
 	try {

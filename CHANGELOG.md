@@ -1,5 +1,23 @@
 # Änderungen
 
+## 0.8.0 – 19.11.2026
+
+### Neu
+
+- **Sicherung** (Einstellungen → Sicherung): alle Daten als Datei – mit Passwort verschlüsselt
+  (AES-256) und dann auch mit Zugangsdaten, ohne Passwort lesbar und ohne Zugangsdaten.
+  Wiederherstellen mit Prüfung und Zusammenfassung vorab, ältere Sicherungen werden
+  umgewandelt, der vorherige Stand lässt sich zurückholen.
+- **Konto-Passwort ändern oder nachtragen** unter Einstellungen → Sync.
+- **Datenintegrität bei Updates:** echte Datenbanken aller früheren Versionen (v1–v6) und
+  Sync-Dateien früherer Versionen als Testdaten; Tests prüfen bei jedem Push, dass nichts
+  verloren geht und alles richtig angezeigt wird. Wächter-Tests schlagen an, wenn sich
+  Datenbank oder Sync-Format ändern, ohne dass Testdaten dazukommen.
+
+### Behoben
+
+- Einstellungen: Wechsel des Bereichs über die Adresse (`#sync`) auf derselben Seite.
+
 ## 0.7.0 – 19.11.2026
 
 ### Neu

@@ -451,6 +451,16 @@ export function createSyncEngine(
 			return account;
 		},
 
+		/** Neues Passwort eintragen (z. B. nach dem Wiederherstellen einer Sicherung ohne
+		 *  Zugangsdaten) – wird vorher beim Server geprüft. */
+		async setAccountPassword(accountId: string, password: string) {
+			const account = await db.accounts.get(accountId);
+			if (!account) throw new Error('Konto nicht gefunden');
+			const next = { ...account, password };
+			await clientFor(next).discover();
+			await db.accounts.update(accountId, { password });
+		},
+
 		async removeAccount(accountId: string) {
 			for (const p of await db.pools.toArray()) {
 				if (p.caldav?.accountId === accountId) await this.unbindPool(p.id);
