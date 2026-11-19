@@ -115,6 +115,9 @@ describe.skipIf(!key)('KI live (OpenRouter)', () => {
 		console.log('Tagesplan:', JSON.stringify(plan));
 		expect(plan.items.length).toBeGreaterThan(0);
 		for (const i of plan.items) expect([...ctx.refs.values()]).toContain(i.taskId);
+		// Zum Einplanen: Dauer und Priorität je Punkt
+		expect(plan.items.some((i) => i.estimateMin !== null)).toBe(true);
+		for (const i of plan.items) expect([1, 2, 3, null]).toContain(i.priority);
 	});
 
 	it('schreibt einen Wochenrückblick', { timeout: 60_000 }, async () => {

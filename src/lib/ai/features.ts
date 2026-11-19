@@ -20,9 +20,21 @@ export interface SuggestedTask {
 	children: SuggestedTask[];
 }
 
+export interface DayPlanItem {
+	taskId: string;
+	title: string;
+	reason: string;
+	/** Geschätzte Dauer (vorhandene Schätzung der Aufgabe, sonst Vorschlag der KI) */
+	estimateMin: number | null;
+	/** Priorität der Aufgabe, sonst Vorschlag der KI */
+	priority: 1 | 2 | 3 | null;
+	/** Uhrzeit beim Einplanen ('HH:mm'); fehlt = ganztägig */
+	time?: string;
+}
+
 export interface DayPlan {
 	summary: string;
-	items: { taskId: string; title: string; reason: string }[];
+	items: DayPlanItem[];
 }
 
 export interface PoolSuggestion {
@@ -58,7 +70,8 @@ const taskLine = (t: PoolContext['tasks'][number]) =>
 		t.scheduled ? `geplant ${t.scheduled}` : '',
 		t.done ? `erledigt${t.completed ? ` ${t.completed}` : ''}` : '',
 		t.postponed ? `${t.postponed}× verschoben` : '',
-		t.minutes ? `${t.minutes} min erfasst` : ''
+		t.minutes ? `${t.minutes} min erfasst` : '',
+		t.estimate ? `geschätzt ${t.estimate} min` : ''
 	]
 		.filter(Boolean)
 		.join(' ');
@@ -123,8 +136,13 @@ const PLAN_SCHEMA: ResponseSchema = {
 				items: {
 					type: 'object',
 					additionalProperties: false,
-					required: ['ref', 'reason'],
-					properties: { ref: { type: 'string' }, reason: { type: 'string' } }
+					required: ['ref', 'reason', 'minutes', 'priority'],
+					properties: {
+						ref: { type: 'string' },
+						reason: { type: 'string' },
+						minutes: { type: 'integer' },
+						priority: { type: 'integer' }
+					}
 				}
 			}
 		}
@@ -289,6 +307,9 @@ export function dayPlan(ctx: PoolContext, today: string, weekday: string): Featu
 					'Schlage einen realistischen Plan für heute vor: 3–6 Aufgaben in sinnvoller Reihenfolge, ' +
 						'mit je einem kurzen Grund (Fälligkeit, Priorität, oft verschoben, passt zusammen). ' +
 						'Gib bei jedem Punkt die Referenz aus der Liste an (z. B. „a3“). ' +
+						'Schätze je Punkt realistisch die Dauer in Minuten („minutes“; steht schon eine Schätzung da, ' +
+						'übernimm sie) und eine Priorität („priority“: 1 = hoch, 2 = mittel, 3 = niedrig; ' +
+						'hat die Aufgabe schon eine, übernimm sie). ' +
 						'Dazu eine Zusammenfassung in einem Satz – darin keine Referenzen, nur die Aufgaben beim Namen.'
 				].join('\n\n')
 			}
@@ -299,14 +320,30 @@ export function dayPlan(ctx: PoolContext, today: string, weekday: string): Featu
 			const seen = new Set<string>();
 			const items = (Array.isArray(raw.items) ? raw.items : [])
 				.map((i) => (i ?? {}) as Record<string, unknown>)
-				.map((i) => ({ ref: String(i.ref ?? '').trim(), reason: clean(i.reason) }))
+				.map((i) => ({
+					ref: String(i.ref ?? '').trim(),
+					reason: clean(i.reason),
+					minutes: Number(i.minutes),
+					priority: Number(i.priority)
+				}))
 				.filter((i) => ctx.refs.has(i.ref) && !seen.has(i.ref) && seen.add(i.ref))
 				.slice(0, 8)
-				.map((i) => ({
-					taskId: ctx.refs.get(i.ref)!,
-					title: ctx.tasks.find((t) => t.ref === i.ref)!.title,
-					reason: i.reason
-				}));
+				.map((i): DayPlanItem => {
+					const task = ctx.tasks.find((t) => t.ref === i.ref)!;
+					// Vorhandenes hat Vorrang; Vorschläge der KI nur in sinnvollen Grenzen
+					const minutes =
+						Number.isFinite(i.minutes) && i.minutes > 0
+							? Math.min(480, Math.max(5, Math.round(i.minutes / 5) * 5))
+							: null;
+					const prio = [1, 2, 3].includes(i.priority) ? (i.priority as 1 | 2 | 3) : null;
+					return {
+						taskId: ctx.refs.get(i.ref)!,
+						title: task.title,
+						reason: i.reason,
+						estimateMin: task.estimate ?? minutes,
+						priority: (task.priority as 1 | 2 | 3 | undefined) ?? prio
+					};
+				});
 			if (!items.length) throw new AiError('Die KI hat keinen Plan erstellt.', 'answer');
 			return { summary: clean(raw.summary), items };
 		}

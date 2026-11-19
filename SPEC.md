@@ -540,7 +540,11 @@ jederzeit geändert werden – dann wird es hier angepasst.
   Projekte oder Kontext-Notizen aus Pools. Das Modell darf nur einen der Namen antworten.
 - **Einstellungen pro Gerät** (Schlüssel, Modell, Ersatzmodell, Tageslimit, Datenschutz) –
   der Schlüssel wird nie synchronisiert. **Pro Pool:** an/aus, eigenes Modell, Kontext-Notizen.
-- **Tagesplan und Wochenrückblick** sind reine Anzeige (Tagesplan: Klick öffnet die Aufgabe);
+- **Tagesplan** liefert je Punkt Dauer (`minutes`, 5–480, auf 5 gerundet) und Priorität; vorhandene
+  Schätzung/Priorität der Aufgabe haben Vorrang. Im Fenster abwählen, Dauer/Priorität ändern,
+  Beginn wählen (Standard: nächste Viertelstunde) – „Für heute einplanen“ setzt `scheduled`
+  (heute, mit Uhrzeit hintereinander gereiht, ohne Uhrzeit ganztägig; nicht über Mitternacht),
+  `estimateMin` und `priority`, mit „Rückgängig“. **Wochenrückblick** ist reine Anzeige;
   Zerlegen und Freitext legen nach Bestätigung Aufgaben an (mit „Rückgängig“), Tipps lassen
   sich an die Notizen anhängen.
 - Live-Test gegen OpenRouter nur mit gesetztem `OPENROUTER_API_KEY` (nie in CI).

@@ -2,7 +2,8 @@
  * Aufgaben-Aktionen mit Rückfragen und „Rückgängig“.
  * Die eigentliche Datenänderung passiert im Repository, hier kommt nur die Nutzerführung dazu.
  */
-import type { SuggestedTask } from '#lib/ai/features.ts';
+import { format } from 'date-fns';
+import type { DayPlan, SuggestedTask } from '#lib/ai/features.ts';
 import { formatDateValue } from '#lib/domain/dates.ts';
 import { isOpen, type Pool, type Project, type Task } from '#lib/domain/types.ts';
 import { errorText } from '#lib/sync/engine.ts';
@@ -185,4 +186,26 @@ export async function addSuggestedTasks(
 		}
 	});
 	return count;
+}
+
+/** Ausgewählte Vorschläge für heute einplanen (mit Uhrzeit, Schätzung, Priorität) – rückgängig machbar */
+export async function planForToday(items: DayPlan['items'], today = new Date()) {
+	const date = format(today, 'yyyy-MM-dd');
+	const before = new Map<string, Pick<Task, 'scheduled' | 'estimateMin' | 'priority'>>();
+	for (const it of items) {
+		const t = await db.tasks.get(it.taskId);
+		if (!t) continue;
+		before.set(t.id, { scheduled: t.scheduled, estimateMin: t.estimateMin, priority: t.priority });
+		await repo.updateTask(t.id, {
+			scheduled: it.time ? { date, time: it.time } : { date },
+			...(it.estimateMin ? { estimateMin: it.estimateMin } : {}),
+			...(it.priority !== undefined ? { priority: it.priority } : {})
+		});
+	}
+	toast(m.ai.planned(before.size), {
+		label: m.ai.undo,
+		run: async () => {
+			for (const [id, prev] of before) await repo.updateTask(id, prev);
+		}
+	});
 }

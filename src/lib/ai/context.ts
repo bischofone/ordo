@@ -25,6 +25,8 @@ export interface ContextTask {
 	completed?: string;
 	postponed?: number;
 	minutes?: number;
+	/** Zeitschätzung (Minuten) */
+	estimate?: number;
 	depth: number;
 }
 
@@ -103,6 +105,7 @@ export function buildPoolContext(
 					...(t.completedAt ? { completed: format(t.completedAt, 'yyyy-MM-dd') } : {}),
 					...(t.postponeCount ? { postponed: t.postponeCount } : {}),
 					...(minutes ? { minutes } : {}),
+					...(t.estimateMin ? { estimate: t.estimateMin } : {}),
 					depth
 				});
 			}

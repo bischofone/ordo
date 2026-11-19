@@ -276,14 +276,22 @@ KI-Modellen, bezahlt wird nur, was man verbraucht (für Ordo meist Bruchteile ei
 
 ### Was die KI kann
 
-| Wo                    | Funktion               | Ergebnis                                                           |
-| --------------------- | ---------------------- | ------------------------------------------------------------------ |
-| Details einer Aufgabe | **Zerlegen**           | Unteraufgaben (bis zu zwei Ebenen) zum Abhaken und Umbenennen      |
-| Details einer Aufgabe | **Tipps**              | Lösungsansätze; auf Wunsch an die Notizen anhängen                 |
-| Pool → Knopf **KI**   | **Aus Text erstellen** | Notizen, E-Mails, Gedanken einfügen → Aufgaben mit Datum/Priorität |
-| Pool → Knopf **KI**   | **Tagesplan**          | 3–6 Aufgaben für heute mit Begründung; Klick öffnet die Aufgabe    |
-| Pool → Knopf **KI**   | **Wochenrückblick**    | Geschafft, hängt fest, Vorschlag für nächste Woche                 |
-| Inbox → Aufräumen     | **Pool vorschlagen**   | markiert den passenden Pool und nennt den Grund                    |
+| Wo                    | Funktion               | Ergebnis                                                                            |
+| --------------------- | ---------------------- | ----------------------------------------------------------------------------------- |
+| Details einer Aufgabe | **Zerlegen**           | Unteraufgaben (bis zu zwei Ebenen) zum Abhaken und Umbenennen                       |
+| Details einer Aufgabe | **Tipps**              | Lösungsansätze; auf Wunsch an die Notizen anhängen                                  |
+| Pool → Knopf **KI**   | **Aus Text erstellen** | Notizen, E-Mails, Gedanken einfügen → Aufgaben mit Datum/Priorität                  |
+| Pool → Knopf **KI**   | **Tagesplan**          | 3–6 Aufgaben für heute mit Begründung, Dauer und Priorität – anpassen und einplanen |
+| Pool → Knopf **KI**   | **Wochenrückblick**    | Geschafft, hängt fest, Vorschlag für nächste Woche                                  |
+| Inbox → Aufräumen     | **Pool vorschlagen**   | markiert den passenden Pool und nennt den Grund                                     |
+
+**Tagesplan einplanen:** Im Vorschlag lässt sich jede Aufgabe abwählen, die Dauer ändern (wie
+überall: `0:30`, `45min`, `1,5h`) und die Priorität setzen. Vorhandene Schätzungen und
+Prioritäten bleiben, sonst schlägt die KI welche vor. Mit Uhrzeiten reiht Ordo die Aufgaben ab
+dem gewählten Beginn hintereinander (09:00–10:30, 10:30–10:45 …); ohne Uhrzeiten werden sie
+nur für heute geplant. „Für heute einplanen“ trägt Datum, Uhrzeit, Dauer und Priorität ein –
+sie stehen dann unter **Heute**, und ist beim Pool ein Kalender gewählt, erscheinen sie dort als
+Termine in passender Länge.
 
 **Alles ist ein Vorschlag.** Erst „Übernehmen“ ändert etwas – und auch das lässt sich mit
 „Rückgängig“ zurücknehmen. „Neu erzeugen“ fragt noch einmal.

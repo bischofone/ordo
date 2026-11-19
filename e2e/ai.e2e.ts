@@ -16,7 +16,10 @@ function reply(body: {
 	if (schema === 'tagesplan')
 		return {
 			summary: 'Erst das Angebot, dann der Rest.',
-			items: [{ ref: 'a1', reason: 'Höchste Priorität' }]
+			items: [
+				{ ref: 'a1', reason: 'Höchste Priorität', minutes: 90, priority: 3 },
+				{ ref: 'a2', reason: 'Kurz zwischendurch', minutes: 17, priority: 2 }
+			]
 		};
 	if (schema === 'aufgaben' && user.includes('Text:'))
 		return {
@@ -146,8 +149,8 @@ test('Aus Text erstellen, Tagesplan, Kosten werden gezählt', async ({ page }) =
 	await page.getByRole('menuitem', { name: 'Tagesplan' }).click();
 	await expect(panel.getByTestId('ai-plan')).toContainText('Angebot Küche Weber');
 	await expect(panel.getByTestId('ai-plan')).toContainText('Höchste Priorität');
-	// Klick auf den Punkt öffnet die Aufgabe
-	await panel.getByTestId('ai-plan').getByRole('button').first().click();
+	// Klick auf den Titel öffnet die Aufgabe
+	await panel.getByRole('button', { name: 'Angebot Küche Weber' }).click();
 	await expect(page.getByTestId('detail').getByRole('textbox', { name: 'Titel' })).toHaveValue(
 		'Angebot Küche Weber'
 	);
@@ -183,4 +186,68 @@ test('ohne Freigabe im Pool gibt es keine KI-Knöpfe', async ({ page }) => {
 	await (await rowByTitle(page, 'Einkaufen')).getByRole('button', { name: 'Details' }).click();
 	await expect(page.getByTestId('detail-ai')).toHaveCount(0);
 	await expect(page.getByRole('button', { name: 'KI', exact: true })).toHaveCount(0);
+});
+
+test('Tagesplan: anpassen und mit Uhrzeit, Dauer und Priorität einplanen, rückgängig', async ({
+	page
+}) => {
+	await page.clock.setFixedTime(new Date(2026, 10, 20, 8, 52));
+	await setup(page);
+	await quickAdd(page, 'Rückruf Müller');
+	await page.getByRole('button', { name: 'KI' }).click();
+	await page.getByRole('menuitem', { name: 'Tagesplan' }).click();
+	const panel = page.getByTestId('ai-panel');
+	const rows = panel.getByTestId('plan-row');
+	await expect(rows).toHaveCount(2);
+
+	// Vorschläge: eigene Priorität (!1) bleibt, KI-Dauer gerundet (17 → 15 Min.)
+	await expect(panel.getByLabel('Priorität: Angebot Küche Weber')).toHaveValue('1');
+	await expect(panel.getByLabel('Dauer: Angebot Küche Weber')).toHaveValue('1:30');
+	await expect(panel.getByLabel('Dauer: Rückruf Müller')).toHaveValue('0:15');
+	await expect(panel.getByLabel('Beginn')).toHaveValue('09:00');
+	await expect(rows.nth(0)).toContainText('09:00–10:30');
+	await expect(rows.nth(1)).toContainText('10:30–10:45');
+
+	// Anpassen: anderer Beginn, kürzere Dauer, andere Priorität
+	await panel.getByLabel('Beginn').fill('13:00');
+	await panel.getByLabel('Dauer: Angebot Küche Weber').fill('1h');
+	await panel.getByLabel('Dauer: Angebot Küche Weber').blur();
+	await expect(panel.getByLabel('Dauer: Angebot Küche Weber')).toHaveValue('1:00');
+	await panel.getByLabel('Priorität: Rückruf Müller').selectOption('1');
+	await expect(rows.nth(1)).toContainText('14:00–14:15');
+	await expect(panel).toContainText('Zusammen 1:15, fertig etwa 14:15');
+
+	await panel.getByRole('button', { name: '2 Aufgaben für heute einplanen' }).click();
+	await expect(page.getByRole('status').filter({ hasText: 'eingeplant' })).toContainText(
+		'2 Aufgaben für heute eingeplant'
+	);
+
+	const task = (title: string) =>
+		page.evaluate(async (t) => {
+			const req = indexedDB.open('tasks-app');
+			await new Promise((r) => (req.onsuccess = r));
+			const all: { title: string }[] = await new Promise((r) => {
+				const g = req.result.transaction('tasks').objectStore('tasks').getAll();
+				g.onsuccess = () => r(g.result);
+			});
+			req.result.close();
+			return all.find((x) => x.title === t) as Record<string, unknown>;
+		}, title);
+	await expect
+		.poll(async () => (await task('Angebot Küche Weber')).scheduled)
+		.toEqual({
+			date: '2026-11-20',
+			time: '13:00'
+		});
+	expect((await task('Angebot Küche Weber')).estimateMin).toBe(60);
+	expect(await task('Rückruf Müller')).toMatchObject({
+		scheduled: { date: '2026-11-20', time: '14:00' },
+		estimateMin: 15,
+		priority: 1
+	});
+
+	await page.getByRole('button', { name: 'Rückgängig' }).click();
+	await expect.poll(async () => (await task('Rückruf Müller')).scheduled).toBeUndefined();
+	expect((await task('Rückruf Müller')).priority).toBe(null);
+	expect((await task('Angebot Küche Weber')).estimateMin).toBeUndefined();
 });

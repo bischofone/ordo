@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.10.0 – 20.11.2026
+
+### Neu
+
+- **KI-Tagesplan zum Einplanen:** Die KI schlägt je Aufgabe auch Dauer und Priorität vor
+  (vorhandene bleiben). Im Vorschlag abwählen, Dauer und Priorität anpassen, Beginn wählen –
+  Ordo reiht die Aufgaben mit Uhrzeiten hintereinander und plant sie mit einem Klick für heute
+  ein (mit „Rückgängig“). Mit Kalender am Pool werden daraus Termine in Nextcloud.
+
 ## 0.9.0 – 20.11.2026
 
 ### Neu

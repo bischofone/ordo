@@ -657,7 +657,21 @@ export const de = {
 		suggestionHint: 'Nur ein Vorschlag – du entscheidest, was übernommen wird.',
 		selectAll: 'Alle',
 		selectNone: 'Keine',
-		openTask: 'Aufgabe öffnen'
+		openTask: 'Aufgabe öffnen',
+		planStart: 'Beginn',
+		planWithTimes: 'Mit Uhrzeiten',
+		planWithTimesHint: 'Steht beim Pool ein Kalender, erscheinen sie dort als Termine.',
+		planEstimate: 'Dauer',
+		planPriority: 'Priorität',
+		planNone: '–',
+		planTotal: (sum: string, end: string) => `Zusammen ${sum}, fertig etwa ${end}`,
+		planTotalNoEnd: (sum: string) => `Zusammen ${sum}`,
+		planApply: (n: number) =>
+			n === 1 ? '1 Aufgabe für heute einplanen' : `${n} Aufgaben für heute einplanen`,
+		planned: (n: number) =>
+			n === 1 ? '1 Aufgabe für heute eingeplant' : `${n} Aufgaben für heute eingeplant`,
+		undo: 'Rückgängig',
+		allDay: 'ganztägig'
 	},
 	toolbar: {
 		outdent: 'Ausrücken',

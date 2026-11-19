@@ -28,7 +28,7 @@ import { m } from '#lib/i18n/index.ts';
 import { de } from 'date-fns/locale';
 import { subDays } from 'date-fns';
 import { isDone, type Pool } from '#lib/domain/types.ts';
-import { addSuggestedTasks } from './actions';
+import { addSuggestedTasks, planForToday } from './actions';
 import { toast } from './ui.svelte';
 import { AiError, createOpenRouter, type FetchLike, type OpenRouter } from '#lib/ai/openrouter.ts';
 import type { Task } from '#lib/domain/types.ts';
@@ -308,7 +308,7 @@ export function aiFromText(pool: Pool, projectId: string | null = null) {
 	});
 }
 
-/** Tagesplan für einen Pool (nur Anzeige – ein Klick öffnet die Aufgabe) */
+/** Tagesplan für einen Pool: Vorschläge prüfen, anpassen und für heute einplanen */
 export function aiDayPlan(pool: Pool) {
 	const now = Date.now();
 	openAiPanel({
@@ -322,7 +322,10 @@ export function aiDayPlan(pool: Pool) {
 					(ctx) => dayPlan(ctx, format(now, 'yyyy-MM-dd'), format(now, 'EEEE', { locale: de })),
 					{ include: (t) => !isDone(t) && !t.someday }
 				)
-			)
+			),
+		apply: async (v) => {
+			if (v.kind === 'plan') await planForToday(v.value.items);
+		}
 	});
 }
 
