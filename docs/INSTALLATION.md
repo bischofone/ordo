@@ -210,7 +210,7 @@ mit **Neu laden**. Die laufende Version steht unter Einstellungen → Sync ganz 
 kann man auch von Hand suchen.
 
 > **Ältere Container** (vor Version 0.7.0) kennen `update` noch nicht. Einmalig:
-> `pct exec <ID> -- sh -c 'wget -qO /usr/local/sbin/ordo https://raw.githubusercontent.com/bischofone/ordo/main/install/ordo-lxc.sh && ordo update'`
+> `pct exec <ID> -- sh -c 'wget -qO /usr/local/sbin/ordo https://raw.githubusercontent.com/bischofone/ordo/main/install/ordo-lxc.sh && chmod 755 /usr/local/sbin/ordo && /usr/local/sbin/ordo update'`
 > – danach reicht immer `update`.
 
 ---
