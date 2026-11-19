@@ -1,0 +1,13 @@
+# Nur was zum Bauen nötig ist – und niemals lokale Schlüssel
+.git
+.env*
+**/.env*
+node_modules
+build
+release
+test-results
+playwright-report
+.svelte-kit
+dev
+docs
+e2e

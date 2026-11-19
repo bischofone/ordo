@@ -32,6 +32,7 @@
 	import Sidebar from '#lib/ui/Sidebar.svelte';
 	import TimerBar from '#lib/ui/TimerBar.svelte';
 	import TriageBanner from '#lib/ui/TriageBanner.svelte';
+	import UpdateBanner from '#lib/ui/UpdateBanner.svelte';
 	import TaskDetail from '#lib/ui/TaskDetail.svelte';
 	import type { LayoutProps } from './$types';
 
@@ -121,6 +122,7 @@
 				</button>
 				<span class="brand"><Logo size={22} />{m.appName}</span>
 			</header>
+			<UpdateBanner />
 			<TimerBar />
 			<TriageBanner count={inboxStats.count} />
 		</div>

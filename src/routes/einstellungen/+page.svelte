@@ -23,7 +23,8 @@
 	import CalendarSettingsCard from '#lib/ui/CalendarSettingsCard.svelte';
 	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
 	import { replaceState } from '$app/navigation';
-	import { page } from '$app/state';
+	import { page, updated } from '$app/state';
+	import { APP_VERSION_LABEL } from '#lib/state/version.ts';
 
 	const pools = live(() => q.pools, []);
 	const projects = live(() => q.projects, []);
@@ -79,6 +80,17 @@
 		// Nur der Anker ändert sich (gleiche Seite), daher kein resolve() nötig
 		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		replaceState(`#${id}`, page.state);
+	}
+
+	/** Manuell nach einer neuen Version auf dem Server fragen (Hinweis erscheint dann oben) */
+	let check = $state<'idle' | 'busy' | 'current' | 'failed'>('idle');
+	async function checkUpdate() {
+		if (!navigator.onLine) {
+			check = 'failed';
+			return;
+		}
+		check = 'busy';
+		check = (await updated.check()) ? 'idle' : 'current';
 	}
 
 	const active = $derived(pools.current.filter((p) => !p.archived));
@@ -327,6 +339,14 @@
 			</section>
 			<CalendarSettingsCard />
 			<p class="about">{m.settings.about}</p>
+			<p class="about version" data-testid="app-version">
+				<span>{m.settings.version(APP_VERSION_LABEL)}</span>
+				<button class="link" onclick={checkUpdate} disabled={check === 'busy'}>
+					{check === 'busy' ? m.settings.checking : m.settings.checkUpdate}
+				</button>
+				{#if check === 'current'}<span>{m.settings.upToDate}</span>{/if}
+				{#if check === 'failed'}<span>{m.settings.updateCheckFailed}</span>{/if}
+			</p>
 		{/if}
 	</div>
 </div>
@@ -523,5 +543,16 @@
 	.about {
 		color: var(--text-faint);
 		font-size: 0.8125rem;
+	}
+	.version {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px 12px;
+		align-items: baseline;
+	}
+	.link {
+		color: var(--accent);
+		text-decoration: underline;
+		font-size: inherit;
 	}
 </style>

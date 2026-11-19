@@ -11,6 +11,7 @@
 # Variablen: ORDO_CTID, ORDO_HOSTNAME, ORDO_STORAGE, ORDO_BRIDGE, ORDO_IP (dhcp oder 10.0.0.5/24),
 #            ORDO_GATEWAY, ORDO_DISK (GB), ORDO_MEMORY (MB), ORDO_CORES, ORDO_DOMAIN,
 #            ORDO_USER, ORDO_PASSWORD, ORDO_NEXTCLOUD (z. B. https://cloud.example.com),
+#            ORDO_AUTOUPDATE (j/n),
 #            ORDO_TOKEN (nur für private Forks nötig)
 set -euo pipefail
 # Bricht etwas ab, soll man sehen, wo – nie wieder stilles Beenden
@@ -88,6 +89,7 @@ if [ "$ORDO_IP" != dhcp ]; then ask ORDO_GATEWAY "Gateway" ""; fi
 ask ORDO_DOMAIN "Domain für HTTPS (leer = nur HTTP im Heimnetz)" ""
 ask ORDO_NEXTCLOUD "Nextcloud-Adresse für Sync/Kalender (leer = keine)" ""
 ask ORDO_USER "Ordo-Benutzer" "ordo"
+ask ORDO_AUTOUPDATE "Jede Nacht automatisch aktualisieren? (j/n)" "n"
 ORDO_PASSWORD="${ORDO_PASSWORD:-}"
 ORDO_TOKEN="${ORDO_TOKEN:-}"
 
@@ -183,6 +185,9 @@ pct exec "$ORDO_CTID" -- env \
 	die "Einrichtung im Container fehlgeschlagen. Nachsehen mit: pct enter $ORDO_CTID"
 
 pct set "$ORDO_CTID" --memory "$ORDO_MEMORY" --swap 256 >/dev/null
+case "$ORDO_AUTOUPDATE" in
+[jJyY]*) pct exec "$ORDO_CTID" -- /usr/local/sbin/ordo auto-update an || true ;;
+esac
 
 # ---------- Fertig ----------
 
@@ -204,8 +209,11 @@ cat <<EOF
 
   In Ordo: Einstellungen → Sync → Konto hinzufügen, Server-Adresse $url/dav/
 
+  Aktualisieren – im Container einfach „update“ eingeben, oder vom Host aus:
+    pct exec $ORDO_CTID -- update                   neueste Version holen (Daten werden vorher gesichert)
+    pct exec $ORDO_CTID -- ordo auto-update an      jede Nacht automatisch
+
   Pflege:
-    pct exec $ORDO_CTID -- ordo update              neueste Version holen
     pct exec $ORDO_CTID -- ordo user-add NAME       weiteren Benutzer anlegen
     pct exec $ORDO_CTID -- ordo domain DOMAIN       Domain setzen (automatisch HTTPS)
     pct exec $ORDO_CTID -- ordo nextcloud ADRESSE   Nextcloud verbinden lassen (gegen CORS)

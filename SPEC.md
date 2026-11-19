@@ -412,6 +412,14 @@ jederzeit geändert werden – dann wird es hier angepasst.
 - **Server:** `docker/` mit Radicale + Caddy; App und CalDAV unter einer Adresse
   (`/dav/`) → kein CORS nötig. Alternative mit CORS als Beispiel. Lokal ohne Docker:
   `pnpm radicale`, im Dev-Server unter `/dav/` erreichbar.
+- **Updates:** Die CI veröffentlicht nur nach grünen Tests auf `main` (Job `release`):
+  Release `main-build` (`ordo-app.tar.gz`, `ordo-lxc.sh`, `version.txt` mit Commit und
+  SHA-256) und das Image `ghcr.io/bischofone/ordo` (Caddy + App, amd64/arm64).
+  `update` im LXC: Befehl selbst erneuern → Version vergleichen → Daten sichern
+  (`/var/backups/ordo`, 5 Stück) → Paket prüfen und atomar tauschen → Konfiguration neu
+  erzeugen; Fallback Bau aus dem Quellcode, alte Version bleibt bei Fehlern. Docker:
+  `docker/update.sh`. Die App erkennt neue Versionen über `_app/version.json`
+  (Name `VERSION-COMMIT`, alle 15 Min. und beim Zurückkehren) und bietet „Neu laden“ an.
 - **Tests:** Integrationstests mit zwei simulierten Geräten gegen echten Radicale
   (startet automatisch), Browser-Test mit zwei Profilen inkl. Offline-Konflikt.
 

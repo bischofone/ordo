@@ -1,5 +1,22 @@
 # Änderungen
 
+## 0.7.0 – 19.11.2026
+
+### Neu
+
+- **Updates für alle Installationswege:** Nach jedem Stand, der auf GitHub alle Tests besteht,
+  entstehen fertige Pakete – ein Release „main-build“ (App, Befehl `ordo`, Prüfsummen) und das
+  Docker-Image `ghcr.io/bischofone/ordo`.
+- **Proxmox:** im Container einfach `update` – aktualisiert zuerst den Befehl `ordo` selbst,
+  sichert die Daten (`/var/backups/ordo`, letzte 5), lädt das geprüfte Paket in Sekunden statt
+  selbst zu bauen und passt die Einstellungen an. Dazu `update --neu`, `update --quelle`,
+  `ordo auto-update an|aus` (nächtlich), `ordo sicherung`. Auch die Erstinstallation nutzt
+  jetzt das fertige Paket.
+- **Docker:** fertiges Image (amd64/arm64) statt selbst bauen; `docker/update.sh` sichert,
+  holt das neue Image und startet neu.
+- **In der App:** Hinweis „Neue Version von Ordo ist da“ mit „Neu laden“; Version und
+  „Nach neuer Version suchen“ unter Einstellungen → Sync.
+
 ## 0.6.0 – 19.11.2026
 
 ### Neu

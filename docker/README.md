@@ -25,22 +25,17 @@ docker run --rm httpd:2-alpine htpasswd -nbB alexander 'DEIN-PASSWORT' >> radica
 
 Für weitere Benutzer den Befehl wiederholen.
 
-## 3. App bauen und starten
+## 3. Starten
 
-Auf dem Rechner mit dem Projekt (oder direkt auf dem Server):
-
-```bash
-pnpm install
-pnpm build
-```
-
-Dann im Ordner `docker/`:
+Im Ordner `docker/`:
 
 ```bash
 docker compose up -d
 ```
 
-Caddy holt beim ersten Start automatisch ein HTTPS-Zertifikat.
+Docker lädt das fertige Image `ghcr.io/bischofone/ordo` (Caddy + App, für amd64 und arm64).
+Caddy holt beim ersten Start automatisch ein HTTPS-Zertifikat. Selbst bauen statt laden:
+`docker compose build`.
 
 ## 4. In der App verbinden
 
@@ -67,8 +62,17 @@ docker run --rm -v docker_radicale-data:/data -v "$PWD":/backup alpine \
 ## Aktualisieren
 
 ```bash
-pnpm build                   # neue App-Version
-docker compose pull && docker compose up -d
+./update.sh                  # neueste Dateien + Image, vorher Sicherung nach sicherungen/
+./update.sh --bauen          # Image selbst aus dem Quellcode bauen
+```
+
+Ein neues Image gibt es nach jedem Stand, der auf GitHub alle Tests bestanden hat. Geöffnete
+Ordo-Fenster zeigen danach „Neue Version von Ordo ist da“.
+
+Automatisch (z. B. jede Nacht um 4 Uhr), per `crontab -e`:
+
+```
+0 4 * * * cd /PFAD/ZU/ordo/docker && ./update.sh >> update.log 2>&1
 ```
 
 ## Andere Varianten

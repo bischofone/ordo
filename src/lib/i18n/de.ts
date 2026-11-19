@@ -217,7 +217,18 @@ export const de = {
 		agingDays: 'Einträge markieren nach (Tagen)',
 		pools: 'Pools',
 		about:
-			'Alle Daten liegen lokal auf diesem Gerät – und, falls verbunden, auf deinem CalDAV-Server.'
+			'Alle Daten liegen lokal auf diesem Gerät – und, falls verbunden, auf deinem CalDAV-Server.',
+		version: (v: string) => `Ordo ${v}`,
+		checkUpdate: 'Nach neuer Version suchen',
+		checking: 'Suche …',
+		upToDate: 'Ordo ist aktuell.',
+		updateCheckFailed: 'Server nicht erreichbar – später noch einmal versuchen.'
+	},
+	update: {
+		title: 'Neue Version von Ordo ist da',
+		hint: 'Neu laden, um sie zu verwenden. Deine Daten bleiben erhalten.',
+		reload: 'Neu laden',
+		later: 'Später'
 	},
 	timeSettings: {
 		title: 'Zeiterfassung',

@@ -4,8 +4,11 @@
 #
 #   1. cp .env.example .env   und DOMAIN eintragen
 #   2. Benutzer anlegen (siehe README.md in diesem Ordner)
-#   3. App bauen:  (im Projektordner) pnpm build
-#   4. docker compose up -d
+#   3. docker compose up -d
+#
+# Aktualisieren:  ./update.sh   (holt das neueste Image und startet neu; Daten bleiben)
+# Das Image ghcr.io/bischofone/ordo baut GitHub nach jedem geprüften Stand. Ist es nicht
+# erreichbar, baut Docker es aus diesem Ordner selbst (docker compose build).
 services:
   radicale:
     image: tomsquest/docker-radicale:3.9.1.1
@@ -31,7 +34,10 @@ services:
       retries: 3
 
   caddy:
-    image: caddy:2
+    # Caddy mit der fertigen App und dem Caddyfile aus diesem Ordner
+    image: ${ORDO_IMAGE:-ghcr.io/bischofone/ordo:latest}
+    build:
+      context: ..
     restart: unless-stopped
     ports:
       - '80:80'
@@ -40,8 +46,6 @@ services:
       DOMAIN: ${DOMAIN:?DOMAIN in .env setzen}
       ORDO_PROXY_HOSTS: ${ORDO_PROXY_HOSTS:-keiner.invalid}
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - ../build:/srv/app:ro
       - caddy-data:/data
       - caddy-config:/config
     depends_on:

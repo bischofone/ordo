@@ -94,8 +94,8 @@ kleinen **Alpine-Linux-Container** an:
 | Darin      | Caddy (App, optional HTTPS) + Radicale (CalDAV) |
 | Belegt     | etwa 180 MB                                     |
 
-Die App wird beim Einrichten im Container gebaut; Node.js und der Quellcode werden danach
-wieder entfernt. Am Ende stehen Adresse, Benutzer und Passwort auf dem Bildschirm.
+Die App kommt als fertiges, von GitHub getestetes Paket in den Container (Prüfsumme wird
+kontrolliert); nur wenn das nicht geht, wird sie dort aus dem Quellcode gebaut. Am Ende stehen Adresse, Benutzer und Passwort auf dem Bildschirm.
 
 **Ohne Rückfragen** (z. B. für Skripte) – Werte voranstellen:
 
@@ -110,7 +110,7 @@ Alle Variablen stehen oben in [`install/proxmox.sh`](../install/proxmox.sh).
 
 | Befehl                               | Wirkung                                           |
 | ------------------------------------ | ------------------------------------------------- |
-| `pct exec 120 -- ordo update`        | neueste Version von GitHub holen und bauen        |
+| `pct exec 120 -- update`             | neueste Version holen (siehe „Aktualisieren“)     |
 | `pct exec 120 -- ordo user-add NAME` | Benutzer anlegen / Passwort ändern (wird erzeugt) |
 | `pct exec 120 -- ordo user-del NAME` | Benutzer entfernen (Daten bleiben)                |
 | `pct exec 120 -- ordo domain DOMAIN` | Domain setzen → Caddy holt automatisch HTTPS      |
@@ -136,7 +136,6 @@ Für einen VPS oder jeden Rechner mit Docker ist alles in [`docker/`](../docker/
 Kurzfassung (Details und Datensicherung in der [Server-Anleitung](../docker/README.md)):
 
 ```bash
-pnpm install && pnpm build                 # App bauen
 cd docker
 cp .env.example .env && nano .env          # DOMAIN=ordo.deine-domain.de
 docker run --rm httpd:2-alpine htpasswd -nbB DEIN-NAME 'DEIN-PASSWORT' >> radicale/users
@@ -144,7 +143,8 @@ docker compose up -d
 ```
 
 Danach ist Ordo unter `https://DEINE-DOMAIN/` erreichbar, der CalDAV-Server unter
-`https://DEINE-DOMAIN/dav/`.
+`https://DEINE-DOMAIN/dav/`. Das Image `ghcr.io/bischofone/ordo` (Caddy + fertige App) baut
+GitHub nach jedem getesteten Stand; ist es nicht erreichbar, baut Docker es selbst.
 
 ### Nextcloud verbinden
 
@@ -165,15 +165,53 @@ direkten Weg und nimmt die Weiterleitung nur, wenn der Browser blockiert.
 der Server Anfragen aus dem Browser nicht, gilt dasselbe wie für Nextcloud – oder man gibt
 ihm CORS-Freigaben, Beispiel in [`docker/Caddyfile.cors-beispiel`](../docker/Caddyfile.cors-beispiel).
 
-### Docker aktualisieren
+### Aktualisieren
 
-```bash
-git pull
-pnpm install
-pnpm build
-```
+Nach jeder Änderung prüft GitHub alles automatisch (Typen, Lint, Unit- und Browser-Tests).
+**Nur wenn alles grün ist**, entstehen daraus neue fertige Pakete – das dauert nach einem
+Push etwa 10 Minuten. Deine Aufgaben bleiben bei jedem Update erhalten und werden vorher
+gesichert.
 
-Caddy liefert die neue Version sofort aus. Geöffnete Apps laden sie beim nächsten Start.
+| Wie Ordo läuft     | Aktualisieren                                                                     |
+| ------------------ | --------------------------------------------------------------------------------- |
+| Proxmox-Container  | im Container `update` – oder vom Host: `pct exec <ID> -- update`                  |
+| Docker             | im Ordner `docker/`: `./update.sh`                                                |
+| Lokal (`pnpm dev`) | `git pull && pnpm install` – der Dev-Server lädt neu                              |
+| Selbst gebaut      | `git pull && pnpm install && pnpm build`, dann den Ordner `build/` neu ausliefern |
+
+**Proxmox im Detail** – `update` macht der Reihe nach:
+
+1. holt den neuesten Befehl `ordo` selbst (neue Unterbefehle und Korrekturen gelten sofort),
+2. vergleicht die installierte Version mit dem neuesten geprüften Paket – ist sie aktuell,
+   passiert nichts weiter,
+3. sichert Aufgaben, Benutzer und Einstellungen nach `/var/backups/ordo` (die letzten 5 bleiben),
+4. lädt das Paket, prüft die Prüfsumme und tauscht die App in einem Rutsch aus,
+5. passt die erzeugten Einstellungen (Caddy, Radicale) an und startet nur bei Änderungen neu.
+
+| Befehl                    | Wirkung                                                            |
+| ------------------------- | ------------------------------------------------------------------ |
+| `update`                  | wie oben                                                           |
+| `update --neu`            | Paket neu einspielen, auch wenn die Version schon stimmt           |
+| `update --quelle`         | selbst aus dem Quellcode bauen (braucht ~1 GB RAM, dauert Minuten) |
+| `ordo auto-update an/aus` | jede Nacht automatisch (Protokoll: `/var/log/ordo-update.log`)     |
+| `ordo sicherung`          | nur sichern                                                        |
+| `ordo status`             | installierte Version, Auto-Update, Anzahl Sicherungen, Dienste     |
+
+Zurückholen einer Sicherung im Container:
+`rc-service radicale stop && tar xzf /var/backups/ordo/ordo-DATUM.tar.gz -C / && rc-service radicale start`
+
+**Docker im Detail** – `./update.sh` holt die neuesten Dateien (`git pull`), sichert das
+Volume `radicale-data` nach `docker/sicherungen/`, zieht das neue Image und startet neu.
+Wer lieber selbst baut: `./update.sh --bauen`.
+
+**In der App** – Geöffnete Ordo-Fenster bemerken eine neue Version von selbst (beim
+Zurückkehren in die App und alle 15 Minuten) und zeigen oben „Neue Version von Ordo ist da“
+mit **Neu laden**. Die laufende Version steht unter Einstellungen → Sync ganz unten, dort
+kann man auch von Hand suchen.
+
+> **Ältere Container** (vor Version 0.7.0) kennen `update` noch nicht. Einmalig:
+> `pct exec <ID> -- sh -c 'wget -qO /usr/local/sbin/ordo https://raw.githubusercontent.com/bischofone/ordo/main/install/ordo-lxc.sh && ordo update'`
+> – danach reicht immer `update`.
 
 ---
 
@@ -206,5 +244,5 @@ und die vorhandenen Listen mit **„Als Pool übernehmen“** holen.
 | Port 5173 ist belegt                               | `pnpm dev --port 5174`                                                             |
 | Sync: „Anmeldung fehlgeschlagen“                   | Benutzer/Passwort prüfen; bei Docker die Datei `docker/radicale/users`             |
 | Sync: „Server nicht erreichbar“ bei fremdem Server | CORS-Freigaben fehlen – siehe `Caddyfile.cors-beispiel`                            |
-| App zeigt nach Update die alte Version             | App einmal ganz schließen und neu öffnen (der Service Worker tauscht dann)         |
+| App zeigt nach Update die alte Version             | Auf „Neu laden“ im Hinweis tippen – oder die App einmal ganz schließen und öffnen  |
 | Alles zurücksetzen                                 | Browser-Daten der Seite löschen. **Achtung:** ohne Sync sind die Aufgaben dann weg |

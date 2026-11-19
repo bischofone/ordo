@@ -28,3 +28,4 @@ playwright-report
 dev/radicale/.venv
 dev/radicale/data
 dev/radicale/users
+/release

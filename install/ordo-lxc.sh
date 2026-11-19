@@ -3,13 +3,21 @@
 # Wird von install/proxmox.sh als /usr/local/sbin/ordo in den Container gelegt.
 #
 #   ordo install NAME [PASSWORT]   Pakete, App, CalDAV und Webserver einrichten, ersten Benutzer anlegen
-#   ordo update                    neueste Version von GitHub holen und bauen
+#   update                         Kurzform für „ordo update“
+#   ordo update [--neu] [--quelle] neueste Version holen (--neu: auch wenn aktuell, --quelle: selbst bauen)
+#   ordo auto-update an|aus        jede Nacht automatisch aktualisieren
 #   ordo user-add NAME [PASSWORT]  Benutzer anlegen oder Passwort ändern (ohne Passwort: wird erzeugt)
 #   ordo user-del NAME             Benutzer entfernen (seine Daten bleiben liegen)
 #   ordo domain [DOMAIN]           Domain setzen (mit Domain: automatisch HTTPS), leer = nur HTTP auf Port 80
 #   ordo nextcloud ADRESSE         Weiterleitung zu Nextcloud (o. a. CalDAV-Server ohne CORS) erlauben
 #   ordo nextcloud-entfernen HOST  Weiterleitung wieder entfernen
+#   ordo sicherung                 Aufgaben und Benutzer sichern (nach /var/backups/ordo)
 #   ordo status                    Version, Dienste, Adressen
+#
+# Updates: GitHub baut nach jedem erfolgreich getesteten Stand ein fertiges Paket
+# (Release „main-build“). „update“ lädt es, prüft die Prüfsumme, sichert vorher die Daten,
+# aktualisiert auch diesen Befehl selbst und passt die Einstellungen an. Ohne Paket (privater
+# Fork, anderer Zweig, GitHub nicht erreichbar) wird aus dem Quellcode gebaut.
 #
 # Einstellungen über Umgebungsvariablen:
 #   ORDO_REPO    Git-Adresse   (Standard: https://github.com/bischofone/ordo.git)
@@ -27,6 +35,8 @@ APP_DIR=/var/www/ordo
 CONF_DIR=/etc/ordo
 USERS=/etc/radicale/users
 DATA=/var/lib/radicale/collections
+BACKUPS=/var/backups/ordo
+RELEASE_TAG=main-build
 
 say() { printf '\033[1;34m›\033[0m %s\n' "$*"; }
 die() {
@@ -51,11 +61,116 @@ install_packages() {
 	grep -q '/community' /etc/apk/repositories ||
 		echo "https://dl-cdn.alpinelinux.org/alpine/v$ver/community" >>/etc/apk/repositories
 	apk update -q
-	apk add -q caddy radicale py3-bcrypt apache2-utils ca-certificates tzdata
+	apk add -q caddy radicale py3-bcrypt apache2-utils ca-certificates tzdata curl
 }
 
-# ---------- App bauen ----------
+# ---------- App holen ----------
 
+dl() { curl -fsSL --retry 3 --connect-timeout 20 -o "$2" "$1"; }
+
+# „besitzer/name“ des GitHub-Repos – leer bei anderen Servern
+github_repo() {
+	printf '%s' "$REPO" | sed -E 's#\.git$##; s#/+$##' | sed -nE 's#^https://github\.com/([^/]+/[^/]+)$#\1#p'
+}
+
+# Woher das fertige Paket kommt (leer → aus dem Quellcode bauen)
+release_url() {
+	if [ -n "${ORDO_RELEASE_URL:-}" ]; then
+		echo "$ORDO_RELEASE_URL"
+		return
+	fi
+	[ -z "${ORDO_TOKEN:-}" ] && [ "$BRANCH" = main ] || return 0
+	r="$(github_repo)"
+	[ -n "$r" ] && echo "https://github.com/$r/releases/download/$RELEASE_TAG"
+	return 0
+}
+
+# Steckbrief des fertigen Pakets lesen → REL_COMMIT, REL_VERSION, REL_APP_SHA, REL_SCRIPT_SHA
+read_release() {
+	base="$(release_url)"
+	[ -n "$base" ] || return 1
+	dl "$base/version.txt" "$WORK/version.txt" 2>/dev/null || return 1
+	REL_COMMIT="$(sed -n 's/^commit=//p' "$WORK/version.txt" | cut -c1-7)"
+	REL_VERSION="$(sed -n 's/^version=//p' "$WORK/version.txt")"
+	REL_APP_SHA="$(sed -n 's/^app_sha256=//p' "$WORK/version.txt")"
+	REL_SCRIPT_SHA="$(sed -n 's/^script_sha256=//p' "$WORK/version.txt")"
+	[ -n "$REL_COMMIT" ] && [ -n "$REL_APP_SHA" ]
+}
+
+# Neuester Stand auf GitHub (kann noch in der Prüfung sein) – leer, wenn unbekannt
+latest_commit() {
+	r="$(github_repo)"
+	[ -n "$r" ] && [ -z "${ORDO_TOKEN:-}" ] || return 0
+	curl -fsS --connect-timeout 10 -H 'Accept: application/vnd.github.sha' \
+		"https://api.github.com/repos/$r/commits/$BRANCH" 2>/dev/null | cut -c1-7 || true
+}
+
+sha_ok() { [ "$(sha256sum "$1" | cut -d' ' -f1)" = "$2" ]; }
+
+installed_commit() { cat "$APP_DIR/.version" 2>/dev/null || true; }
+
+# Neue App-Dateien (Ordner $1) an die Stelle der alten setzen – in einem Rutsch
+swap_app() {
+	echo "$2" >"$1/.version"
+	[ -n "${3:-}" ] && echo "$3" >"$1/.ordo-version"
+	mkdir -p "$(dirname "$APP_DIR")"
+	rm -rf "$APP_DIR.alt"
+	[ -d "$APP_DIR" ] && mv "$APP_DIR" "$APP_DIR.alt"
+	mv "$1" "$APP_DIR"
+	rm -rf "$APP_DIR.alt"
+}
+
+# Den Befehl „ordo“ ersetzen (neue Unterbefehle, Korrekturen) und die Kurzform „update“ anlegen
+install_self() {
+	mkdir -p /usr/local/sbin /usr/local/bin
+	if [ -n "${1:-}" ] && [ -s "$1" ] && ! cmp -s "$1" /usr/local/sbin/ordo; then
+		cp "$1" /usr/local/sbin/ordo.neu && chmod 755 /usr/local/sbin/ordo.neu &&
+			mv /usr/local/sbin/ordo.neu /usr/local/sbin/ordo
+	fi
+	cat >/usr/local/bin/update <<'EOF'
+#!/bin/sh
+# Ordo aktualisieren – Kurzform für „ordo update“
+exec /usr/local/sbin/ordo update "$@"
+EOF
+	chmod 755 /usr/local/bin/update
+	cat >/etc/motd <<'EOF'
+
+  Ordo – Aufgaben in Ordnung
+    update          neueste Version holen
+    ordo status     Version, Dienste, Adressen
+    ordo            alle Befehle
+
+EOF
+}
+
+# Fertiges Paket laden und einsetzen (Steckbrief muss schon gelesen sein)
+fetch_app() {
+	base="$(release_url)"
+	say "Ordo $REL_COMMIT herunterladen …"
+	dl "$base/ordo-app.tar.gz" "$WORK/ordo-app.tar.gz" || return 1
+	if ! sha_ok "$WORK/ordo-app.tar.gz" "$REL_APP_SHA"; then
+		say "Prüfsumme stimmt nicht (Paket wird vielleicht gerade erneuert)."
+		return 1
+	fi
+	rm -rf "$APP_DIR.neu"
+	mkdir -p "$APP_DIR.neu"
+	tar xzf "$WORK/ordo-app.tar.gz" -C "$APP_DIR.neu" || return 1
+	[ -s "$APP_DIR.neu/index.html" ] || return 1
+	swap_app "$APP_DIR.neu" "$REL_COMMIT" "$REL_VERSION"
+	say "Ordo $REL_VERSION ($REL_COMMIT) ist installiert."
+}
+
+# Bauwerkzeuge wieder entfernen (auch nach einem Fehler)
+build_cleanup() {
+	store="$(cd "$WORK/src" 2>/dev/null && pnpm store path 2>/dev/null || true)"
+	rm -rf "$WORK/src" "${store:-/nonexistent}" /root/.npm /root/.cache /root/.local/share/pnpm
+	npm uninstall -g --silent pnpm >/dev/null 2>&1 || true
+	apk del -q .ordo-pnpm >/dev/null 2>&1 || true
+	apk del -q .ordo-build >/dev/null 2>&1 || true
+	rm -rf /var/cache/apk/*
+}
+
+# Aus dem Quellcode bauen – braucht ein paar Minuten und etwa 1 GB Arbeitsspeicher
 build_app() {
 	say "Ordo herunterladen und bauen (dauert ein paar Minuten) …"
 	apk add -q --virtual .ordo-build nodejs npm git
@@ -65,44 +180,62 @@ build_app() {
 	fi
 	command -v pnpm >/dev/null || die "pnpm fehlt nach der Installation (PATH: $PATH)."
 
-	src="$(mktemp -d)"
+	src="$WORK/src"
 	url="$REPO"
 	if [ -n "${ORDO_TOKEN:-}" ]; then
 		url="$(echo "$REPO" | sed "s#https://#https://x-access-token:${ORDO_TOKEN}@#")"
 	fi
-	git clone -q --depth 1 --branch "$BRANCH" "$url" "$src" ||
+	git clone -q --depth 1 --branch "$BRANCH" "$url" "$src" || {
+		build_cleanup
 		die "Herunterladen fehlgeschlagen. Internet erreichbar? Bei privatem Fork ORDO_TOKEN setzen."
-	commit="$(git -C "$src" rev-parse --short HEAD)"
-	# Den Befehl „ordo“ selbst gleich mit aktualisieren (neue Unterbefehle, Korrekturen)
-	if [ -s "$src/install/ordo-lxc.sh" ] && [ -w /usr/local/sbin ]; then
-		cp "$src/install/ordo-lxc.sh" /usr/local/sbin/ordo.neu && chmod 755 /usr/local/sbin/ordo.neu &&
-			mv /usr/local/sbin/ordo.neu /usr/local/sbin/ordo
-	fi
+	}
+	commit="$(git -C "$src" rev-parse --short=7 HEAD)"
+	version="$(sed -n 's/^[[:space:]]*"version": "\(.*\)".*/\1/p' "$src/package.json" | head -1)"
+	install_self "$src/install/ordo-lxc.sh"
 
 	(
 		cd "$src"
-		export CI=true
+		export CI=true ORDO_COMMIT="$commit"
 		pnpm install --frozen-lockfile --silent
 		pnpm build >/dev/null
-	) || die "Bauen fehlgeschlagen."
+	) || {
+		build_cleanup
+		die "Bauen fehlgeschlagen – die bisherige Version läuft unverändert weiter."
+	}
 
-	mkdir -p "$(dirname "$APP_DIR")"
 	rm -rf "$APP_DIR.neu"
 	cp -r "$src/build" "$APP_DIR.neu"
-	echo "$commit" >"$APP_DIR.neu/.version"
-	rm -rf "$APP_DIR.alt"
-	[ -d "$APP_DIR" ] && mv "$APP_DIR" "$APP_DIR.alt"
-	mv "$APP_DIR.neu" "$APP_DIR"
-	rm -rf "$APP_DIR.alt"
+	swap_app "$APP_DIR.neu" "$commit" "$version"
 
 	say "Aufräumen (Node.js und Quellcode werden nicht mehr gebraucht) …"
-	store="$(cd "$src" && pnpm store path 2>/dev/null || true)"
-	rm -rf "$src" "${store:-/nonexistent}" /root/.npm /root/.cache /root/.local/share/pnpm
-	npm uninstall -g --silent pnpm >/dev/null 2>&1 || true
-	apk del -q .ordo-pnpm >/dev/null 2>&1 || true
-	apk del -q .ordo-build
-	rm -rf /var/cache/apk/*
-	say "Ordo $commit ist gebaut."
+	build_cleanup
+	say "Ordo $version ($commit) ist gebaut."
+}
+
+# Erst das fertige Paket versuchen, sonst selbst bauen
+get_app() {
+	if [ -z "${1:-}" ]; then
+		if { [ -n "${REL_COMMIT:-}" ] || read_release; } && fetch_app; then return 0; fi
+		say "Kein fertiges Paket verfügbar – Ordo wird aus dem Quellcode gebaut."
+	fi
+	build_app
+}
+
+# ---------- Sicherung ----------
+
+backup_data() {
+	[ -d "$DATA" ] || return 0
+	mkdir -p "$BACKUPS"
+	chmod 700 "$BACKUPS"
+	f="$BACKUPS/ordo-$(date +%Y-%m-%d_%H%M%S).tar.gz"
+	set -- "${DATA#/}"
+	[ -f "$USERS" ] && set -- "$@" "${USERS#/}"
+	[ -d "$CONF_DIR" ] && set -- "$@" "${CONF_DIR#/}"
+	tar czf "$f" -C / "$@" ||
+		die "Sicherung fehlgeschlagen – Update abgebrochen, nichts wurde verändert."
+	# Die letzten 5 Sicherungen behalten
+	ls -1t "$BACKUPS"/ordo-*.tar.gz 2>/dev/null | tail -n +6 | xargs -r rm -f
+	say "Daten gesichert: $f"
 }
 
 # ---------- Konfiguration ----------
@@ -247,7 +380,8 @@ cmd_install() {
 		[ -n "$h" ] && { grep -qx "$h" "$CONF_DIR/proxy-hosts" 2>/dev/null || echo "$h" >>"$CONF_DIR/proxy-hosts"; }
 	done
 	install_packages
-	build_app
+	get_app
+	install_self
 	write_radicale_config
 	write_caddyfile
 	[ -n "${1:-}" ] && user_add "$1" "${2:-}"
@@ -256,9 +390,86 @@ cmd_install() {
 }
 
 cmd_update() {
-	build_app
+	force=""
+	from_source=""
+	for a in "$@"; do
+		case "$a" in
+		--neu | --force | -f) force=1 ;;
+		--quelle) from_source=1 ;;
+		*) die "Unbekannte Option: $a (erlaubt: --neu, --quelle)" ;;
+		esac
+	done
+	command -v curl >/dev/null || apk add -q curl
+
+	have="$(installed_commit)"
+	if [ -z "$from_source" ] && read_release; then
+		# 1. Zuerst diesen Befehl selbst erneuern und mit der neuen Fassung weitermachen
+		if [ -z "${ORDO_SELF_UPDATED:-}" ] && [ -n "$REL_SCRIPT_SHA" ] &&
+			dl "$(release_url)/ordo-lxc.sh" "$WORK/ordo-lxc.sh" &&
+			sha_ok "$WORK/ordo-lxc.sh" "$REL_SCRIPT_SHA" &&
+			! cmp -s "$WORK/ordo-lxc.sh" /usr/local/sbin/ordo; then
+			install_self "$WORK/ordo-lxc.sh"
+			say "Befehl „ordo“ aktualisiert."
+			rm -rf "$WORK"
+			ORDO_SELF_UPDATED=1 exec /usr/local/sbin/ordo update "$@"
+		fi
+		newest="$(latest_commit)"
+		if [ -n "$newest" ] && [ "$newest" != "$REL_COMMIT" ]; then
+			say "Hinweis: Der allerneueste Stand ($newest) wird auf GitHub gerade noch geprüft."
+			echo "  Installiert wird der letzte geprüfte Stand ($REL_COMMIT). In ein paar Minuten nochmal „update“."
+		fi
+		if [ "$have" = "$REL_COMMIT" ] && [ -z "$force" ]; then
+			install_self
+			apply_config
+			say "Ordo ist aktuell ($(cat "$APP_DIR/.ordo-version" 2>/dev/null || echo "?") · $have)."
+			return 0
+		fi
+	fi
+
+	backup_data
+	say "Pakete aktualisieren …"
+	install_packages
+	get_app "$from_source"
+	install_self
+	apply_config
 	rc-service caddy reload >/dev/null 2>&1 || rc-service caddy restart >/dev/null
-	say "Fertig. Geöffnete Apps laden die neue Version beim nächsten Start."
+	say "Fertig. Offene Ordo-Fenster zeigen „Neue Version“ und laden mit einem Klick neu."
+}
+
+# Erzeugte Einstellungen an die neue Version anpassen; Dienste nur bei Änderungen neu starten
+apply_config() {
+	before="$(cat /etc/radicale/config /etc/caddy/Caddyfile 2>/dev/null | cksum)"
+	write_radicale_config
+	write_caddyfile
+	after="$(cat /etc/radicale/config /etc/caddy/Caddyfile 2>/dev/null | cksum)"
+	if [ "$before" != "$after" ]; then
+		say "Einstellungen angepasst."
+		rc-service radicale restart >/dev/null 2>&1 || true
+		rc-service caddy restart >/dev/null 2>&1 || true
+	fi
+}
+
+AUTO=/etc/periodic/daily/ordo-update
+
+cmd_auto_update() {
+	case "${1:-}" in
+	an | on | ja)
+		cat >"$AUTO" <<'EOF'
+#!/bin/sh
+# Von „ordo auto-update an“ angelegt – jede Nacht neueste geprüfte Version holen
+/usr/local/sbin/ordo update >>/var/log/ordo-update.log 2>&1
+EOF
+		chmod 755 "$AUTO"
+		rc-update add crond default >/dev/null 2>&1 || true
+		rc-service crond start >/dev/null 2>&1 || true
+		say "Automatische Updates sind an (jede Nacht, Protokoll: /var/log/ordo-update.log)."
+		;;
+	aus | off | nein)
+		rm -f "$AUTO"
+		say "Automatische Updates sind aus. Aktualisieren mit: update"
+		;;
+	*) die "ordo auto-update an  oder  ordo auto-update aus" ;;
+	esac
 }
 
 cmd_domain() {
@@ -299,11 +510,13 @@ cmd_nextcloud_remove() {
 
 cmd_status() {
 	echo
-	printf 'Ordo-Version: %s\n' "$(cat "$APP_DIR/.version" 2>/dev/null || echo '–')"
+	printf 'Ordo-Version: %s (%s)\n' "$(cat "$APP_DIR/.ordo-version" 2>/dev/null || echo '?')" "$(installed_commit)"
+	printf 'Auto-Update:  %s\n' "$([ -x "$AUTO" ] && echo an || echo 'aus (ordo auto-update an)')"
+	printf 'Sicherungen:  %s\n' "$(ls -1 "$BACKUPS"/ordo-*.tar.gz 2>/dev/null | wc -l) in $BACKUPS"
 	printf 'Radicale:     %s\n' "$(rc-service radicale status 2>/dev/null | sed 's/.*: //' || echo '–')"
 	printf 'Caddy:        %s\n' "$(rc-service caddy status 2>/dev/null | sed 's/.*: //' || echo '–')"
 	printf 'Benutzer:     %s\n' "$(cut -d: -f1 "$USERS" 2>/dev/null | tr '\n' ' ')"
-	printf 'Nextcloud:    %s\n' "$(tr '\n' ' ' <"$CONF_DIR/proxy-hosts" 2>/dev/null || echo '–')"
+	printf 'Nextcloud:    %s\n' "$(if [ -s "$CONF_DIR/proxy-hosts" ]; then tr '\n' ' ' <"$CONF_DIR/proxy-hosts"; else echo '–'; fi)"
 	echo
 	for a in $(addresses); do
 		printf 'App:     %s/\n' "$a"
@@ -312,14 +525,20 @@ cmd_status() {
 	echo
 }
 
+# Arbeitsordner für Downloads; wird am Ende immer aufgeräumt
+WORK="$(mktemp -d)"
+trap 'rm -rf "$WORK"' EXIT
+
 case "${1:-}" in
 install) shift && cmd_install "$@" ;;
-update) cmd_update ;;
+update) shift && cmd_update "$@" ;;
+auto-update) shift && cmd_auto_update "$@" ;;
+sicherung) backup_data ;;
 user-add) shift && user_add "$@" ;;
 user-del) shift && user_del "$@" ;;
 domain) shift && cmd_domain "$@" ;;
 nextcloud) shift && cmd_nextcloud "$@" ;;
 nextcloud-entfernen) shift && cmd_nextcloud_remove "$@" ;;
 status) cmd_status ;;
-*) sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//' ;;
+*) sed -n '2,/^set -eu/p' "$0" | grep '^#' | sed 's/^# \{0,1\}//' ;;
 esac
