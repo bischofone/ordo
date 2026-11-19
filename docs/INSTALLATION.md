@@ -68,6 +68,18 @@ In Ordo: **Einstellungen → Sync → Konto hinzufügen**
 Danach in einem Pool über den Stift-Knopf unter „Synchronisation“ **„Neue Liste in …“** wählen.
 Ein zweites Browserfenster im privaten Modus spielt ein zweites Gerät.
 
+**Weitere Benutzer** für den Testserver – so wie später auf dem echten Server:
+
+```bash
+pnpm benutzer neu maria        # zeigt Adresse, Benutzer und erzeugtes Passwort
+pnpm benutzer                  # alle anzeigen
+pnpm benutzer passwort maria   # neues Passwort
+pnpm benutzer loeschen maria
+```
+
+Den zweiten Benutzer am besten in einem privaten Fenster ausprobieren – jedes Fenster hat
+eigene lokale Daten, und jeder Benutzer sieht auf dem Server nur seine eigenen Listen.
+
 ---
 
 ## 2. Eigener Server

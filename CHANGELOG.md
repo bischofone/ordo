@@ -9,6 +9,7 @@
   Änderung je Benutzer. Dazu `ordo user-list`, `user-passwd`, `user-del NAME --daten`.
   Zugangsdaten werden fertig zum Weitergeben angezeigt.
 - **Docker:** `docker/benutzer.sh` (neu, passwort, loeschen) statt htpasswd von Hand.
+- **Lokal:** `pnpm benutzer` (dieselben Befehle) für den Test-Server aus `pnpm radicale`.
 
 ## 0.8.0 – 19.11.2026
 
