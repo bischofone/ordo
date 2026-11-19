@@ -80,7 +80,14 @@
 	 *   gesetzt; am Handy/schmalen Fenster nur bearbeitet, damit das Tippen frei bleibt.
 	 */
 	// ---------- Zeitfeld neben dem Play-Knopf ----------
-	const ownMinutes = $derived(entryMinutes(task.timeEntries));
+	const storedMinutes = $derived(entryMinutes(task.timeEntries));
+	/** Gerade gespeichert, aber von der Datenbank noch nicht zurückgemeldet. Ohne das würde
+	 *  die verspätete Rückmeldung eine schon neu getippte Eingabe („+15“) überschreiben. */
+	let pendingMinutes = $state<number | null>(null);
+	const ownMinutes = $derived(pendingMinutes ?? storedMinutes);
+	$effect(() => {
+		if (pendingMinutes !== null && storedMinutes === pendingMinutes) pendingMinutes = null;
+	});
 	let timeInvalid = $state(false);
 
 	/** Eingabe übernehmen: Wert = neue Gesamtzeit, „+0:15“ = dazu, leer/0 = löschen. */
@@ -93,7 +100,8 @@
 			timeInvalid = true;
 			setTimeout(() => (timeInvalid = false), 1200);
 		} else if (total !== ownMinutes) {
-			void repo.setTimeTotal(task.id, total);
+			pendingMinutes = total;
+			repo.setTimeTotal(task.id, total).catch(() => (pendingMinutes = null));
 		}
 		field.value = total === null ? shown : total ? formatDuration(total) : '';
 	}
