@@ -108,13 +108,35 @@ Alle Variablen stehen oben in [`install/proxmox.sh`](../install/proxmox.sh).
 
 **Pflege** – vom Proxmox-Host aus (`120` = deine Container-ID) oder im Container direkt `ordo …`:
 
-| Befehl                               | Wirkung                                           |
-| ------------------------------------ | ------------------------------------------------- |
-| `pct exec 120 -- update`             | neueste Version holen (siehe „Aktualisieren“)     |
-| `pct exec 120 -- ordo user-add NAME` | Benutzer anlegen / Passwort ändern (wird erzeugt) |
-| `pct exec 120 -- ordo user-del NAME` | Benutzer entfernen (Daten bleiben)                |
-| `pct exec 120 -- ordo domain DOMAIN` | Domain setzen → Caddy holt automatisch HTTPS      |
-| `pct exec 120 -- ordo status`        | Version, Dienste, Benutzer, Adressen              |
+| Befehl                               | Wirkung                                       |
+| ------------------------------------ | --------------------------------------------- |
+| `pct exec 120 -- update`             | neueste Version holen (siehe „Aktualisieren“) |
+| `pct exec 120 -- ordo benutzer`      | Benutzer verwalten (Menü, siehe unten)        |
+| `pct exec 120 -- ordo domain DOMAIN` | Domain setzen → Caddy holt automatisch HTTPS  |
+| `pct exec 120 -- ordo status`        | Version, Dienste, Benutzer, Adressen          |
+
+**Benutzer verwalten:** Jeder Benutzer hat eigene Listen auf dem Server und sieht nur seine.
+Am einfachsten über das Menü:
+
+```bash
+pct exec 120 -- ordo benutzer
+```
+
+```
+Ordo – Benutzer
+  alex             2 Listen · 34 Einträge · zuletzt geändert 19.11.2026 23:15
+  maria            noch keine Daten
+
+  [n] Neu anlegen   [p] Passwort neu setzen   [z] Zugangsdaten zeigen   [l] Löschen   [q] Fertig
+```
+
+Beim Anlegen erzeugt Ordo ein sicheres Passwort (oder nimmt deins) und zeigt die fertigen
+Zugangsdaten zum Weitergeben an. Löschen fragt zur Sicherheit nach dem Namen und ob die
+Aufgaben auf dem Server mit weg sollen (dann wird vorher gesichert). Passwörter werden nur
+verschlüsselt (bcrypt) gespeichert – vergessene lassen sich daher nur neu setzen.
+
+Dasselbe ohne Menü, z. B. für Skripte: `ordo user-list`, `ordo user-add NAME [PASSWORT]`,
+`ordo user-passwd NAME [PASSWORT]`, `ordo user-del NAME [--daten]`.
 
 **HTTPS:** Ohne Domain läuft Ordo per HTTP auf Port 80 – gut fürs Heimnetz oder hinter einem
 vorhandenen Reverse-Proxy (z. B. Nginx Proxy Manager, Traefik): dort einfach auf
@@ -138,7 +160,7 @@ Kurzfassung (Details und Datensicherung in der [Server-Anleitung](../docker/READ
 ```bash
 cd docker
 cp .env.example .env && nano .env          # DOMAIN=ordo.deine-domain.de
-docker run --rm httpd:2-alpine htpasswd -nbB DEIN-NAME 'DEIN-PASSWORT' >> radicale/users
+./benutzer.sh neu DEIN-NAME                # zeigt das erzeugte Passwort
 docker compose up -d
 ```
 

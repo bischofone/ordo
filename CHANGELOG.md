@@ -1,5 +1,15 @@
 # Änderungen
 
+## 0.9.0 – 20.11.2026
+
+### Neu
+
+- **Benutzer verwalten** auf dem eigenen Server: `ordo benutzer` öffnet ein Menü zum Anlegen,
+  Passwort neu setzen, Zugangsdaten anzeigen und Löschen – mit Listen, Einträgen und letzter
+  Änderung je Benutzer. Dazu `ordo user-list`, `user-passwd`, `user-del NAME --daten`.
+  Zugangsdaten werden fertig zum Weitergeben angezeigt.
+- **Docker:** `docker/benutzer.sh` (neu, passwort, loeschen) statt htpasswd von Hand.
+
 ## 0.8.0 – 19.11.2026
 
 ### Neu

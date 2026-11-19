@@ -89,6 +89,7 @@ if [ "$ORDO_IP" != dhcp ]; then ask ORDO_GATEWAY "Gateway" ""; fi
 ask ORDO_DOMAIN "Domain für HTTPS (leer = nur HTTP im Heimnetz)" ""
 ask ORDO_NEXTCLOUD "Nextcloud-Adresse für Sync/Kalender (leer = keine)" ""
 ask ORDO_USER "Ordo-Benutzer" "ordo"
+ORDO_USER="$(printf '%s' "$ORDO_USER" | tr 'A-Z' 'a-z')"
 ask ORDO_AUTOUPDATE "Jede Nacht automatisch aktualisieren? (j/n)" "n"
 ORDO_PASSWORD="${ORDO_PASSWORD:-}"
 ORDO_TOKEN="${ORDO_TOKEN:-}"
@@ -214,7 +215,7 @@ cat <<EOF
     pct exec $ORDO_CTID -- ordo auto-update an      jede Nacht automatisch
 
   Pflege:
-    pct exec $ORDO_CTID -- ordo user-add NAME       weiteren Benutzer anlegen
+    pct exec $ORDO_CTID -- ordo benutzer            Benutzer verwalten (Menü)
     pct exec $ORDO_CTID -- ordo domain DOMAIN       Domain setzen (automatisch HTTPS)
     pct exec $ORDO_CTID -- ordo nextcloud ADRESSE   Nextcloud verbinden lassen (gegen CORS)
     pct exec $ORDO_CTID -- ordo status              Version und Adressen

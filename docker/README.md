@@ -17,13 +17,14 @@ nano .env        # DOMAIN=ordo.deine-domain.de
 
 ## 2. Benutzer anlegen
 
-Passwörter werden mit bcrypt gespeichert. Ohne installiertes `htpasswd` geht es über Docker:
-
 ```bash
-docker run --rm httpd:2-alpine htpasswd -nbB alexander 'DEIN-PASSWORT' >> radicale/users
+./benutzer.sh neu alexander        # erzeugt ein sicheres Passwort und zeigt die Zugangsdaten
 ```
 
-Für weitere Benutzer den Befehl wiederholen.
+Weitere Befehle: `./benutzer.sh` (alle anzeigen), `./benutzer.sh passwort NAME` (neu setzen),
+`./benutzer.sh loeschen NAME`. Jeder Benutzer sieht nur seine eigenen Listen. Passwörter werden
+mit bcrypt gespeichert; ohne installiertes `htpasswd` nimmt das Skript kurz einen
+Docker-Container dafür. Ein Neustart ist nicht nötig.
 
 ## 3. Starten
 

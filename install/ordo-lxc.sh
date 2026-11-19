@@ -6,8 +6,11 @@
 #   update                         Kurzform für „ordo update“
 #   ordo update [--neu] [--quelle] neueste Version holen (--neu: auch wenn aktuell, --quelle: selbst bauen)
 #   ordo auto-update an|aus        jede Nacht automatisch aktualisieren
-#   ordo user-add NAME [PASSWORT]  Benutzer anlegen oder Passwort ändern (ohne Passwort: wird erzeugt)
-#   ordo user-del NAME             Benutzer entfernen (seine Daten bleiben liegen)
+#   ordo benutzer                  Benutzer verwalten – Menü: anlegen, Passwort, Zugangsdaten, löschen
+#   ordo user-list                 Benutzer mit Listen, Aufgaben und letzter Änderung
+#   ordo user-add NAME [PASSWORT]  Benutzer anlegen (ohne Passwort: sicheres wird erzeugt)
+#   ordo user-passwd NAME [PASSW.] Passwort neu setzen (ohne Passwort: wird erzeugt)
+#   ordo user-del NAME [--daten]   Benutzer entfernen (--daten: auch seine Aufgaben, vorher gesichert)
 #   ordo domain [DOMAIN]           Domain setzen (mit Domain: automatisch HTTPS), leer = nur HTTP auf Port 80
 #   ordo nextcloud ADRESSE         Weiterleitung zu Nextcloud (o. a. CalDAV-Server ohne CORS) erlauben
 #   ordo nextcloud-entfernen HOST  Weiterleitung wieder entfernen
@@ -137,6 +140,7 @@ EOF
 
   Ordo – Aufgaben in Ordnung
     update          neueste Version holen
+    ordo benutzer   Benutzer verwalten
     ordo status     Version, Dienste, Adressen
     ordo            alle Befehle
 
@@ -337,28 +341,182 @@ enable_services() {
 
 # ---------- Benutzer ----------
 
+# Jeder Benutzer hat seine eigenen Listen (Radicale: owner_only) unter $DATA/collection-root/NAME
+user_dir() { echo "$DATA/collection-root/$1"; }
+user_exists() { [ -f "$USERS" ] && cut -d: -f1 "$USERS" | grep -qx "$1"; }
+user_names() { [ -f "$USERS" ] && cut -d: -f1 "$USERS" | sort || true; }
+
+valid_name() {
+	printf '%s' "$1" | grep -Eq '^[a-z0-9][a-z0-9._-]{0,31}$' ||
+		die "Ungültiger Name „$1“ – erlaubt: Kleinbuchstaben, Ziffern, Punkt, - und _ (max. 32 Zeichen)."
+}
+
+set_password() {
+	touch "$USERS"
+	htpasswd -bB "$USERS" "$1" "$2" >/dev/null 2>&1 || die "Passwort ließ sich nicht setzen."
+	chown root:radicale "$USERS"
+	chmod 640 "$USERS"
+}
+
+# Zugangsdaten zum Weitergeben
+show_access() {
+	name="$1"
+	pass="${2:-}"
+	app="$(addresses | head -1)"
+	echo
+	printf '  ┌ Zugangsdaten für %s\n' "$name"
+	printf '  │ Ordo öffnen:     %s/\n' "$app"
+	printf '  │ Server-Adresse:  %s/dav/\n' "$app"
+	printf '  │ Benutzer:        %s\n' "$name"
+	if [ -n "$pass" ]; then
+		printf '  │ Passwort:        %s\n' "$pass"
+	else
+		printf '  │ Passwort:        (wird nicht gespeichert – neu setzen mit: ordo user-passwd %s)\n' "$name"
+	fi
+	printf '  └ In Ordo: Einstellungen → Sync → „Anderer CalDAV-Server“. Auch für Tasks.org/DAVx⁵.\n'
+	echo
+}
+
+# Listen, Aufgaben und letzte Änderung eines Benutzers
+user_stats() {
+	d="$(user_dir "$1")"
+	if [ ! -d "$d" ]; then
+		echo "noch keine Daten"
+		return
+	fi
+	lists="$(find "$d" -mindepth 1 -maxdepth 1 -type d ! -name '.*' | wc -l)"
+	tasks="$(find "$d" -mindepth 2 -maxdepth 2 -type f -name '*.ics' | wc -l)"
+	last="$(find "$d" -type f -name '*.ics' -exec stat -c %Y {} + 2>/dev/null | sort -n | tail -1)"
+	when="–"
+	[ -n "$last" ] && when="$(date -d "@$last" '+%d.%m.%Y %H:%M' 2>/dev/null || echo '?')"
+	echo "$lists Listen · $tasks Einträge · zuletzt geändert $when"
+}
+
 user_add() {
 	name="${1:-}"
 	pass="${2:-}"
 	[ -n "$name" ] || die "Name fehlt: ordo user-add NAME [PASSWORT]"
-	generated=""
-	if [ -z "$pass" ]; then
-		pass="$(gen_password)"
-		generated=1
+	name="$(printf '%s' "$name" | tr 'A-Z' 'a-z')"
+	valid_name "$name"
+	if user_exists "$name"; then
+		die "„$name“ gibt es schon. Passwort ändern mit: ordo user-passwd $name"
 	fi
-	touch "$USERS"
-	htpasswd -bB "$USERS" "$name" "$pass" >/dev/null 2>&1
-	chown root:radicale "$USERS"
-	chmod 640 "$USERS"
+	[ -n "$pass" ] || pass="$(gen_password)"
+	set_password "$name" "$pass"
 	say "Benutzer „$name“ angelegt."
-	[ -n "$generated" ] && printf '  Passwort: %s\n' "$pass"
-	return 0
+	show_access "$name" "$pass"
+}
+
+user_passwd() {
+	name="${1:-}"
+	pass="${2:-}"
+	[ -n "$name" ] || die "Name fehlt: ordo user-passwd NAME [PASSWORT]"
+	user_exists "$name" || die "Benutzer „$name“ gibt es nicht."
+	[ -n "$pass" ] || pass="$(gen_password)"
+	set_password "$name" "$pass"
+	say "Neues Passwort für „$name“ gesetzt."
+	show_access "$name" "$pass"
+	echo "  Auf den Geräten: Einstellungen → Sync → beim Konto „Passwort ändern“."
 }
 
 user_del() {
-	[ -n "${1:-}" ] || die "Name fehlt: ordo user-del NAME"
-	htpasswd -D "$USERS" "$1" >/dev/null 2>&1 || die "Benutzer „$1“ gibt es nicht."
-	say "Benutzer „$1“ entfernt (Daten liegen weiter unter $DATA)."
+	name="${1:-}"
+	[ -n "$name" ] || die "Name fehlt: ordo user-del NAME [--daten]"
+	user_exists "$name" || die "Benutzer „$name“ gibt es nicht."
+	htpasswd -D "$USERS" "$name" >/dev/null 2>&1 || die "Entfernen fehlgeschlagen."
+	if [ "${2:-}" = "--daten" ] && [ -d "$(user_dir "$name")" ]; then
+		backup_data
+		rm -rf "$(user_dir "$name")"
+		say "Benutzer „$name“ und seine Daten entfernt (vorher gesichert)."
+	else
+		say "Benutzer „$name“ entfernt. Seine Daten liegen weiter unter $(user_dir "$name")."
+	fi
+}
+
+user_list() {
+	names="$(user_names)"
+	if [ -z "$names" ]; then
+		echo "Noch keine Benutzer. Anlegen mit: ordo user-add NAME"
+		return
+	fi
+	for n in $names; do printf '  %-16s %s\n' "$n" "$(user_stats "$n")"; done
+}
+
+# ---------- Benutzer-Menü ----------
+
+ask_line() {
+	printf '%s' "$1" >/dev/tty
+	read -r REPLY </dev/tty || REPLY=""
+}
+
+pick_user() {
+	names="$(user_names)"
+	[ -n "$names" ] || {
+		echo "  Es gibt noch keine Benutzer."
+		return 1
+	}
+	i=0
+	for n in $names; do
+		i=$((i + 1))
+		printf '   %d  %s\n' "$i" "$n"
+	done
+	ask_line "  Nummer oder Name (Enter = zurück): "
+	[ -n "$REPLY" ] || return 1
+	case "$REPLY" in
+	*[!0-9]*) PICKED="$REPLY" ;;
+	*) PICKED="$(echo "$names" | sed -n "${REPLY}p")" ;;
+	esac
+	user_exists "${PICKED:-}" || {
+		echo "  Unbekannt: $REPLY"
+		return 1
+	}
+}
+
+cmd_users_menu() {
+	[ -t 0 ] || [ -r /dev/tty ] || die "Das Menü braucht ein Terminal. Ohne Menü: ordo user-list / user-add / user-passwd / user-del"
+	while true; do
+		printf '\n\033[1mOrdo – Benutzer\033[0m\n'
+		user_list
+		printf '\n  [n] Neu anlegen   [p] Passwort neu setzen   [z] Zugangsdaten zeigen   [l] Löschen   [q] Fertig\n'
+		ask_line "  Auswahl: "
+		case "$REPLY" in
+		n | N)
+			ask_line "  Name (z. B. maria): "
+			[ -n "$REPLY" ] || continue
+			name="$REPLY"
+			ask_line "  Passwort (Enter = sicheres Passwort erzeugen): "
+			(user_add "$name" "$REPLY") || true
+			ask_line "  Weiter mit Enter …"
+			;;
+		p | P)
+			pick_user || continue
+			ask_line "  Neues Passwort (Enter = erzeugen): "
+			(user_passwd "$PICKED" "$REPLY") || true
+			ask_line "  Weiter mit Enter …"
+			;;
+		z | Z)
+			pick_user || continue
+			show_access "$PICKED"
+			ask_line "  Weiter mit Enter …"
+			;;
+		l | L)
+			pick_user || continue
+			echo "  $(user_stats "$PICKED")"
+			ask_line "  Zum Bestätigen den Namen „$PICKED“ eintippen: "
+			[ "$REPLY" = "$PICKED" ] || {
+				echo "  Abgebrochen."
+				continue
+			}
+			ask_line "  Auch seine Aufgaben auf dem Server löschen? (j/N): "
+			case "$REPLY" in
+			j | J) (user_del "$PICKED" --daten) || true ;;
+			*) (user_del "$PICKED") || true ;;
+			esac
+			;;
+		q | Q | "") return 0 ;;
+		*) echo "  Bitte n, p, z, l oder q." ;;
+		esac
+	done
 }
 
 # ---------- Befehle ----------
@@ -384,7 +542,9 @@ cmd_install() {
 	install_self
 	write_radicale_config
 	write_caddyfile
-	[ -n "${1:-}" ] && user_add "$1" "${2:-}"
+	if [ -n "${1:-}" ]; then
+		if user_exists "$1"; then user_passwd "$1" "${2:-}"; else user_add "$1" "${2:-}"; fi
+	fi
 	enable_services
 	cmd_status
 }
@@ -515,7 +675,7 @@ cmd_status() {
 	printf 'Sicherungen:  %s\n' "$(ls -1 "$BACKUPS"/ordo-*.tar.gz 2>/dev/null | wc -l) in $BACKUPS"
 	printf 'Radicale:     %s\n' "$(rc-service radicale status 2>/dev/null | sed 's/.*: //' || echo '–')"
 	printf 'Caddy:        %s\n' "$(rc-service caddy status 2>/dev/null | sed 's/.*: //' || echo '–')"
-	printf 'Benutzer:     %s\n' "$(cut -d: -f1 "$USERS" 2>/dev/null | tr '\n' ' ')"
+	printf 'Benutzer:     %s  (verwalten: ordo benutzer)\n' "$(user_names | tr '\n' ' ')"
 	printf 'Nextcloud:    %s\n' "$(if [ -s "$CONF_DIR/proxy-hosts" ]; then tr '\n' ' ' <"$CONF_DIR/proxy-hosts"; else echo '–'; fi)"
 	echo
 	for a in $(addresses); do
@@ -534,7 +694,10 @@ install) shift && cmd_install "$@" ;;
 update) shift && cmd_update "$@" ;;
 auto-update) shift && cmd_auto_update "$@" ;;
 sicherung) backup_data ;;
+benutzer | users) cmd_users_menu ;;
+user-list) user_list ;;
 user-add) shift && user_add "$@" ;;
+user-passwd) shift && user_passwd "$@" ;;
 user-del) shift && user_del "$@" ;;
 domain) shift && cmd_domain "$@" ;;
 nextcloud) shift && cmd_nextcloud "$@" ;;

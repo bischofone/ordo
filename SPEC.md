@@ -424,6 +424,10 @@ jederzeit geändert werden – dann wird es hier angepasst.
 - **Server:** `docker/` mit Radicale + Caddy; App und CalDAV unter einer Adresse
   (`/dav/`) → kein CORS nötig. Alternative mit CORS als Beispiel. Lokal ohne Docker:
   `pnpm radicale`, im Dev-Server unter `/dav/` erreichbar.
+- **Benutzer auf dem eigenen Server:** Radicale mit htpasswd (bcrypt) und `owner_only` – jeder
+  sieht nur seine Listen. Verwaltung per `ordo benutzer` (Menü) bzw. `ordo user-list|add|passwd|del`
+  im LXC, `docker/benutzer.sh` bei Docker. Namen: Kleinbuchstaben, Ziffern, `._-`. Löschen mit
+  Daten sichert vorher. Gemeinsame Listen mehrerer Benutzer: offen.
 - **Updates:** Die CI veröffentlicht nur nach grünen Tests auf `main` (Job `release`):
   Release `main-build` (`ordo-app.tar.gz`, `ordo-lxc.sh`, `version.txt` mit Commit und
   SHA-256) und das Image `ghcr.io/bischofone/ordo` (Caddy + App, amd64/arm64).
